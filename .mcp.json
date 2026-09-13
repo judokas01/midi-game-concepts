@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "godot": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@coding-solo/godot-mcp"],
+      "env": {
+        "GODOT_PATH": "C:/game-dev/godot/Godot_v4.7.2-stable_win64.exe",
+        "DEBUG": "true"
+      }
+    },
+    "blender": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--python", "3.11", "blender-mcp"],
+      "env": {
+        "UV_PYTHON_PREFERENCE": "only-managed"
+      }
+    }
+  }
+}

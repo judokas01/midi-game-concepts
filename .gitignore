@@ -1,0 +1,18 @@
+.claude
+
+# web spikes
+node_modules/
+
+# Godot
+.godot/
+.import/
+export_presets.cfg
+*.translation
+
+# Blender
+*.blend1
+*.blend2
+
+# OS
+.DS_Store
+Thumbs.db
