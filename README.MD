@@ -120,7 +120,7 @@ concept survives its verdict — or earlier, if the look *is* the hypothesis bei
 
 | # | Concept | Stage | Verdict |
 | --- | --- | --- | --- |
-| — | _no concepts yet_ | — | — |
+| 001 | [Staff Defence](concepts/001-staff-defence/README.md) — tower defence on a treble staff, the melody is the enemy wave | Spike | _not played yet_ |
 
 ## Working with Claude Code
 

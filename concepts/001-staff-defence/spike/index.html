@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>001 Staff Defence — spike</title>
+<style>
+  html, body { margin:0; height:100%; background:#14161a; color:#e8e6df; font:14px/1.3 system-ui, sans-serif; overflow:hidden; }
+  #hud { position:fixed; top:0; left:0; right:0; display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; padding:8px 12px; background:#1d2026; border-bottom:1px solid #2c3038; z-index:2; }
+  #hud .grp { display:flex; gap:4px; align-items:center; }
+  #hud .lbl { color:#8b909a; font-size:12px; margin-right:2px; }
+  button { background:#2b2f37; color:#e8e6df; border:1px solid #3c414b; border-radius:4px; padding:4px 9px; cursor:pointer; font:inherit; }
+  button.on { background:#4b7bec; border-color:#4b7bec; color:#fff; }
+  #status { margin-left:auto; display:flex; gap:14px; font-variant-numeric:tabular-nums; }
+  #input { padding:2px 8px; border-radius:4px; background:#3a3f49; }
+  #input.midi { background:#2e8b57; }
+  canvas { display:block; position:fixed; top:0; left:0; }
+  #overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,11,14,.78); z-index:3; text-align:center; cursor:pointer; }
+  #overlay h1 { margin:0 0 8px; font-size:28px; }
+  #overlay p { margin:4px 0; color:#b8bcc5; max-width:640px; }
+  #overlay.hidden { display:none; }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="grp"><span class="lbl">Song</span><span id="songs"></span></div>
+  <div class="grp"><span class="lbl">Movement</span><span id="movement"></span></div>
+  <div class="grp"><span class="lbl">Routes</span><span id="routes"></span></div>
+  <div class="grp"><span class="lbl">Chords</span><span id="chordmodes"></span></div>
+  <div class="grp"><span class="lbl">Tempo</span><input id="tempo" type="range" min="30" max="120" value="60" style="width:110px"><span id="tempoval" style="font-variant-numeric:tabular-nums;color:#b8bcc5">60%</span></div>
+  <button id="restart">Restart</button>
+  <div id="status">
+    <span id="input">keyboard</span>
+    <span id="hp">HP 20</span>
+    <span id="kills">Kills 0/0</span>
+    <span id="cd">ready</span>
+  </div>
+</div>
+<canvas id="c"></canvas>
+<div id="overlay"><div>
+  <h1>Staff Defence</h1>
+  <p>Bugs spawn on the right and weave toward the staff. Each one steps into the boxed kill zone on its line on its beat.
+     Play that note to fire into the box; hold for as long as the bug is long. What gets past chips the base.</p>
+  <p>Left hand: root + fifth below C3 picks the laser colour. Computer keys are printed on every line.</p>
+  <p><b>Click to start</b></p>
+</div></div>
+
+<script>
+// ============ song data ============
+// notes: [name, lengthInEighths] ; 'r' = rest. chords: one per bar (8 eighths).
+const SONGS = {
+  'Ode to Joy (C)': { key:'C', bpm:84, chords:['C','C','C','G','C','C','G','C'],
+    notes:[['E4',2],['E4',2],['F4',2],['G4',2], ['G4',2],['F4',2],['E4',2],['D4',2], ['C4',2],['C4',2],['D4',2],['E4',2], ['E4',3],['D4',1],['D4',4],
+           ['E4',2],['E4',2],['F4',2],['G4',2], ['G4',2],['F4',2],['E4',2],['D4',2], ['C4',2],['C4',2],['D4',2],['E4',2], ['D4',3],['C4',1],['C4',4]] },
+  'Twinkle (C)': { key:'C', bpm:88, chords:['C','F','C','G','C','G','C','F','C','G','C','F'],
+    notes:[['C4',2],['C4',2],['G4',2],['G4',2], ['A4',2],['A4',2],['G4',4], ['F4',2],['F4',2],['E4',2],['E4',2], ['D4',2],['D4',2],['C4',4],
+           ['G4',2],['G4',2],['F4',2],['F4',2], ['E4',2],['E4',2],['D4',4], ['G4',2],['G4',2],['F4',2],['F4',2], ['E4',2],['E4',2],['D4',4],
+           ['C4',2],['C4',2],['G4',2],['G4',2], ['A4',2],['A4',2],['G4',4], ['F4',2],['F4',2],['E4',2],['E4',2], ['D4',2],['D4',2],['C4',4]] },
+  'Twinkle (G)': { key:'G', bpm:88, chords:['G','C','G','D','G','D','G','C','G','D','G','C'],
+    notes:[['G4',2],['G4',2],['D5',2],['D5',2], ['E5',2],['E5',2],['D5',4], ['C5',2],['C5',2],['B4',2],['B4',2], ['A4',2],['A4',2],['G4',4],
+           ['D5',2],['D5',2],['C5',2],['C5',2], ['B4',2],['B4',2],['A4',4], ['D5',2],['D5',2],['C5',2],['C5',2], ['B4',2],['B4',2],['A4',4],
+           ['G4',2],['G4',2],['D5',2],['D5',2], ['E5',2],['E5',2],['D5',4], ['C5',2],['C5',2],['B4',2],['B4',2], ['A4',2],['A4',2],['G4',4]] },
+  'Frère Jacques (C)': { key:'C', bpm:96, chords:['C','C','C','C','C','C','G','C'],
+    notes:[['C4',2],['D4',2],['E4',2],['C4',2], ['C4',2],['D4',2],['E4',2],['C4',2], ['E4',2],['F4',2],['G4',4], ['E4',2],['F4',2],['G4',4],
+           ['G4',1],['A4',1],['G4',1],['F4',1],['E4',2],['C4',2], ['G4',1],['A4',1],['G4',1],['F4',1],['E4',2],['C4',2], ['C4',2],['G4',2],['C4',4], ['C4',2],['G4',2],['C4',4]] },
+  'Scale walk (C)': { key:'C', bpm:80, chords:['C','G','C','G'],
+    notes:[['C4',2],['D4',2],['E4',2],['F4',2], ['G4',2],['A4',2],['B4',2],['C5',2], ['C5',2],['B4',2],['A4',2],['G4',2], ['F4',2],['E4',2],['D4',2],['C4',4]] },
+};
+
+const KEYSIGS = { C:{}, G:{F:1}, D:{F:1,C:1}, F:{B:-1} };
+const CHORD_COLOURS = { C:'#3ddc84', F:'#4b9bff', G:'#ff5c5c', D:'#ffb347', Am:'#ffe14d', Em:'#c77dff' };
+const CHORD_ROOT = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+const LETTER_SEMI = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+const LETTER_POS  = { C:0, D:1, E:2, F:3, G:4, A:5, B:6 };
+
+// ============ board constants (SPEC §2) ============
+const ROWS = 17, GRID_ROWS = 35, K = 4, LEAD = 8, COLS = K + LEAD + 2;
+const FIRST_WINDOW = 8;             // one bar of silence before the first window opens
+const COOLDOWN = 0.9;               // eighths
+const FALLBACK = 'zxcvbnmasdfghjqwe';
+const gridRowOf = R => 2 * R + 1;
+
+function rowOf(name) { const L = name[0], oct = +name.slice(-1); return 7 * (oct - 3) + LETTER_POS[L] - 5; }
+function rowInfo(row, key) {
+  const pos = (row + 5) % 7, oct = 3 + Math.floor((row + 5) / 7), letter = 'CDEFGAB'[pos];
+  const acc = (KEYSIGS[key] || {})[letter] || 0;
+  return { letter, oct, acc, midi: 12 * (oct + 1) + LETTER_SEMI[letter] + acc,
+           label: letter + (acc === 1 ? '#' : acc === -1 ? 'b' : '') + oct, isLine: row % 2 === 0 };
+}
+
+// ============ state ============
+const MOVEMENT = ['Stepped', 'Smooth'], ROUTES = ['Shown', 'Hidden'], CHORDMODES = ['Off', 'Sticky', 'Held'];
+let movement = 0, routesMode = 0, chordMode = 1, songName = Object.keys(SONGS)[0];
+let audio = null, started = false;
+let song, enemies, hp, kills, total, startTime, rowMidi, midiRow, lastShot = -1e9, nextClick, clickIdx, finished;
+let baseFlash = 0, cracks = [], tempoScale = 0.6, side = 1;
+const rows = Array.from({ length: ROWS }, () => ({ on: false, osc: null, gain: null, flash: 0 }));
+let laserChord = null;
+const heldLow = new Set();
+let disabledFlash = [];
+let inputSrc = 'keyboard';
+
+const eighthSec = () => 60 / (song.bpm * tempoScale) / 2;
+const songTime = () => (audio.currentTime - startTime) / eighthSec();
+const rnd = n => Math.floor(Math.random() * n);
+
+// ---- route generation (SPEC §4.2) ----
+function makeRoute(R) {
+  const gr = gridRowOf(R);
+  let s = side;                       // one side for the whole song, chosen at load
+  let v = Math.random() < 0.5 ? 0 : 2;
+  const fits = (s, v) => gr + s * (1 + v) >= 0 && gr + s * (1 + v) < GRID_ROWS;
+  if (!fits(s, v)) s = -s;
+  if (!fits(s, v)) v = 0;
+  const h = LEAD - 1 - v;
+  const moves = [...Array(h).fill('H'), ...Array(v).fill('V')];
+  for (let i = moves.length - 1; i > 0; i--) { const j = rnd(i + 1); [moves[i], moves[j]] = [moves[j], moves[i]]; }
+  if (moves[moves.length - 1] === 'V') { const j = moves.indexOf('H'); [moves[j], moves[moves.length - 1]] = ['V', 'H']; } // never step vertically inside column K
+  let r = gr + s * (1 + v), c = K + h;
+  const route = [[r, c]];
+  for (const m of moves) { if (m === 'H') c--; else r -= s; route.push([r, c]); }   // ends on parking tile (gr+s, K)
+  route.push([gr, K]);                                                              // route[LEAD] = kill zone
+  for (let cc = K - 1; cc >= 0; cc--) route.push([gr, cc]);                         // run-in to the base
+  return route;
+}
+
+function loadSong() {
+  song = SONGS[songName];
+  rowMidi = []; midiRow = {};
+  for (let r = 0; r < ROWS; r++) { const m = rowInfo(r, song.key).midi; rowMidi.push(m); midiRow[m] = r; }
+  enemies = []; let t = FIRST_WINDOW; side = Math.random() < 0.5 ? 1 : -1;
+  for (const [name, len] of song.notes) {
+    if (name !== 'r') {
+      const R = rowOf(name), bar = Math.floor((t - FIRST_WINDOW) / 8);
+      enemies.push({ R, t, len, chord: song.chords[bar % song.chords.length], seg: Array(len).fill(true), route: makeRoute(R), spawn: t - LEAD });
+    }
+    t += len;
+  }
+  total = enemies.reduce((a, e) => a + e.len, 0);
+  hp = 20; kills = 0; finished = false; cracks = [];
+  laserChord = chordMode === 0 ? null : song.chords[0];
+  if (audio) { startTime = audio.currentTime + 0.3; nextClick = startTime; clickIdx = 0; }
+  for (const r of rows) stopLaser(r);
+  updateHud();
+}
+
+// ============ audio ============
+function ensureAudio() {
+  if (audio) return;
+  audio = new (window.AudioContext || window.webkitAudioContext)();
+  startTime = audio.currentTime + 0.3; nextClick = startTime; clickIdx = 0;
+}
+function click(time, accent) {
+  const o = audio.createOscillator(), g = audio.createGain();
+  o.frequency.value = accent ? 1600 : 1000;
+  g.gain.setValueAtTime(accent ? 0.25 : 0.12, time); g.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+  o.connect(g).connect(audio.destination); o.start(time); o.stop(time + 0.06);
+}
+function scheduleClicks() {
+  while (nextClick < audio.currentTime + 0.15) { click(nextClick, clickIdx % 4 === 0); clickIdx++; nextClick += eighthSec() * 2; }
+}
+function startLaser(r, midi) {
+  const row = rows[r]; if (row.osc) return;
+  const o = audio.createOscillator(), g = audio.createGain();
+  o.type = 'triangle'; o.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+  g.gain.setValueAtTime(0, audio.currentTime); g.gain.linearRampToValueAtTime(0.14, audio.currentTime + 0.01);
+  o.connect(g).connect(audio.destination); o.start();
+  row.osc = o; row.gain = g; row.on = true;
+}
+function stopLaser(row) {
+  if (row.osc) { const o = row.osc, g = row.gain, t = audio.currentTime;
+    g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + 0.04); o.stop(t + 0.05); }
+  row.osc = null; row.gain = null; row.on = false;
+}
+
+// ============ input ============
+function noteOn(midi) {
+  if (!started) return;
+  if (midi < 48) { heldLow.add(midi); detectChord(); return; }
+  const r = midiRow[midi];
+  if (r === undefined) { disabledFlash.push({ midi, t: performance.now() }); return; }
+  const now = songTime();
+  if (now - lastShot < COOLDOWN) { rows[r].flash = performance.now(); return; }
+  lastShot = now; startLaser(r, midi);
+}
+function noteOff(midi) {
+  if (midi < 48) { heldLow.delete(midi); if (chordMode === 2) detectChord(); return; }
+  const r = midiRow[midi]; if (r !== undefined) stopLaser(rows[r]);
+}
+function detectChord() {
+  const held = [...heldLow].sort((a, b) => a - b);
+  let root = null;
+  for (const n of held) if (held.some(m => m > n && (m - n) % 12 === 7)) { root = n % 12; break; }
+  if (root !== null) {
+    const name = Object.keys(CHORD_ROOT).find(k => CHORD_ROOT[k] === root);
+    if (name && song.chords.includes(name)) laserChord = name;
+    else if (chordMode === 2) laserChord = null;
+  } else if (chordMode === 2) laserChord = null;
+}
+const laserColour = () => chordMode === 0 ? '#ffffff' : (CHORD_COLOURS[laserChord] || '#666');
+const laserHits = e => chordMode === 0 || laserChord === e.chord;
+const distinctChords = () => song.chords.filter((v, i, a) => a.indexOf(v) === i);
+
+window.addEventListener('keydown', e => {
+  if (e.repeat || e.target.tagName === 'BUTTON') return;
+  const k = e.key.toLowerCase();
+  if (k === ' ') { e.preventDefault(); if (!started) start(); return; }
+  if (!started) return;
+  const r = FALLBACK.indexOf(k);
+  if (r >= 0) { noteOn(rowMidi[r]); return; }
+  if ('1234'.includes(k)) { const c = distinctChords()[+k - 1]; if (c) laserChord = c; }
+});
+window.addEventListener('keyup', e => { const r = FALLBACK.indexOf(e.key.toLowerCase()); if (r >= 0) noteOff(rowMidi[r]); });
+
+if (navigator.requestMIDIAccess) {
+  navigator.requestMIDIAccess().then(midi => {
+    const hook = p => { p.onmidimessage = onMidi; };
+    for (const input of midi.inputs.values()) hook(input);
+    midi.onstatechange = e => { if (e.port.type === 'input' && e.port.state === 'connected') hook(e.port); };
+  }).catch(() => {});
+}
+function setInput(src) { inputSrc = src; const el = document.getElementById('input'); el.textContent = src === 'midi' ? 'MIDI' : 'keyboard'; el.className = src; }
+function onMidi({ data }) {
+  const [status, note, vel] = data, type = status & 0xf0;
+  if (type === 0x90 && vel > 0) { setInput('midi'); noteOn(note); }
+  else if (type === 0x80 || type === 0x90) noteOff(note);     // note-on with velocity 0 is note-off
+}
+
+// ============ HUD ============
+function mkButtons(id, items, current, onpick) {
+  const el = document.getElementById(id); el.innerHTML = '';
+  items.forEach((name, i) => { const b = document.createElement('button'); b.textContent = name;
+    if (i === current) b.classList.add('on'); b.onclick = () => { onpick(i); b.blur(); }; el.appendChild(b); });
+}
+function buildHud() {
+  const names = Object.keys(SONGS);
+  mkButtons('songs', names, names.indexOf(songName), i => { songName = names[i]; buildHud(); if (audio) loadSong(); });
+  mkButtons('movement', MOVEMENT, movement, i => { movement = i; buildHud(); });
+  mkButtons('routes', ROUTES, routesMode, i => { routesMode = i; buildHud(); });
+  mkButtons('chordmodes', CHORDMODES, chordMode, i => { chordMode = i;
+    if (i === 0) laserChord = null; else if (i === 1 && !laserChord && song) laserChord = song.chords[0]; buildHud(); });
+}
+function updateHud() {
+  document.getElementById('hp').textContent = 'HP ' + hp;
+  document.getElementById('kills').textContent = `Kills ${kills}/${total}`;
+}
+const tempoEl = document.getElementById('tempo');
+tempoEl.oninput = () => {
+  const T = (audio && started) ? songTime() : null;
+  tempoScale = tempoEl.value / 100;
+  document.getElementById('tempoval').textContent = tempoEl.value + '%';
+  if (T !== null) { startTime = audio.currentTime - T * eighthSec(); nextClick = audio.currentTime + 0.05; clickIdx = Math.ceil(T / 2) % 4; }
+};
+document.getElementById('restart').onclick = e => { if (audio) loadSong(); e.target.blur(); };
+
+// ============ game loop ============
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+function resize() { cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio; ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); }
+addEventListener('resize', resize); resize();
+
+function start() {
+  ensureAudio(); audio.resume(); started = true;
+  document.getElementById('overlay').classList.add('hidden');
+  loadSong();
+}
+document.getElementById('overlay').onclick = start;
+
+function frame() {
+  requestAnimationFrame(frame);
+  const W = innerWidth, H = innerHeight, hudH = document.getElementById('hud').offsetHeight;
+  ctx.fillStyle = '#14161a'; ctx.fillRect(0, 0, W, H);
+  if (!song) return;
+
+  // geometry
+  const labelW = 86, top = hudH + 44, bottom = H - 16;
+  const tileW = (W - labelW - 12) / COLS, tileH = (bottom - top) / GRID_ROWS;
+  const tileX = c => labelW + c * tileW, tileY = gr => bottom - (gr + 1) * tileH;   // top-left of tile
+  const cx = c => tileX(c) + tileW / 2, cy = gr => tileY(gr) + tileH / 2;
+  const T = started ? songTime() : 0, now = performance.now();
+
+  // faint tile grid in enemy territory
+  ctx.strokeStyle = '#1f2228'; ctx.lineWidth = 1;
+  for (let c = K + 1; c <= COLS; c++) { ctx.beginPath(); ctx.moveTo(tileX(c), top); ctx.lineTo(tileX(c), bottom); ctx.stroke(); }
+  for (let gr = 0; gr <= GRID_ROWS; gr++) { const y = tileY(gr) + tileH; ctx.beginPath(); ctx.moveTo(tileX(K + 1), y); ctx.lineTo(tileX(COLS), y); ctx.stroke(); }
+
+  // staff lines, labels
+  for (let R = 0; R < ROWS; R++) {
+    const info = rowInfo(R, song.key), gr = gridRowOf(R), y = cy(gr);
+    if (info.isLine) {
+      const ledger = R < 4 || R > 12;
+      ctx.strokeStyle = ledger ? '#3a3f49' : '#8b909a'; ctx.lineWidth = ledger ? 1 : 1.5; ctx.setLineDash(ledger ? [6, 8] : []);
+      ctx.beginPath(); ctx.moveTo(labelW, y); ctx.lineTo(tileX(COLS), y); ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
+    ctx.font = '13px system-ui'; ctx.fillStyle = rows[R].on ? '#fff' : '#b8bcc5'; ctx.fillText(info.label, labelW - 30, y);
+    ctx.font = '11px system-ui'; ctx.fillStyle = '#6c717c'; ctx.fillText(FALLBACK[R].toUpperCase(), labelW - 8, y);
+    if (now - rows[R].flash < 200) { ctx.fillStyle = 'rgba(255,80,80,0.25)'; ctx.fillRect(labelW, tileY(gr), tileX(COLS) - labelW, tileH); }
+  }
+  ctx.font = 'bold 26px serif'; ctx.fillStyle = '#4a4f59'; ctx.textAlign = 'left'; ctx.fillText('𝄞', tileX(1) + 4, cy(gridRowOf(6)));
+
+  // base (column 0)
+  ctx.fillStyle = now - baseFlash < 150 ? '#ff8a80' : '#7a3b3b';
+  ctx.fillRect(tileX(0), top, tileW * 0.6, bottom - top);
+  ctx.strokeStyle = '#2a1414'; ctx.lineWidth = 1.5;
+  for (const [y0, dx, dy] of cracks) { ctx.beginPath(); ctx.moveTo(tileX(0) + tileW * 0.3, y0); ctx.lineTo(tileX(0) + tileW * 0.3 + dx, y0 + dy); ctx.stroke(); }
+  ctx.fillStyle = '#c94f4f'; ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.fillText('BASE', tileX(0) + tileW * 0.3, top - 10);
+  ctx.fillStyle = '#8b909a'; ctx.fillText('KILL ZONE', cx(K), top - 10);
+
+  // kill zone tiles
+  for (let R = 0; R < ROWS; R++) {
+    const gr = gridRowOf(R);
+    if (rows[R].on) { ctx.fillStyle = laserColour(); ctx.globalAlpha = 0.35; ctx.fillRect(tileX(K) + 1, tileY(gr) + 1, tileW - 2, tileH - 2); ctx.globalAlpha = 1; }
+    ctx.strokeStyle = rows[R].on ? laserColour() : '#4a4f59'; ctx.lineWidth = rows[R].on ? 2 : 1;
+    ctx.strokeRect(tileX(K) + 1, tileY(gr) + 1, tileW - 2, tileH - 2);
+  }
+
+  // enemies: resolve, then draw
+  let unresolved = 0;
+  for (const e of enemies) {
+    const stepF = T - e.spawn, step = Math.floor(stepF), frac = stepF - step, last = e.route.length - 1;
+    const anyAlive = e.seg.some(Boolean);
+    if (!anyAlive) continue;
+    unresolved++;
+    const colour = chordMode === 0 ? '#d9d5c8' : CHORD_COLOURS[e.chord];
+    // route
+    if (routesMode === 0 && step >= 0) {
+      ctx.strokeStyle = colour; ctx.globalAlpha = 0.18; ctx.lineWidth = 3; ctx.setLineDash([4, 6]);
+      ctx.beginPath(); e.route.forEach(([r, c], i) => i ? ctx.lineTo(cx(c), cy(r)) : ctx.moveTo(cx(c), cy(r))); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+    }
+    for (let i = 0; i < e.len; i++) {
+      if (!e.seg[i]) continue;
+      const idx = step - i;
+      if (idx < 0) continue;                                   // not spawned yet
+      if (idx >= last) {                                       // reached the base
+        e.seg[i] = false; hp = Math.max(0, hp - 1); baseFlash = now;
+        cracks.push([top + Math.random() * (bottom - top), (Math.random() - 0.5) * tileW * 0.5, (Math.random() - 0.5) * 30]);
+        updateHud(); continue;
+      }
+      if (idx === LEAD && rows[e.R].on && laserHits(e)) { e.seg[i] = false; kills++; updateHud(); continue; }
+      let [r, c] = e.route[idx];
+      if (movement === 1 && idx + 1 <= last) { const [r2, c2] = e.route[idx + 1]; r += (r2 - r) * frac; c += (c2 - c) * frac; }
+      const x = cx(c), y = cy(r), rad = Math.min(tileW, tileH) * (i === 0 ? 0.42 : 0.32);
+      ctx.fillStyle = colour; ctx.beginPath(); ctx.ellipse(x, y, Math.min(tileW * 0.45, rad * 1.6), rad, 0, 0, Math.PI * 2); ctx.fill();
+      if (i === 0) { ctx.fillStyle = '#14161a'; ctx.beginPath(); ctx.arc(x - rad * 0.6, y - rad * 0.3, rad * 0.22, 0, 7); ctx.arc(x - rad * 0.6, y + rad * 0.3, rad * 0.22, 0, 7); ctx.fill(); }
+    }
+  }
+
+  // lasers
+  for (let R = 0; R < ROWS; R++) if (rows[R].on) {
+    const y = cy(gridRowOf(R));
+    ctx.strokeStyle = laserColour(); ctx.lineWidth = 4; ctx.globalAlpha = 0.85;
+    ctx.beginPath(); ctx.moveTo(tileX(0) + tileW * 0.6, y); ctx.lineTo(tileX(K + 1) - 2, y); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+
+  // disabled-note flashes
+  disabledFlash = disabledFlash.filter(f => now - f.t < 700);
+  ctx.textAlign = 'center'; ctx.font = 'bold 16px system-ui';
+  disabledFlash.forEach((f, i) => { ctx.fillStyle = 'rgba(255,90,90,0.9)'; ctx.fillText(`MIDI ${f.midi} is not in the key of ${song.key}`, W / 2, top + 14 + i * 20); });
+
+  // legend
+  document.getElementById('cd').textContent = (T - lastShot) < COOLDOWN ? 'cooldown' : 'ready';
+  const bar = Math.max(0, Math.floor((T - FIRST_WINDOW) / 8)), n = song.chords.length;
+  ctx.textAlign = 'left'; ctx.font = '13px system-ui'; ctx.fillStyle = '#8b909a';
+  ctx.fillText(`Laser:`, 12, top - 26);
+  ctx.fillStyle = '#6c717c'; ctx.textAlign = 'right'; ctx.fillText(`bugs arrive from ${side > 0 ? 'above' : 'below'} · ${Math.round(song.bpm * tempoScale)} BPM`, tileX(COLS), top - 26); ctx.textAlign = 'left';
+  ctx.fillStyle = laserColour(); ctx.fillText(chordMode === 0 ? 'any colour' : (laserChord || 'none — play root + fifth'), 56, top - 26);
+  if (chordMode !== 0) {
+    const cur = song.chords[bar % n], nxt = song.chords[(bar + 1) % n];
+    ctx.fillStyle = '#8b909a'; ctx.fillText('Bar chord:', 12, top - 8);
+    ctx.fillStyle = CHORD_COLOURS[cur]; ctx.fillText(cur, 84, top - 8);
+    ctx.fillStyle = '#8b909a'; ctx.fillText('next', 110, top - 8);
+    ctx.fillStyle = CHORD_COLOURS[nxt]; ctx.fillText(nxt, 142, top - 8);
+    ctx.fillStyle = '#6c717c'; ctx.fillText('keys 1-4: ' + distinctChords().join(' '), 190, top - 8);
+  }
+
+  // audio scheduling & end state
+  if (started) {
+    scheduleClicks();
+    if (!finished && (unresolved === 0 || hp === 0)) finished = true;
+    if (finished) {
+      ctx.fillStyle = 'rgba(10,11,14,0.8)'; ctx.fillRect(W / 2 - 240, H / 2 - 60, 480, 120);
+      ctx.fillStyle = '#e8e6df'; ctx.textAlign = 'center'; ctx.font = 'bold 26px system-ui';
+      ctx.fillText(hp === 0 ? 'Base destroyed' : 'Song survived', W / 2, H / 2 - 20);
+      ctx.font = '15px system-ui'; ctx.fillStyle = '#b8bcc5';
+      ctx.fillText(`HP ${hp}/20 · ${kills}/${total} segments burned · Restart or pick a song`, W / 2, H / 2 + 18);
+    }
+  }
+}
+buildHud();
+frame();
+</script>
+</body>
+</html>
