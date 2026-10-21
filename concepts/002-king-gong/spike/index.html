@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>002 King Gong — spike</title>
+<style>
+  html, body { margin:0; height:100%; background:#1a2418; color:#ecebe4; font:14px/1.3 system-ui, sans-serif; overflow:hidden; }
+  #hud { position:fixed; top:0; left:0; right:0; display:flex; flex-wrap:wrap; gap:4px 14px; align-items:center; padding:6px 10px; background:#1d2620; border-bottom:1px solid #2f3b31; z-index:2; }
+  #hud .grp { display:flex; gap:5px; align-items:center; }
+  #hud .lbl { color:#93a092; font-size:12px; }
+  button { background:#2b352d; color:#ecebe4; border:1px solid #3e4b40; border-radius:4px; padding:3px 8px; cursor:pointer; font:inherit; font-size:13px; }
+  button.on { background:#4f8a3c; border-color:#4f8a3c; color:#fff; }
+  #status { margin-left:auto; display:flex; gap:14px; align-items:center; font-variant-numeric:tabular-nums; }
+  #input { padding:2px 8px; border-radius:4px; background:#3a3f49; }
+  #input.midi { background:#2e8b57; }
+  canvas { display:block; position:fixed; top:0; left:0; }
+  #overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(12,18,12,.82); z-index:3; text-align:center; cursor:pointer; }
+  #overlay h1 { margin:0 0 10px; font-size:30px; }
+  #overlay p { margin:6px auto; color:#c4cec1; max-width:660px; }
+  #overlay.hidden { display:none; }
+</style>
+</head>
+<body>
+<div id="hud">
+  <b>King Gong</b>
+  <div class="grp"><span class="lbl">Tempo</span><input id="tempo" type="range" min="40" max="120" value="60" style="width:110px"><span id="tempoval" style="color:#c4cec1;font-variant-numeric:tabular-nums">60 BPM</span></div>
+  <div class="grp"><span class="lbl">Labels</span><button id="labels" class="on">on</button></div>
+  <div class="grp"><span class="lbl">Beat tick</span><button id="tick" class="on">on</button></div>
+  <div class="grp"><span class="lbl">Synth</span><button id="synth" class="on">on</button></div>
+  <button id="restart">Restart</button>
+  <div id="status">
+    <span id="input">keyboard</span>
+    <span id="bananas">🍌 3</span>
+    <span id="progress">branch 0/0</span>
+    <span id="falls">falls 0</span>
+  </div>
+</div>
+<canvas id="c"></canvas>
+<div id="overlay"><div>
+  <h1>King Gong</h1>
+  <p>Swing the gorilla through the treetops. The five long bushes are the staff lines; every branch sits on a note.
+     Play that note to grab the branch.</p>
+  <p><b>Hold the note as long as the branch is thick</b>: thin = 1 beat, thick = 2 beats. Let go too early and you drop,
+     hang on too long and the branch breaks. A liana below a gap is a rest: let go on time and bounce off it.</p>
+  <p>A wrong note is a fall too. Magic bananas bounce you back up. You start with 3, and more hang from some branches.</p>
+  <p>There is no backing track: the song starts when you grab the first branch and every grab restarts the beat.</p>
+  <p>No MIDI? Keys <b>A S D F G H J K</b> = C4 D4 E4 F4 G4 A4 B4 C5.</p>
+  <p><b>Click or press Space to start</b> · Chrome or Edge</p>
+</div></div>
+
+<script>
+// ============ song ============
+// [note, beats]. 'r' is a rest. A trailing '*' hangs a banana on that branch.
+const SONG = [
+  ['C4',1],['C4',1],['G4',1],['G4',1],['A4',1],['A4',1],['G4*',2],
+  ['F4',1],['F4',1],['E4',1],['E4',1],['D4',1],['D4',1],['C4',1],['r',1],
+  ['G4',1],['G4',1],['F4',1],['F4',1],['E4',1],['E4',1],['D4*',2],
+  ['G4',1],['G4',1],['F4',1],['F4',1],['E4*',1],['E4',1],['D4',1],['r',1],
+  ['C4',1],['C4',1],['G4',1],['G4',1],['A4',1],['A4',1],['G4*',2],
+  ['F4',1],['F4',1],['E4',1],['E4',1],['D4',1],['D4',1],['C4',2],
+];
+
+const LETTER_SEMI = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+const LETTER_STEP = { C:0, D:1, E:2, F:3, G:4, A:5, B:6 };
+const NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const KEYS = 'asdfghjk', KEY_MIDI = [60, 62, 64, 65, 67, 69, 71, 72];
+const START_BANANAS = 3;
+const TOL = 0.35;                                // timing window either side of the ideal moment, in beats
+const GRACE = 25;                                // ms: an event that arrives just in time beats the frame-loop timeout
+const SWING = 0.85;                              // pendulum half-angle, radians
+const RP = 1.5;                                  // shoulders hang this many staff steps below the grip
+const THICK = { 1: 0.26, 2: 0.6, 3: 0.8, 4: 1.0 };   // branch thickness in staff steps, by beats
+const LIANA_DIP = 0.95;                          // liana midpoint below lianaY when the gorilla lands, in steps
+
+const noteName = m => NAMES[m % 12] + (Math.floor(m / 12) - 1);
+const beatsWord = n => n === 1 ? '1 beat' : n + ' beats';
+const gapUnits = beats => 0.6 + 0.4 * beats;     // horizontal space, loosely proportional like engraved music
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const smooth = v => { v = clamp01(v); return v * v * (3 - 2 * v); };
+const lerp = (a, b, k) => a + (b - a) * k;
+const hash = k => { const x = Math.sin(k * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const keyFor = midi => { const i = KEY_MIDI.indexOf(midi); return i >= 0 ? KEYS[i].toUpperCase() : null; };
+
+function parseSong() {
+  const out = []; let beat = 0, xu = 0;
+  for (const [raw, len] of SONG) {
+    if (raw === 'r') {
+      const p = out[out.length - 1];
+      p.restAfter += len; p.rx0u = xu; xu += gapUnits(len) + 0.4; p.rx1u = xu; beat += len;
+      continue;
+    }
+    const banana = raw.endsWith('*'), name = banana ? raw.slice(0, -1) : raw, L = name[0], oct = +name.slice(-1);
+    out.push({ name, midi: 12 * (oct + 1) + LETTER_SEMI[L], step: 7 * (oct - 4) + LETTER_STEP[L], len, beat, xu,
+               restAfter: 0, banana, taken: false, brokenT: 0 });
+    beat += len; xu += gapUnits(len);
+  }
+  return out;
+}
+
+// ============ layout ============
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let W, H, s, ppb, skyTop, c4Y, lianaY, floorY, hudH;
+function layout() {
+  W = innerWidth; H = innerHeight; hudH = document.getElementById('hud').offsetHeight;
+  s = Math.max(14, Math.min(40, (H - hudH) / 18.2));         // one staff step (half a line spacing)
+  skyTop = hudH + Math.max(0, (H - hudH) - 18.2 * s) * 0.35;
+  c4Y = skyTop + 11.6 * s; lianaY = c4Y + 4.1 * s; floorY = c4Y + 5.7 * s;
+  ppb = 3 * s;
+  cv.width = W * devicePixelRatio; cv.height = H * devicePixelRatio; ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+const yOf = step => c4Y - step * s;
+const nx = n => n.xu * ppb, ny = n => yOf(n.step);
+addEventListener('resize', layout);
+
+// ============ state ============
+let notes, bars, st, bananas, falls, doneUpTo, camX, render, blend, banner, flyers, started = false;
+let bpm = 60, labels = true, tickOn = true, synthOn = true, inputSrc = 'keyboard';
+const beatMs = () => 60000 / bpm, tolMs = () => TOL * beatMs();
+
+// Every window is measured from the grab of branch i at time g, never from a global clock.
+function windows(i, g) {
+  const n = notes[i], end = g + n.len * beatMs(), next = end + n.restAfter * beatMs(), tol = tolMs();
+  return { end, relLo: end - tol, relHi: end + tol, next, nextLo: next - tol, nextHi: next + tol };
+}
+function restTimes() {
+  const t0 = st.rel, t2 = windows(st.i, st.g).next;
+  return { t0, t1: t0 + (t2 - t0) * 0.45, t2 };
+}
+const waitSpot = r => ({ x: nx(notes[r]) - 2.1 * s, y: ny(notes[r]) + 1.7 * s });
+const stumpSpot = () => ({ x: nx(notes[0]) - 2.6 * s, y: ny(notes[0]) + 1.4 * s });
+const homeSpot = () => { const n = notes[notes.length - 1]; return { x: nx(n) + 2.9 * s, y: ny(n) + 1.9 * s }; };
+
+function restart() {
+  notes = parseSong();
+  bars = notes.filter(n => n.beat > 0 && n.beat % 4 === 0).map(n => n.xu - 0.45);
+  bananas = START_BANANAS; falls = 0; doneUpTo = 0; banner = null; flyers = [];
+  for (const m of Object.keys(voices)) stopNote(+m);
+  cancelTicks();
+  st = { k: 'wait', r: 0, perch: 'stump' }; blend = null; camX = undefined;
+  render = pose(performance.now());
+  updateHud();
+}
+
+// ============ rules ============
+function noteOn(m, ts) {
+  if (!started) return;
+  playNote(m);
+  if (st.k === 'wait') {
+    const n = notes[st.r];
+    if (m === n.midi) grab(st.r, ts, false);
+    else fall(`Wrong note: ${noteName(m)}. That branch is ${n.name}`, st.r);
+    return;
+  }
+  if (st.k !== 'hang' && st.k !== 'air' && st.k !== 'rest') return;
+  const i = st.i, j = i + 1, w = windows(i, st.g), hanging = st.k === 'hang';
+  if (j >= notes.length) { fall(`Wrong note: ${noteName(m)}. Last branch: hold it, then let go`, i); return; }
+  const nj = notes[j];
+  if (m !== nj.midi) { fall(`Wrong note: ${noteName(m)}. The next branch is ${nj.name}`, j); return; }
+  if (hanging && notes[i].restAfter) { fall('Too early. There is a rest: let go and bounce off the liana first', i); return; }
+  if (ts < w.nextLo) { fall(hanging ? `Too early. ${notes[i].name} is ${beatsWord(notes[i].len)} long` : 'Too early. Wait for the rest to end', hanging ? i : j); return; }
+  if (ts > w.nextHi + GRACE) { if (hanging) breakBranch(i); else fall('Too late. Missed the branch', j); return; }
+  if (hanging) complete(i);
+  grab(j, ts, st.k !== 'rest' && Math.abs(nj.step - notes[i].step) > 2);   // more than a third apart: jump
+}
+
+function noteOff(m, ts) {
+  stopNote(m);
+  if (!started || st.k !== 'hang' || m !== notes[st.i].midi) return;
+  const i = st.i, w = windows(i, st.g);
+  if (ts < w.relLo) { fall(`Let go too early. ${notes[i].name} is ${beatsWord(notes[i].len)} long`, i); return; }
+  if (ts > w.relHi + GRACE) { breakBranch(i); return; }
+  complete(i);
+  if (i === notes.length - 1) { win(); return; }
+  st = { k: notes[i].restAfter ? 'rest' : 'air', i, g: st.g, rel: ts, px: render.x, py: render.y, prot: render.rot, boing: false };
+}
+
+function grab(j, ts, jump) {
+  blend = { fx: render.x, fy: render.y, frot: render.rot, t0: performance.now(), dur: jump ? 260 : 150, hop: jump ? 1.4 * s : 0 };
+  st = { k: 'hang', i: j, g: ts, creaked: false };
+  notes[j].brokenT = 0;
+  scheduleTicks(j, ts);
+  sfxGrab();
+}
+
+function complete(i) {
+  doneUpTo = Math.max(doneUpTo, i + 1);
+  const n = notes[i];
+  if (n.banana && !n.taken) {
+    n.taken = true; bananas++; sfxCollect();
+    flyers.push({ t0: performance.now(), x: nx(n) + 0.65 * s - camX, y: ny(n) + 0.7 * s });
+  }
+  updateHud();
+}
+
+function breakBranch(i) { notes[i].brokenT = performance.now(); sfxCrack(); fall('Held too long. The branch broke', i); }
+
+function fall(reason, resume) {
+  falls++; cancelTicks(); sfxFall();
+  st = { k: 'fall', x: render.x, y: render.y, rot: render.rot, vx: 1.5 * s, vy: -3 * s, vr: (Math.random() < 0.5 ? -1 : 1) * 3, resume, landT: 0 };
+  blend = null;
+  banner = { text: reason, t: performance.now() };
+  updateHud();
+}
+
+function win() {
+  cancelTicks(); sfxWin();
+  blend = { fx: render.x, fy: render.y, frot: render.rot, t0: performance.now(), dur: 450, hop: 1.5 * s };
+  st = { k: 'won' };
+}
+
+function update(now, dt) {
+  if (st.k === 'hang') {
+    const w = windows(st.i, st.g);
+    if (!st.creaked && now > w.end + tolMs() * 0.3) { st.creaked = true; sfxCreak(); }
+    if (now > w.relHi + GRACE) breakBranch(st.i);
+  } else if (st.k === 'air' || st.k === 'rest') {
+    if (st.k === 'rest' && !st.boing && now > restTimes().t1) { st.boing = true; sfxBoing(); }
+    if (now > windows(st.i, st.g).nextHi + GRACE) fall('Too late. Missed the branch', st.i + 1);
+  } else if (st.k === 'fall') {
+    if (!st.landT) {
+      st.vy += 40 * s * dt; st.x += st.vx * dt; st.y += st.vy * dt; st.rot += st.vr * dt;
+      if (st.y >= floorY - 1.7 * s) { st.y = floorY - 1.7 * s; st.rot = 0; st.landT = now; sfxThud(); }
+    } else if (now - st.landT > 550) {
+      if (bananas > 0) { bananas--; updateHud(); st = { k: 'bounce', t0: now, fx: st.x, fy: st.y, r: st.resume }; sfxMagic(); }
+      else st = { k: 'over', x: st.x, y: st.y };
+    }
+  } else if (st.k === 'bounce') {
+    if (now - st.t0 > 1100) { notes[st.r].brokenT = 0; st = { k: 'wait', r: st.r, perch: 'balloon' }; }
+  }
+}
+
+// ============ gorilla pose ============
+function pose(now) {
+  const A = SWING;
+  switch (st.k) {
+    case 'wait': {
+      if (st.perch === 'stump') return { ...stumpSpot(), rot: 0, kind: 'perch' };
+      const w = waitSpot(st.r);
+      return { x: w.x, y: w.y + Math.sin(now / 320) * 0.12 * s, rot: 0, kind: 'balloon' };
+    }
+    case 'hang': case 'air': {
+      // one pendulum per note: from behind the grip to the front of the swing, arriving when the note's length is up
+      const n = notes[st.i], p = (now - st.g) / (n.len * beatMs()), next = notes[st.i + 1];
+      let th = -A + A * (1 - Math.cos(Math.PI * clamp01(p)));
+      if (st.k === 'hang' && p > 1) th = A + Math.sin(now / 22) * 0.05 * clamp01((p - 1) * 4);   // straining
+      const x = nx(n) + RP * s * Math.sin(th), y = ny(n) + RP * s * Math.cos(th);
+      if (st.k === 'air') return { x, y, rot: -th, kind: 'reach', target: next };
+      return { x, y, rot: -th, kind: 'hang', grip: n, hand: st.i % 2, target: n.restAfter ? null : next, reachK: smooth((p - 0.35) / 0.6) };
+    }
+    case 'rest': {
+      const n = notes[st.i], j = notes[st.i + 1], { t0, t1, t2 } = restTimes();
+      const lx = (n.rx0u + n.rx1u) / 2 * ppb, ly = lianaY + LIANA_DIP * s - 1.7 * s;
+      const ex = nx(j) - RP * s * Math.sin(A), ey = ny(j) + RP * s * Math.cos(A);
+      if (now < t1) { const k = clamp01((now - t0) / (t1 - t0)); return { x: lerp(st.px, lx, k), y: lerp(st.py, ly, k * k), rot: lerp(st.prot, 0, k), kind: 'up' }; }
+      const k = clamp01((now - t1) / (t2 - t1));
+      return { x: lerp(lx, ex, k), y: lerp(ly, ey, 1 - (1 - k) * (1 - k)), rot: 0, kind: k > 0.4 ? 'reach' : 'up', target: j };
+    }
+    case 'fall': return { x: st.x, y: st.y, rot: st.rot, kind: st.landT ? 'sit' : 'fall' };
+    case 'over': return { x: st.x, y: st.y, rot: 0, kind: 'sit' };
+    case 'bounce': {
+      const k = (now - st.t0) / 1100, w = waitSpot(st.r);
+      if (k < 0.3) return { x: st.fx, y: st.fy + Math.sin(k / 0.3 * Math.PI) * 0.25 * s, rot: 0, kind: 'sit' };
+      const e = clamp01((k - 0.3) / 0.7), ee = 1 - (1 - e) * (1 - e);
+      return { x: lerp(st.fx, w.x, ee), y: lerp(st.fy, w.y, ee) - Math.sin(Math.PI * e) * 2.5 * s, rot: 0, kind: 'balloon' };
+    }
+    case 'won': { const h = homeSpot(); return { x: h.x, y: h.y - Math.abs(Math.sin(now / 250)) * 0.3 * s, rot: 0, kind: 'up' }; }
+  }
+}
+function applyBlend(T, now) {
+  if (!blend) return T;
+  const k = (now - blend.t0) / blend.dur;
+  if (k >= 1) { blend = null; return T; }
+  const e = smooth(k);
+  return { ...T, x: lerp(blend.fx, T.x, e), y: lerp(blend.fy, T.y, e) - Math.sin(Math.PI * k) * blend.hop,
+           rot: lerp(blend.frot, T.rot, e), kind: blend.hop ? 'up' : T.kind };
+}
+
+// ============ audio ============
+let audio = null, noise = null, tickNodes = [];
+const voices = {};
+function ensureAudio() {
+  if (!audio) {
+    audio = new (window.AudioContext || window.webkitAudioContext)();
+    noise = audio.createBuffer(1, audio.sampleRate, audio.sampleRate);
+    const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  audio.resume();
+}
+const audioAt = perfMs => audio.currentTime + (perfMs - performance.now()) / 1000;
+function tone(type, f0, f1, dur, vol, at = audio.currentTime) {
+  const o = audio.createOscillator(), g = audio.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, at); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, at + dur);
+  g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(vol, at + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  o.connect(g).connect(audio.destination); o.start(at); o.stop(at + dur + 0.02);
+  return o;
+}
+function hiss(dur, freq, ftype, vol, q = 1) {
+  const src = audio.createBufferSource(), f = audio.createBiquadFilter(), g = audio.createGain(), at = audio.currentTime;
+  src.buffer = noise; f.type = ftype; f.frequency.value = freq; f.Q.value = q;
+  g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  src.connect(f).connect(g).connect(audio.destination); src.start(at); src.stop(at + dur + 0.02);
+}
+const sfxGrab = () => hiss(0.07, 900, 'bandpass', 0.25, 1.5);
+const sfxCreak = () => { tone('sawtooth', 95, 70, 0.4, 0.05); hiss(0.35, 420, 'bandpass', 0.2, 9); };
+const sfxCrack = () => { hiss(0.14, 1800, 'highpass', 0.5); tone('sine', 140, 60, 0.15, 0.3); };
+const sfxFall = () => tone('sine', 520, 130, 0.6, 0.15);
+const sfxThud = () => { tone('sine', 90, 45, 0.2, 0.5); hiss(0.15, 300, 'lowpass', 0.3); };
+const sfxMagic = () => { tone('sine', 220, 880, 0.55, 0.2); tone('triangle', 330, 1320, 0.55, 0.08); };
+const sfxBoing = () => tone('sine', 160, 420, 0.3, 0.2);
+const sfxCollect = () => { const t = audio.currentTime; tone('sine', 1047, 1047, 0.12, 0.15, t); tone('sine', 1319, 1319, 0.18, 0.15, t + 0.08); };
+const sfxWin = () => { const t = audio.currentTime; [523, 659, 784, 1047].forEach((f, i) => tone('triangle', f, f, 0.3, 0.15, t + i * 0.12)); };
+
+// Ticks count the beats of the branch just grabbed, from that grab; the last (higher) one is the moment to move on.
+function scheduleTicks(i, g) {
+  cancelTicks();
+  if (!tickOn) return;
+  const n = notes[i], total = n.len + n.restAfter;
+  for (let k = 1; k <= total; k++) {
+    const at = audioAt(g + k * beatMs());
+    if (at > audio.currentTime) tickNodes.push(tone('sine', k === total ? 1250 : 900, k === total ? 1250 : 900, 0.05, k === total ? 0.16 : 0.09, at));
+  }
+}
+function cancelTicks() { for (const o of tickNodes) { try { o.stop(); } catch (e) {} } tickNodes = []; }
+
+function playNote(m) {
+  if (!synthOn || !audio) return;
+  stopNote(m);
+  const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
+  o.type = 'triangle'; o.frequency.value = 440 * Math.pow(2, (m - 69) / 12);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.2, t + 0.01); g.gain.exponentialRampToValueAtTime(0.07, t + 0.5);
+  o.connect(g).connect(audio.destination); o.start(t);
+  voices[m] = { o, g };
+}
+function stopNote(m) {
+  const v = voices[m]; if (!v) return;
+  const t = audio.currentTime;
+  v.g.gain.cancelScheduledValues(t); v.g.gain.setValueAtTime(v.g.gain.value, t); v.g.gain.linearRampToValueAtTime(0, t + 0.08); v.o.stop(t + 0.1);
+  delete voices[m];
+}
+
+// ============ input ============
+// Event timestamps share the performance.now() clock; fall back to it if a device reports something odd.
+const stamp = ts => (ts && Math.abs(ts - performance.now()) < 1000) ? ts : performance.now();
+
+function setInput(src) {
+  if (inputSrc === src) return;
+  inputSrc = src; const el = document.getElementById('input'); el.textContent = src === 'midi' ? 'MIDI' : 'keyboard'; el.className = src;
+}
+addEventListener('keydown', e => {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === ' ') { e.preventDefault(); if (!started) start(); return; }
+  if (k === 'enter') { e.preventDefault(); if (started) restart(); return; }
+  const idx = k.length === 1 ? KEYS.indexOf(k) : -1;
+  if (idx >= 0) { setInput('keyboard'); noteOn(KEY_MIDI[idx], stamp(e.timeStamp)); }
+});
+addEventListener('keyup', e => {
+  const k = e.key.toLowerCase(), idx = k.length === 1 ? KEYS.indexOf(k) : -1;
+  if (idx >= 0) noteOff(KEY_MIDI[idx], stamp(e.timeStamp));
+});
+
+function onMidi(e) {
+  const [status, note, vel] = e.data, type = status & 0xf0, ts = stamp(e.timeStamp);
+  if (type === 0x90 && vel > 0) { setInput('midi'); noteOn(note, ts); }
+  else if (type === 0x80 || type === 0x90) noteOff(note, ts);   // note-on with velocity 0 is a note-off
+}
+if (navigator.requestMIDIAccess) {
+  navigator.requestMIDIAccess().then(midi => {
+    for (const input of midi.inputs.values()) input.onmidimessage = onMidi;
+    midi.onstatechange = e => { if (e.port.type === 'input' && e.port.state === 'connected') e.port.onmidimessage = onMidi; };
+  }).catch(() => {});   // no device, no permission or wrong browser: the keyboard fallback still works
+}
+
+// ============ HUD ============
+function updateHud() {
+  document.getElementById('bananas').textContent = '🍌 ' + bananas;
+  document.getElementById('progress').textContent = `branch ${doneUpTo}/${notes.length}`;
+  document.getElementById('falls').textContent = 'falls ' + falls;
+}
+function toggle(id, get, set) {
+  const b = document.getElementById(id);
+  b.onclick = () => { set(!get()); b.classList.toggle('on', get()); b.textContent = get() ? 'on' : 'off'; b.blur(); };
+}
+toggle('labels', () => labels, v => labels = v);
+toggle('tick', () => tickOn, v => { tickOn = v; if (!v) cancelTicks(); });
+toggle('synth', () => synthOn, v => { synthOn = v; if (!v) for (const m of Object.keys(voices)) stopNote(+m); });
+const tempoEl = document.getElementById('tempo');
+tempoEl.oninput = () => { bpm = +tempoEl.value; document.getElementById('tempoval').textContent = bpm + ' BPM'; };
+tempoEl.onchange = () => tempoEl.blur();
+document.getElementById('restart').onclick = e => { restart(); e.target.blur(); };
+
+function start() {
+  ensureAudio(); started = true;
+  document.getElementById('overlay').classList.add('hidden');
+  restart();
+}
+document.getElementById('overlay').onclick = start;
+
+// ============ drawing ============
+const FUR = '#2a292e', HAND = '#3b3a41', SKIN = '#8b7d74', MUZZLE = '#a6968b';
+
+function drawBush(x0, x1, y, off, seed) {
+  // a staff line drawn as a band of distant bushes; off = scroll offset (parallax)
+  const step = 0.34 * s, k0 = Math.floor((x0 + off) / step) - 1, k1 = Math.ceil((x1 + off) / step) + 1;
+  ctx.fillStyle = '#2f5a36'; ctx.beginPath();
+  for (let k = k0; k <= k1; k++) {
+    const x = k * step - off, r = (0.22 + 0.13 * hash(k + seed)) * s, yy = y + (hash(k * 2.3 + seed) - 0.5) * 0.08 * s;
+    ctx.moveTo(x + r, yy); ctx.arc(x, yy, r, 0, 7);
+  }
+  ctx.fill();
+  ctx.fillStyle = '#4f8752'; ctx.beginPath();
+  for (let k = k0; k <= k1; k++) {
+    if (hash(k * 5.1 + seed) < 0.45) continue;
+    const x = k * step - off + 0.05 * s, r = (0.1 + 0.06 * hash(k + seed + 9)) * s, yy = y - 0.12 * s;
+    ctx.moveTo(x + r, yy); ctx.arc(x, yy, r, 0, 7);
+  }
+  ctx.fill();
+}
+
+function limb(x0, y0, x1, y1, th, sag) {
+  const mx = (x0 + x1) / 2, my = (y0 + y1) / 2 + 2 * sag;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#5a3b20'; ctx.lineWidth = th;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.quadraticCurveTo(mx, my, x1, y1); ctx.stroke();
+  ctx.strokeStyle = '#8a6239'; ctx.lineWidth = Math.max(1.5, th * 0.3);
+  ctx.beginPath(); ctx.moveTo(x0, y0 - th * 0.22); ctx.quadraticCurveTo(mx, my - th * 0.22, x1, y1 - th * 0.22); ctx.stroke();
+}
+function leaves(x, y, r) {
+  const ell = (dx, dy, rx, ry, a, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(x + dx * r, y + dy * r, rx * r, ry * r, a, 0, 7); ctx.fill(); };
+  ell(0.5, -0.4, 0.7, 0.32, -0.5, '#3c7232'); ell(0.7, 0.2, 0.7, 0.3, 0.4, '#4b8a3e'); ell(0.2, 0.5, 0.55, 0.26, 1.1, '#3c7232');
+}
+
+function drawBanana(x, y, sz, rot, glow) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(sz, sz);
+  if (glow) { ctx.shadowColor = '#fff3a0'; ctx.shadowBlur = 18; }
+  ctx.fillStyle = '#ffd83a'; ctx.beginPath();
+  ctx.moveTo(-1, -0.25); ctx.quadraticCurveTo(0, 1.05, 1, -0.25); ctx.quadraticCurveTo(0, 0.45, -1, -0.25); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#5a3d1a'; ctx.beginPath(); ctx.arc(-1, -0.25, 0.1, 0, 7); ctx.arc(1, -0.25, 0.1, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function sparkles(x, y, now) {
+  ctx.fillStyle = '#fffbd0';
+  for (let i = 0; i < 5; i++) {
+    const a = now / 600 + i * 1.256, r = (0.75 + 0.15 * Math.sin(now / 200 + i)) * s;
+    ctx.globalAlpha = 0.5 + 0.5 * Math.sin(now / 150 + i * 2);
+    ctx.beginPath(); ctx.arc(x + Math.cos(a) * r, y + Math.sin(a) * r * 0.6, 0.07 * s, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawBranch(n, i, now) {
+  const x = nx(n), y = ny(n), th = THICK[n.len] * s, half = 1.1 * s;
+  ctx.globalAlpha = i < doneUpTo ? 0.5 : 1;
+  if (n.brokenT) {
+    const k = (now - n.brokenT) / 1000;
+    if (k < 1.6) {
+      ctx.globalAlpha *= clamp01(1.6 - k);
+      ctx.save(); ctx.translate(x - half, y); ctx.rotate(Math.min(1.2, k * 3)); limb(0, 0, half, 0, th, 0); ctx.restore();
+      ctx.save(); ctx.translate(x + half * 0.5, y + 20 * s * k * k); ctx.rotate(-k * 2); limb(-half * 0.5, 0, half * 0.5, 0, th, 0); leaves(half * 0.5, 0, 0.5 * s); ctx.restore();
+    }
+    ctx.globalAlpha = 1; return;
+  }
+  let sag = 0, crack = 0;
+  if (st.k === 'hang' && st.i === i) {
+    const end = st.g + n.len * beatMs(); sag = 0.08 * s;
+    if (now > end) { crack = clamp01((now - end) / tolMs()); sag += crack * 0.35 * s; }
+  }
+  ctx.strokeStyle = '#5a3b20'; ctx.lineWidth = Math.max(1.5, th * 0.35); ctx.lineCap = 'round';   // twig
+  ctx.beginPath(); ctx.moveTo(x - half * 0.7, y); ctx.lineTo(x - half * 1.15, y - 0.5 * s); ctx.stroke();
+  limb(x - half, y, x + half, y, th, sag);
+  leaves(x + half, y, 0.5 * s); leaves(x - half * 1.15, y - 0.5 * s, 0.32 * s);
+  if (crack > 0) {
+    ctx.strokeStyle = '#1e120a'; ctx.lineWidth = 1.5;
+    for (let c = 0; c < Math.ceil(crack * 3); c++) {
+      const cx = x + (c - 1) * 0.3 * s, cy = y + sag;
+      ctx.beginPath(); ctx.moveTo(cx, cy - th / 2); ctx.lineTo(cx + 0.08 * s, cy - th * 0.1); ctx.lineTo(cx - 0.05 * s, cy + th * 0.15); ctx.lineTo(cx + 0.06 * s, cy + th / 2); ctx.stroke();
+    }
+  }
+  if (n.banana && !n.taken) {
+    const bx = x + 0.9 * s;   // toward the tip, clear of the gorilla's head
+    ctx.strokeStyle = '#5a3d1a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(bx, y); ctx.lineTo(bx, y + th / 2 + 0.3 * s); ctx.stroke();
+    drawBanana(bx, y + th / 2 + 0.8 * s, 0.5 * s, -1.2, false);
+  }
+  if (labels) {
+    const key = inputSrc === 'keyboard' ? keyFor(n.midi) : null, txt = n.name + (key ? ' · ' + key : '');
+    ctx.font = `bold ${Math.round(0.55 * s)}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(20,32,20,0.85)'; ctx.strokeText(txt, x, y - th / 2 - 0.12 * s);
+    ctx.fillStyle = '#fff8e0'; ctx.fillText(txt, x, y - th / 2 - 0.12 * s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function lianaSag(i, now) {
+  let sag = 0.45 * s;
+  if (st.k === 'rest' && st.i === i) {
+    const { t0, t1, t2 } = restTimes(), d = now - t1, span = t2 - t0;
+    sag += (LIANA_DIP + 0.3 - 0.45) * s * (d < 0 ? clamp01(1 + d / (0.06 * span)) : clamp01(1 - d / (0.3 * span)));
+  }
+  return sag;
+}
+function drawLiana(n, i, now) {
+  const x0 = n.rx0u * ppb - 0.2 * s, x1 = n.rx1u * ppb + 0.2 * s, y0 = lianaY - 0.3 * s, sag = lianaSag(i, now);
+  ctx.fillStyle = '#5a4630';
+  ctx.fillRect(x0 - 0.15 * s, y0 - 0.2 * s, 0.3 * s, floorY - y0 + 0.2 * s); ctx.fillRect(x1 - 0.15 * s, y0 - 0.2 * s, 0.3 * s, floorY - y0 + 0.2 * s);
+  const cx = (x0 + x1) / 2, cy = y0 + 2 * sag;
+  ctx.strokeStyle = '#3f7a34'; ctx.lineWidth = 0.2 * s; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.quadraticCurveTo(cx, cy, x1, y0); ctx.stroke();
+  ctx.fillStyle = '#5c9a45';
+  for (let t = 0.1; t < 0.95; t += 0.16) {
+    const px = (1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * cx + t * t * x1, py = (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cy + t * t * y0;
+    ctx.beginPath(); ctx.ellipse(px, py + 0.12 * s, 0.22 * s, 0.1 * s, t * 6, 0, 7); ctx.fill();
+  }
+}
+
+function drawTree(x, feetY, w, nest) {
+  ctx.fillStyle = '#5d4329'; ctx.fillRect(x - w / 2, feetY, w, floorY - feetY);
+  ctx.fillStyle = '#7a5a38'; ctx.beginPath(); ctx.ellipse(x, feetY, w / 2, 0.22 * s, 0, 0, 7); ctx.fill();
+  if (nest) {
+    ctx.fillStyle = '#8a6a3a'; ctx.beginPath(); ctx.ellipse(x, feetY + 0.1 * s, 1.5 * s, 0.45 * s, 0, 0, Math.PI); ctx.fill();
+    ctx.strokeStyle = '#5a4022'; ctx.lineWidth = 1.5;
+    for (let k = -3; k <= 3; k++) { ctx.beginPath(); ctx.moveTo(x + k * 0.4 * s, feetY - 0.05 * s); ctx.lineTo(x + k * 0.45 * s + 0.3 * s, feetY + 0.35 * s); ctx.stroke(); }
+  }
+}
+
+function drawGorilla(b, now) {
+  const { x, y, rot } = b, cs = Math.cos(rot), sn = Math.sin(rot);
+  const at = (lx, ly) => ({ x: x + (lx * cs - ly * sn) * s, y: y + (lx * sn + ly * cs) * s });
+  const pt = n => ({ x: nx(n), y: ny(n) });
+  const shL = at(-0.45, 0.05), shR = at(0.45, 0.05);
+  let hl, hr;
+  switch (b.kind) {
+    case 'hang': {
+      const grip = pt(b.grip), relaxed = b.hand ? at(-0.75, 1.0) : at(0.75, 1.0);
+      let free = relaxed;
+      if (b.target) { const t = pt(b.target); free = { x: lerp(relaxed.x, t.x, b.reachK), y: lerp(relaxed.y, t.y, b.reachK) }; }
+      if (b.hand) { hr = grip; hl = free; } else { hl = grip; hr = free; }
+      break;
+    }
+    case 'reach': { const t = pt(b.target); hl = { x: t.x - 0.15 * s, y: t.y }; hr = { x: t.x + 0.15 * s, y: t.y }; break; }
+    case 'up': hl = at(-0.4, -1.55); hr = at(0.4, -1.55); break;
+    case 'balloon': hl = at(-0.18, -1.5); hr = at(0.18, -1.5); break;
+    case 'fall': hl = at(-1.05, -0.5 + 0.35 * Math.sin(now / 55)); hr = at(1.05, -0.5 + 0.35 * Math.cos(now / 55)); break;
+    default: hl = at(-0.7, 0.95); hr = at(0.7, 0.95);   // perch, sit
+  }
+  const reach = (sh, h) => { const dx = h.x - sh.x, dy = h.y - sh.y, d = Math.hypot(dx, dy), m = 2.4 * s; return d > m ? { x: sh.x + dx * m / d, y: sh.y + dy * m / d } : h; };
+  hl = reach(shL, hl); hr = reach(shR, hr);
+  ctx.lineCap = 'round'; ctx.lineWidth = 0.32 * s;
+  for (const [sh, h] of [[shL, hl], [shR, hr]]) {
+    ctx.strokeStyle = FUR; ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.lineTo(h.x, h.y); ctx.stroke();
+    ctx.fillStyle = HAND; ctx.beginPath(); ctx.arc(h.x, h.y, 0.18 * s, 0, 7); ctx.fill();
+  }
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+  const ell = (ex, ey, rx, ry, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(ex, ey, rx, ry, 0, 0, 7); ctx.fill(); };
+  ell(-0.3, 1.38, 0.21, 0.32, FUR); ell(0.3, 1.38, 0.21, 0.32, FUR);          // legs
+  ell(0, 0.62, 0.62, 0.8, FUR); ell(0, 0.72, 0.36, 0.5, '#57525c');            // body, chest
+  ell(0, -0.2, 0.46, 0.44, FUR);                                               // head
+  ell(0, -0.1, 0.32, 0.25, SKIN); ell(0, 0.03, 0.21, 0.14, MUZZLE);            // face, muzzle
+  ell(0, -0.3, 0.36, 0.09, '#1c1b1f');                                         // brow
+  const look = b.kind === 'fall' ? 0 : 0.02;
+  ell(-0.13, -0.2, 0.06, 0.055, '#fff'); ell(0.13, -0.2, 0.06, 0.055, '#fff');
+  ell(-0.13 + look, -0.2, 0.032, 0.035, '#111'); ell(0.13 + look, -0.2, 0.032, 0.035, '#111');
+  ell(-0.05, 0, 0.025, 0.02, '#3a302c'); ell(0.05, 0, 0.025, 0.02, '#3a302c');
+  if (b.kind === 'fall') ell(0, 0.12, 0.07, 0.06, '#3a1f1f');
+  else { ctx.strokeStyle = '#3a302c'; ctx.lineWidth = 0.03; ctx.beginPath(); ctx.arc(0, 0.04, 0.09, 0.3, Math.PI - 0.3); ctx.stroke(); }
+  ctx.fillStyle = '#f2c230'; ctx.beginPath();                                   // the king's crown
+  ctx.moveTo(-0.22, -0.56); ctx.lineTo(-0.24, -0.82); ctx.lineTo(-0.11, -0.68); ctx.lineTo(0, -0.86); ctx.lineTo(0.11, -0.68); ctx.lineTo(0.24, -0.82); ctx.lineTo(0.22, -0.56);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  if (b.kind === 'balloon') { const p = at(0, -2.0); drawBanana(p.x, p.y, 0.6 * s, 0, true); sparkles(p.x, p.y, now); }
+}
+
+function outlined(txt, x, y, size, colour) {
+  ctx.font = `bold ${size}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(16,24,16,0.85)'; ctx.strokeText(txt, x, y);
+  ctx.fillStyle = colour; ctx.fillText(txt, x, y);
+}
+function panel(title, line) {
+  const w = Math.min(560, W - 40), h = 116, x = (W - w) / 2, y = yOf(8) - h / 2;
+  ctx.fillStyle = 'rgba(16,22,16,0.88)'; ctx.fillRect(x, y, w, h);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 26px system-ui'; ctx.fillText(title, W / 2, y + 40);
+  ctx.fillStyle = '#cfd8cc'; ctx.font = '15px system-ui'; ctx.fillText(line, W / 2, y + 80);
+}
+
+function draw(now, dt) {
+  render = applyBlend(pose(now), now);
+  const camTarget = render.x - W * 0.3;
+  camX = camX === undefined ? camTarget : camX + (camTarget - camX) * (1 - Math.exp(-dt * 3.5));
+
+  // sky, the spaces of the staff
+  const sky = ctx.createLinearGradient(0, skyTop, 0, floorY);
+  sky.addColorStop(0, '#d7e8d2'); sky.addColorStop(0.6, '#b9d6b4'); sky.addColorStop(1, '#88ad86');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+  // canopy fringe overhead, far away
+  { const off = camX * 0.35, step = 1.1 * s; ctx.fillStyle = '#3e6a45'; ctx.fillRect(0, 0, W, skyTop - 0.6 * s); ctx.beginPath();
+    for (let k = Math.floor(off / step) - 2; k <= Math.floor((off + W) / step) + 2; k++) {
+      const x = k * step - off, r = (0.6 + 0.6 * hash(k)) * s, y = skyTop - 1.0 * s + hash(k + 50) * 0.4 * s;
+      ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, 7);
+    }
+    ctx.fill(); }
+
+  // bar lines: distant trunks
+  ctx.fillStyle = 'rgba(96,76,52,0.28)';
+  for (const bu of bars) { const x = bu * ppb - camX; if (x > -s && x < W + s) ctx.fillRect(x - 0.16 * s, skyTop, 0.32 * s, floorY - skyTop); }
+
+  // staff lines: long bushes, E4 G4 B4 D5 F5
+  [2, 4, 6, 8, 10].forEach((step, idx) => drawBush(0, W, yOf(step), camX * 0.55, idx * 37));
+  // C4 ledger line: a short bush around each C4 branch
+  for (const n of notes) if (n.step === 0) { const x = nx(n) - camX; if (x > -3 * s && x < W + 3 * s) drawBush(x - 1.3 * s, x + 1.3 * s, yOf(0), camX, 91); }
+
+  // vine clef; its curl wraps the G line (offsets measured for Segoe UI Symbol)
+  ctx.fillStyle = 'rgba(38,78,44,0.7)'; ctx.font = `${Math.round(13 * s)}px "Segoe UI Symbol","Noto Music",serif`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillText('𝄞', 0.2 * s, yOf(0.75));
+
+  // jungle floor
+  ctx.fillStyle = '#2c2a1c'; ctx.fillRect(0, floorY, W, H - floorY);
+  { const step = 0.6 * s; ctx.fillStyle = '#3b5a2c'; ctx.beginPath();
+    for (let k = Math.floor(camX / step) - 2; k <= Math.floor((camX + W) / step) + 2; k++) {
+      const x = k * step - camX, r = (0.3 + 0.3 * hash(k + 7)) * s; ctx.moveTo(x + r, floorY + 0.1 * s); ctx.arc(x, floorY + 0.1 * s, r, Math.PI, 0);
+    }
+    ctx.fill(); }
+
+  // world
+  ctx.save(); ctx.translate(-camX, 0);
+  const inView = n => { const x = nx(n) - camX; return x > -5 * s && x < W + 6 * s; };
+  { const p = stumpSpot(); drawTree(p.x, p.y + 1.7 * s, 1.4 * s, false); }
+  { const h = homeSpot(); drawTree(h.x, h.y + 1.7 * s, 1.6 * s, true); }
+  notes.forEach((n, i) => { if (n.restAfter && inView(n)) drawLiana(n, i, now); });
+  notes.forEach((n, i) => { if (inView(n)) drawBranch(n, i, now); });
+  if (st.k === 'bounce' && now - st.t0 < 330) drawBanana(st.fx, floorY - 0.25 * s, lerp(0.1, 0.6, (now - st.t0) / 330) * s, 0, true);
+  drawGorilla(render, now);
+  ctx.restore();
+
+  // prompt above the gorilla while it waits
+  if (st.k === 'wait' && started) {
+    const n = notes[st.r], key = inputSrc === 'keyboard' ? keyFor(n.midi) : null;
+    const txt = labels ? `Play ${n.name}${key ? ' (key ' + key + ')' : ''} to grab` : 'Play the next branch to grab it';
+    outlined(txt, render.x - camX, render.y - (st.perch === 'stump' ? 1.4 : 3.0) * s, Math.max(14, Math.round(0.55 * s)), '#fff8e0');
+  }
+
+  // why you fell
+  if (banner) {
+    const k = (now - banner.t) / 2800;
+    if (k > 1) banner = null;
+    else { ctx.globalAlpha = k < 0.8 ? 1 : (1 - k) / 0.2; outlined(banner.text, W / 2, yOf(9), Math.max(16, Math.round(0.7 * s)), '#ffd2c4'); ctx.globalAlpha = 1; }
+  }
+
+  // collected bananas fly to the counter
+  const tgt = document.getElementById('bananas').getBoundingClientRect();
+  flyers = flyers.filter(f => {
+    const k = (now - f.t0) / 700; if (k >= 1) return false;
+    const e = smooth(k); drawBanana(lerp(f.x, tgt.left + tgt.width / 2, e), lerp(f.y, hudH + 0.4 * s, e) - Math.sin(Math.PI * k) * 2 * s, 0.3 * s, -0.5, true);
+    return true;
+  });
+
+  // legend on the forest floor
+  if (H - floorY > 1.4 * s) {
+    ctx.font = `${Math.max(12, Math.round(0.42 * s))}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#b8c4ad';
+    ctx.fillText(`thin branch = 1 beat · thick branch = 2 beats · liana below = rest, let go and bounce · ${bpm} BPM, the beat restarts at every grab`, W / 2, floorY + 1.1 * s);
+    if (inputSrc === 'keyboard') { ctx.fillStyle = '#8f9c86'; ctx.fillText('keys  A S D F G H J K  =  C4 D4 E4 F4 G4 A4 B4 C5', W / 2, floorY + 1.8 * s); }
+  }
+
+  if (st.k === 'won') panel('Home in the nest!', `${falls} fall${falls === 1 ? '' : 's'} · ${bananas} banana${bananas === 1 ? '' : 's'} left · Enter or Restart to play again`);
+  if (st.k === 'over') panel('Out of magic bananas', `Made it to branch ${doneUpTo} of ${notes.length} · Enter or Restart to try again`);
+}
+
+let lastT = performance.now();
+function frame() {
+  requestAnimationFrame(frame);
+  const now = performance.now(), dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+  if (started) update(now, dt);
+  draw(now, dt);
+}
+layout();
+restart();
+frame();
+</script>
+</body>
+</html>

@@ -71,6 +71,8 @@ bugs approach from one side, above or below, chosen once per song.
 
 ## Notes
 
+- Start with the **Tutorial** song: five bugs at 50 BPM with captions under the board that
+  walk through the staff, kill zone, base, holding, colours, switches and cooldown.
 - Songs: Ode to Joy, Twinkle Twinkle (C and G major), Frère Jacques, plus a scale walk.
   G major exists to check that the F line accepts F# and rejects F.
 - Ideas parked for later: multi-colour enemies (hit green, then red later), fuller chord

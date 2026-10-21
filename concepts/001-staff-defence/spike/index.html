@@ -5,10 +5,10 @@
 <title>001 Staff Defence — spike</title>
 <style>
   html, body { margin:0; height:100%; background:#14161a; color:#e8e6df; font:14px/1.3 system-ui, sans-serif; overflow:hidden; }
-  #hud { position:fixed; top:0; left:0; right:0; display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; padding:8px 12px; background:#1d2026; border-bottom:1px solid #2c3038; z-index:2; }
+  #hud { position:fixed; top:0; left:0; right:0; display:flex; flex-wrap:wrap; gap:4px 10px; align-items:center; padding:6px 10px; background:#1d2026; border-bottom:1px solid #2c3038; z-index:2; }
   #hud .grp { display:flex; gap:4px; align-items:center; }
   #hud .lbl { color:#8b909a; font-size:12px; margin-right:2px; }
-  button { background:#2b2f37; color:#e8e6df; border:1px solid #3c414b; border-radius:4px; padding:4px 9px; cursor:pointer; font:inherit; }
+  button { background:#2b2f37; color:#e8e6df; border:1px solid #3c414b; border-radius:4px; padding:3px 8px; cursor:pointer; font:inherit; font-size:13px; }
   button.on { background:#4b7bec; border-color:#4b7bec; color:#fff; }
   #status { margin-left:auto; display:flex; gap:14px; font-variant-numeric:tabular-nums; }
   #input { padding:2px 8px; border-radius:4px; background:#3a3f49; }
@@ -48,6 +48,21 @@
 // ============ song data ============
 // notes: [name, lengthInEighths] ; 'r' = rest. chords: one per bar (8 eighths).
 const SONGS = {
+  'Tutorial': { key:'C', bpm:50, chords:['C','C','C','C','C','C','G','G','C','C','C','C'],
+    // rests space the bugs out; captions are [songTimeInEighths, text]
+    notes:[['r',16],['C4',8], ['r',8],['E4',4], ['r',12],['G4',4], ['r',12],['D4',1],['D4',1],['r',2],['D4',4]],
+    captions:[
+      [0,  'This is a treble staff. Every line and space is one note. Its name and the computer key that plays it are printed on the left. The boxed column is the KILL ZONE, the red wall on the far left is your BASE.'],
+      [16, 'A bug has just spawned on the right. It is a C4 whole note: one body segment per eighth, so it is 8 tiles long. It weaves toward the C4 box and will step into it on the beat.'],
+      [22, 'When its head enters the C4 box, play C4 (key C) and HOLD. Each segment burns as it passes through the box. Let go early and the tail survives.'],
+      [33, 'Segments you miss run left and chip the base. HP is top-right. Kills counts burned segments.'],
+      [34, 'Next: a half-note bug on E4 (key B). Half as long, so hold half as long.'],
+      [45, 'Colours. Every bug wears the colour of its bar chord and the laser only burns a matching colour. Chords Off ignores colour. Sticky keeps the last chord you played. Held needs root + fifth held down.'],
+      [49, 'The next bug is RED, a G chord. Change laser colour before it lands: play G and D together below C3, or press 2. Then G4 (key M).'],
+      [61, 'Switches in the top bar: Movement changes only the look. Routes Hidden removes the painted paths so you must predict the landing line. Tempo speeds up or slows down live.'],
+      [65, 'Last: two quick eighth bugs on D4 (key V), then a half note. There is a half-beat cooldown between shots, so tap, tap, then hold.'],
+      [82, 'That is everything. Pick a song at the top and set the tempo you like.'],
+    ] },
   'Ode to Joy (C)': { key:'C', bpm:84, chords:['C','C','C','G','C','C','G','C'],
     notes:[['E4',2],['E4',2],['F4',2],['G4',2], ['G4',2],['F4',2],['E4',2],['D4',2], ['C4',2],['C4',2],['D4',2],['E4',2], ['E4',3],['D4',1],['D4',4],
            ['E4',2],['E4',2],['F4',2],['G4',2], ['G4',2],['F4',2],['E4',2],['D4',2], ['C4',2],['C4',2],['D4',2],['E4',2], ['D4',3],['C4',1],['C4',4]] },
@@ -125,6 +140,7 @@ function makeRoute(R) {
 
 function loadSong() {
   song = SONGS[songName];
+  if (song.captions) { tempoScale = 1; tempoEl.value = 100; document.getElementById('tempoval').textContent = '100%'; }
   rowMidi = []; midiRow = {};
   for (let r = 0; r < ROWS; r++) { const m = rowInfo(r, song.key).midi; rowMidi.push(m); midiRow[m] = r; }
   enemies = []; let t = FIRST_WINDOW; side = Math.random() < 0.5 ? 1 : -1;
@@ -271,9 +287,12 @@ function frame() {
   if (!song) return;
 
   // geometry
-  const labelW = 86, top = hudH + 44, bottom = H - 16;
-  const tileW = (W - labelW - 12) / COLS, tileH = (bottom - top) / GRID_ROWS;
-  const tileX = c => labelW + c * tileW, tileY = gr => bottom - (gr + 1) * tileH;   // top-left of tile
+  const labelW = 86, captionH = song.captions ? 96 : 24;
+  const availW = W - 24, availH = H - hudH - 52 - captionH;
+  const boardW = Math.min(availW, 980), boardH = Math.min(availH, 560, boardW * 0.62);
+  const left = (W - boardW) / 2, top = hudH + 44 + Math.max(0, (availH - boardH) / 2), bottom = top + boardH;
+  const tileW = (boardW - labelW) / COLS, tileH = boardH / GRID_ROWS;
+  const tileX = c => left + labelW + c * tileW, tileY = gr => bottom - (gr + 1) * tileH;   // top-left of tile
   const cx = c => tileX(c) + tileW / 2, cy = gr => tileY(gr) + tileH / 2;
   const T = started ? songTime() : 0, now = performance.now();
 
@@ -288,12 +307,12 @@ function frame() {
     if (info.isLine) {
       const ledger = R < 4 || R > 12;
       ctx.strokeStyle = ledger ? '#3a3f49' : '#8b909a'; ctx.lineWidth = ledger ? 1 : 1.5; ctx.setLineDash(ledger ? [6, 8] : []);
-      ctx.beginPath(); ctx.moveTo(labelW, y); ctx.lineTo(tileX(COLS), y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(left + labelW, y); ctx.lineTo(tileX(COLS), y); ctx.stroke(); ctx.setLineDash([]);
     }
     ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
-    ctx.font = '13px system-ui'; ctx.fillStyle = rows[R].on ? '#fff' : '#b8bcc5'; ctx.fillText(info.label, labelW - 30, y);
-    ctx.font = '11px system-ui'; ctx.fillStyle = '#6c717c'; ctx.fillText(FALLBACK[R].toUpperCase(), labelW - 8, y);
-    if (now - rows[R].flash < 200) { ctx.fillStyle = 'rgba(255,80,80,0.25)'; ctx.fillRect(labelW, tileY(gr), tileX(COLS) - labelW, tileH); }
+    ctx.font = '13px system-ui'; ctx.fillStyle = rows[R].on ? '#fff' : '#b8bcc5'; ctx.fillText(info.label, left + labelW - 30, y);
+    ctx.font = '11px system-ui'; ctx.fillStyle = '#6c717c'; ctx.fillText(FALLBACK[R].toUpperCase(), left + labelW - 8, y);
+    if (now - rows[R].flash < 200) { ctx.fillStyle = 'rgba(255,80,80,0.25)'; ctx.fillRect(left + labelW, tileY(gr), tileX(COLS) - left - labelW, tileH); }
   }
   ctx.font = 'bold 26px serif'; ctx.fillStyle = '#4a4f59'; ctx.textAlign = 'left'; ctx.fillText('𝄞', tileX(1) + 4, cy(gridRowOf(6)));
 
@@ -355,22 +374,38 @@ function frame() {
   // disabled-note flashes
   disabledFlash = disabledFlash.filter(f => now - f.t < 700);
   ctx.textAlign = 'center'; ctx.font = 'bold 16px system-ui';
-  disabledFlash.forEach((f, i) => { ctx.fillStyle = 'rgba(255,90,90,0.9)'; ctx.fillText(`MIDI ${f.midi} is not in the key of ${song.key}`, W / 2, top + 14 + i * 20); });
+  disabledFlash.forEach((f, i) => { ctx.fillStyle = 'rgba(255,90,90,0.9)'; ctx.fillText(`MIDI ${f.midi} is not in the key of ${song.key}`, W / 2, top - 44 - i * 20); });
 
   // legend
   document.getElementById('cd').textContent = (T - lastShot) < COOLDOWN ? 'cooldown' : 'ready';
   const bar = Math.max(0, Math.floor((T - FIRST_WINDOW) / 8)), n = song.chords.length;
   ctx.textAlign = 'left'; ctx.font = '13px system-ui'; ctx.fillStyle = '#8b909a';
-  ctx.fillText(`Laser:`, 12, top - 26);
+  ctx.fillText(`Laser:`, left, top - 26);
   ctx.fillStyle = '#6c717c'; ctx.textAlign = 'right'; ctx.fillText(`bugs arrive from ${side > 0 ? 'above' : 'below'} · ${Math.round(song.bpm * tempoScale)} BPM`, tileX(COLS), top - 26); ctx.textAlign = 'left';
-  ctx.fillStyle = laserColour(); ctx.fillText(chordMode === 0 ? 'any colour' : (laserChord || 'none — play root + fifth'), 56, top - 26);
+  ctx.fillStyle = laserColour(); ctx.fillText(chordMode === 0 ? 'any colour' : (laserChord || 'none — play root + fifth'), left + 44, top - 26);
   if (chordMode !== 0) {
     const cur = song.chords[bar % n], nxt = song.chords[(bar + 1) % n];
-    ctx.fillStyle = '#8b909a'; ctx.fillText('Bar chord:', 12, top - 8);
-    ctx.fillStyle = CHORD_COLOURS[cur]; ctx.fillText(cur, 84, top - 8);
-    ctx.fillStyle = '#8b909a'; ctx.fillText('next', 110, top - 8);
-    ctx.fillStyle = CHORD_COLOURS[nxt]; ctx.fillText(nxt, 142, top - 8);
-    ctx.fillStyle = '#6c717c'; ctx.fillText('keys 1-4: ' + distinctChords().join(' '), 190, top - 8);
+    ctx.fillStyle = '#8b909a'; ctx.fillText('Bar chord:', left, top - 8);
+    ctx.fillStyle = CHORD_COLOURS[cur]; ctx.fillText(cur, left + 72, top - 8);
+    ctx.fillStyle = '#8b909a'; ctx.fillText('next', left + 98, top - 8);
+    ctx.fillStyle = CHORD_COLOURS[nxt]; ctx.fillText(nxt, left + 130, top - 8);
+    ctx.fillStyle = '#6c717c'; ctx.fillText('keys 1-4: ' + distinctChords().join(' '), left + 178, top - 8);
+  }
+
+  // tutorial captions
+  if (song.captions) {
+    let text = song.captions[0][1];
+    for (const [ct, txt] of song.captions) if (T >= ct) text = txt;
+    const bx = left, by = bottom + 12, bw = boardW, lh = 18;
+    ctx.fillStyle = '#1d2026'; ctx.fillRect(bx, by, bw, captionH - 16);
+    ctx.strokeStyle = '#3c414b'; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bw, captionH - 16);
+    ctx.fillStyle = '#e8e6df'; ctx.font = '14px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    let line = '', ly = by + 10;
+    for (const word of text.split(' ')) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > bw - 24 && line) { ctx.fillText(line, bx + 12, ly); ly += lh; line = word; } else line = test;
+    }
+    ctx.fillText(line, bx + 12, ly); ctx.textBaseline = 'middle';
   }
 
   // audio scheduling & end state
@@ -380,7 +415,7 @@ function frame() {
     if (finished) {
       ctx.fillStyle = 'rgba(10,11,14,0.8)'; ctx.fillRect(W / 2 - 240, H / 2 - 60, 480, 120);
       ctx.fillStyle = '#e8e6df'; ctx.textAlign = 'center'; ctx.font = 'bold 26px system-ui';
-      ctx.fillText(hp === 0 ? 'Base destroyed' : 'Song survived', W / 2, H / 2 - 20);
+      ctx.fillText(hp === 0 ? 'Base destroyed' : song.captions ? 'Tutorial done' : 'Song survived', W / 2, H / 2 - 20);
       ctx.font = '15px system-ui'; ctx.fillStyle = '#b8bcc5';
       ctx.fillText(`HP ${hp}/20 · ${kills}/${total} segments burned · Restart or pick a song`, W / 2, H / 2 + 18);
     }

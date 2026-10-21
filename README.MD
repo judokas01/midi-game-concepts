@@ -121,6 +121,7 @@ concept survives its verdict — or earlier, if the look *is* the hypothesis bei
 | # | Concept | Stage | Verdict |
 | --- | --- | --- | --- |
 | 001 | [Staff Defence](concepts/001-staff-defence/README.md) — tower defence on a treble staff, the melody is the enemy wave | Spike | _not played yet_ |
+| 002 | [King Gong](concepts/002-king-gong/README.md) — swing a gorilla through a treetop staff; each branch is a note, its thickness the note's length | Spike | _not played yet_ |
 
 ## Working with Claude Code
 

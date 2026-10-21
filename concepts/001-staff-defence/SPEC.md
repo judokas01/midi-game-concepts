@@ -18,8 +18,8 @@ chips it.
 
 ### 2.1 Grid
 
-- Rectangular tiles. Tiles need not be square; width and height are derived from the
-  viewport so the whole board is visible.
+- Rectangular tiles. The board is a centred box of at most 980×560 px (aspect capped at
+  0.62), shrinking to fit smaller windows, with the legend above and a caption strip below.
 - **Rows:** 35 grid rows. Odd grid rows (1, 3, …, 33) are the 17 **pitch rows**; even grid
   rows are **corridors**. Pitch row `R` (0 = A3 at the bottom, 16 = C6 at the top) is grid
   row `2R + 1`. Grid row 0 is at the bottom.
@@ -186,6 +186,7 @@ All 4/4, one chord per bar, notes as `[name, lengthInEighths]`.
 
 | Button | Key | BPM | Chords | Tests |
 | --- | --- | --- | --- | --- |
+| Tutorial | C | 50 | C, G | scripted: five bugs with rests between, timed captions explaining staff, kill zone, base, hold-to-kill, colours, switches, cooldown. Forces tempo 100 %. |
 | Ode to Joy (C) | C | 84 | C, G | dotted rhythm, repeated notes |
 | Twinkle (C) | C | 88 | C, F, G | three chords, half notes |
 | Twinkle (G) | G | 88 | G, C, D | F# row accepts F#, rejects F |
