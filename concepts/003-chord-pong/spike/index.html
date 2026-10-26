@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>003 Chord Pong — spike</title>
+<style>
+  html, body { margin:0; height:100%; background:#15131c; color:#ecebf2; font:14px/1.3 system-ui, sans-serif; overflow:hidden; }
+  #hud { position:fixed; top:0; left:0; right:0; display:flex; flex-wrap:wrap; gap:4px 14px; align-items:center; padding:6px 10px; background:#1b1824; border-bottom:1px solid #2e2a3b; z-index:2; }
+  #hud .grp { display:flex; gap:5px; align-items:center; }
+  #hud .lbl { color:#9893a8; font-size:12px; }
+  button { background:#2a2636; color:#ecebf2; border:1px solid #3d384d; border-radius:4px; padding:3px 8px; cursor:pointer; font:inherit; font-size:13px; }
+  button.on { background:#6a4fa3; border-color:#6a4fa3; color:#fff; }
+  #status { margin-left:auto; display:flex; gap:14px; align-items:center; font-variant-numeric:tabular-nums; }
+  #input { padding:2px 8px; border-radius:4px; background:#3a3f49; }
+  #input.midi { background:#2e8b57; }
+  #lives { color:#ff6b7a; letter-spacing:2px; }
+  canvas { display:block; position:fixed; top:0; left:0; }
+  #overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(12,10,18,.86); z-index:3; text-align:center; cursor:pointer; }
+  #overlay h1 { margin:0 0 10px; font-size:30px; }
+  #overlay p { margin:6px auto; color:#c9c5d6; max-width:660px; }
+  #overlay.hidden { display:none; }
+</style>
+</head>
+<body>
+<div id="hud">
+  <b>Chord Pong</b>
+  <div class="grp"><span class="lbl">Hints</span><button id="hints" class="on">on</button></div>
+  <div class="grp"><span class="lbl">Synth</span><button id="synth" class="on">on</button></div>
+  <button id="restart">Restart</button>
+  <div id="status">
+    <span id="input">keyboard</span>
+    <span id="lives">♥♥♥</span>
+    <span id="returns">returns 0</span>
+    <span id="speed">ball 3.0 s</span>
+  </div>
+</div>
+<canvas id="c"></canvas>
+<div id="overlay"><div>
+  <h1>Chord Pong</h1>
+  <p>A creature at the top keeps throwing an elemental ball at you. Every element has its chord:
+     <b>fire = C</b>, <b>ice = Em</b>, <b>earth = G</b>, <b>water = Am</b>.</p>
+  <p>Play the matching chord before the ball reaches the bottom and your shield sends it back.
+     Any octave, any inversion. The last chord you played is your shield, and an extra wrong note spoils it.</p>
+  <p>Every return hurts the creature and speeds the ball up. Miss, and you lose a heart and the ball slows down.</p>
+  <p>No MIDI? Keys <b>W E R T</b> = C, Em, G, Am.</p>
+  <p><b>Click or press Space to start</b> · Chrome or Edge</p>
+</div></div>
+
+<script>
+// ============ chords & elements ============
+// All from C major: warm elements are major chords, cold ones minor.
+const CHORDS = [
+  { key: 'w', name: 'C',  el: 'fire',  root: 0, minor: false },
+  { key: 'e', name: 'Em', el: 'ice',   root: 4, minor: true  },
+  { key: 'r', name: 'G',  el: 'earth', root: 7, minor: false },
+  { key: 't', name: 'Am', el: 'water', root: 9, minor: true  },
+];
+const EL = {
+  fire:  { label: 'Fire',  icon: '🔥', col: '#ff6b2c', glow: '#ffb15c', ink: '#ff6b2c' },
+  ice:   { label: 'Ice',   icon: '❄️', col: '#8fe1ff', glow: '#e2f8ff', ink: '#22a8d8' },
+  earth: { label: 'Earth', icon: '⛰️', col: '#b08a45', glow: '#e2c98f', ink: '#a07a35' },
+  water: { label: 'Water', icon: '💧', col: '#2f86ff', glow: '#93c4ff', ink: '#2f86ff' },
+};
+const NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+for (const c of CHORDS) {
+  c.pcs = [c.root, (c.root + (c.minor ? 3 : 4)) % 12, (c.root + 7) % 12];
+  const base = 60 + c.root - (c.root >= 7 ? 12 : 0);           // root-position voicing around middle C
+  c.voicing = [base, base + (c.minor ? 3 : 4), base + 7];
+  c.notes = c.pcs.map(p => NAMES[p]).join(' ');
+}
+const byEl = el => CHORDS.find(c => c.el === el);
+
+const HP_MAX = 12, LIVES = 3;
+const T_START = 3000, T_MIN = 1100, T_MAX = 3600;   // ms the ball takes to come down
+const FASTER = 0.92, SLOWER = 1.2;                   // after a return / after a miss
+const HOLD = 380;                                    // ms the creature holds the ball after recolouring it
+const GRACE = 40;                                    // ms: a chord that arrives just in time beats the frame loop
+
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const fold01 = f => { const t = ((f % 2) + 2) % 2; return t <= 1 ? t : 2 - t; };   // bounce off the side walls
+
+// Name whatever triad the held notes make, element or not.
+function nameTriad(pcs) {
+  if (pcs.size !== 3) return null;
+  for (let r = 0; r < 12; r++) {
+    if (!pcs.has(r) || !pcs.has((r + 7) % 12)) continue;
+    if (pcs.has((r + 4) % 12)) return NAMES[r] + ' major';
+    if (pcs.has((r + 3) % 12)) return NAMES[r] + ' minor';
+  }
+  return null;
+}
+
+// ============ layout ============
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let W, H, hudH, hintH, AX, AW, AT, AB, u, cY, sY, r;
+function layout() {
+  W = innerWidth; H = innerHeight; hudH = document.getElementById('hud').offsetHeight;
+  hintH = hints ? Math.max(110, Math.min(170, H * 0.22)) : 0;
+  AW = Math.min(W - 32, 760); AX = (W - AW) / 2; AT = hudH + 12; AB = H - hintH - 12;
+  u = Math.max(14, Math.min(38, AW / 16, (AB - AT) / 15));
+  cY = AT + 2.4 * u; sY = AB - 2.2 * u; r = 0.62 * u;
+  cv.width = W * devicePixelRatio; cv.height = H * devicePixelRatio; ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+addEventListener('resize', layout);
+const holdY = () => cY + 1.5 * u, hitY = () => sY - 0.2 * u - r;
+
+// ============ state ============
+let game, lives, hp, returns, misses, tDown, times, ball, revealT, creature, shield, parts, floats, trail, banner, shake;
+let hints = true, synthOn = true, inputSrc = 'keyboard', started = false;
+
+function restart() {
+  lives = LIVES; hp = HP_MAX; returns = 0; misses = 0; tDown = T_START; times = [];
+  parts = []; floats = []; banner = null; shake = 0;
+  creature = { f: 0.5, hitT: -1e9, dieT: 0 };
+  game = 'play';
+  serve(performance.now(), null, 1000);
+  updateHud();
+}
+
+// The creature holds the ball with a new element; the clock for finding the chord starts now.
+function serve(now, prevEl, dur) {
+  const opts = CHORDS.map(c => c.el).filter(e => e !== prevEl);
+  ball = { phase: 'held', el: opts[Math.floor(Math.random() * opts.length)], t0: now, dur };
+  revealT = now; shield = { kind: 'none' }; trail = [];
+}
+
+function ballPos(now) {
+  const b = ball, L = AX + r, S = AW - 2 * r;
+  if (b.phase === 'held' || b.phase === 'gone') return { x: L + creature.f * S, y: holdY() };
+  const k = (now - b.t0) / b.T, kk = b.phase === 'miss' ? k : clamp01(k);   // a missed ball keeps going
+  const x = L + fold01(lerp(b.f0, b.f1, kk)) * S;
+  return { x, y: b.phase === 'up' ? lerp(hitY(), holdY(), kk) : lerp(holdY(), hitY(), kk) };
+}
+
+// ============ rules ============
+function throwDown(now) {
+  const f0 = creature.f;
+  Object.assign(ball, { phase: 'down', t0: now, T: tDown, f0, f1: f0 + (Math.random() * 2 - 1) * 1.4 });
+  sfxThrow();
+}
+
+function impact(now) {
+  const b = ball, p = ballPos(b.t0 + b.T);
+  if (shield.kind === 'chord' && CHORDS[shield.c].el === b.el) {
+    returns++;
+    const secs = Math.max(0, shield.t - revealT) / 1000; times.push(secs);
+    tDown = Math.max(T_MIN, tDown * FASTER);
+    burst(p.x, p.y + r, EL[b.el].col, 28); shield.flash = now;
+    floats.push({ text: secs.toFixed(2) + ' s', x: p.x, y: p.y - u, t0: now, col: EL[b.el].glow });
+    const f0 = fold01(b.f1);
+    Object.assign(b, { phase: 'up', t0: now, T: Math.max(650, tDown * 0.4), f0, f1: f0 + (Math.random() * 2 - 1) * 0.8 });
+    sfxReturn();
+  } else {
+    misses++; lives--; tDown = Math.min(T_MAX, tDown * SLOWER);
+    const c = byEl(b.el);
+    const mine = shield.kind === 'chord' ? `Your shield was ${CHORDS[shield.c].name} (${EL[CHORDS[shield.c].el].label.toLowerCase()})`
+               : shield.kind === 'other' ? `You played ${shield.text}` : 'No chord in time';
+    banner = { text: `${EL[b.el].label} needs ${c.name}: ${c.notes}. ${mine}.`, t: now };
+    b.phase = 'miss'; b.shattered = false; shake = now;
+    sfxMiss();
+  }
+  updateHud();
+}
+
+function catchBall(now) {
+  hp--; creature.hitT = now; sfxHit();
+  const p = ballPos(now); burst(p.x, p.y - 0.5 * u, EL[ball.el].col, 18);
+  if (hp <= 0) { game = 'won'; creature.dieT = now; ball.phase = 'gone'; sfxWin(); updateHud(); return; }
+  serve(now, ball.el, HOLD);
+  updateHud();
+}
+
+function update(now, dt) {
+  // the creature moves to meet the ball on its way up, and drifts back to the middle otherwise
+  const b = ball, tgt = b.phase === 'up' ? fold01(b.f1) : b.phase === 'held' ? creature.f : 0.5;
+  creature.f += (tgt - creature.f) * (1 - Math.exp(-dt * (b.phase === 'up' ? 6 : 1)));
+  if (game !== 'play') return;
+  if (b.phase === 'held' && now >= b.t0 + b.dur) throwDown(now);
+  else if (b.phase === 'down' && now >= b.t0 + b.T + GRACE) impact(now);
+  else if (b.phase === 'up' && now >= b.t0 + b.T) catchBall(now);
+  else if (b.phase === 'miss') {
+    const p = ballPos(now);
+    if (!b.shattered && p.y > AB - r) { b.shattered = true; burst(p.x, AB - r, '#c9c5d6', 22); burst(p.x, AB - r, EL[b.el].col, 16); sfxShatter(); }
+    if (now >= b.t0 + b.T + 1400) {
+      if (lives > 0) serve(now, b.el, 900);
+      else { game = 'over'; b.phase = 'gone'; sfxLose(); }
+    }
+  }
+}
+
+// ============ chord reading ============
+const held = new Map();                    // midi note -> how many sources hold it (keyboard chords share notes)
+const midiHeld = new Set(), keysHeld = new Set();
+
+function hold(m) { held.set(m, (held.get(m) || 0) + 1); if (held.get(m) === 1) playNote(m); }
+function unhold(m) { const k = (held.get(m) || 0) - 1; if (k > 0) held.set(m, k); else { held.delete(m); stopNote(m); } }
+
+// The shield is the last full chord you played. Fewer than three pitch classes leaves it alone, so
+// rolling a chord or lifting fingers is safe; three or more that are not an element chord spoil it.
+function readChord(ts) {
+  if (!started || game !== 'play') return;
+  const pcs = new Set([...held.keys()].map(m => m % 12));
+  if (pcs.size < 3) return;
+  const c = pcs.size === 3 ? CHORDS.findIndex(c => c.pcs.every(p => pcs.has(p))) : -1;
+  let next;
+  if (c >= 0) next = { kind: 'chord', c, t: ts };
+  else {
+    const nm = nameTriad(pcs);
+    next = { kind: 'other', t: ts, text: nm ? `${nm} (no element)` : [...pcs].sort((a, b) => a - b).map(p => NAMES[p]).join(' ') + ' (not a chord)' };
+  }
+  if (shield.kind === next.kind && shield.c === next.c && shield.text === next.text) return;   // same chord re-read keeps its time
+  shield = next; shield.flash = performance.now();
+}
+
+// ============ audio ============
+let audio = null, noise = null;
+const voices = {};
+function ensureAudio() {
+  if (!audio) {
+    audio = new (window.AudioContext || window.webkitAudioContext)();
+    noise = audio.createBuffer(1, audio.sampleRate, audio.sampleRate);
+    const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  audio.resume();
+}
+function tone(type, f0, f1, dur, vol, at) {
+  if (!audio) return;
+  at = at ?? audio.currentTime;
+  const o = audio.createOscillator(), g = audio.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, at); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, at + dur);
+  g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(vol, at + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  o.connect(g).connect(audio.destination); o.start(at); o.stop(at + dur + 0.02);
+}
+function hiss(dur, freq, ftype, vol, q = 1) {
+  if (!audio) return;
+  const src = audio.createBufferSource(), f = audio.createBiquadFilter(), g = audio.createGain(), at = audio.currentTime;
+  src.buffer = noise; f.type = ftype; f.frequency.value = freq; f.Q.value = q;
+  g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  src.connect(f).connect(g).connect(audio.destination); src.start(at); src.stop(at + dur + 0.02);
+}
+const sfxThrow = () => hiss(0.18, 700, 'bandpass', 0.12, 2);
+const sfxReturn = () => { hiss(0.06, 2500, 'bandpass', 0.35, 2); tone('triangle', 520, 1040, 0.12, 0.12); };
+const sfxHit = () => { tone('sine', 140, 55, 0.25, 0.45); hiss(0.12, 400, 'lowpass', 0.25); };
+const sfxMiss = () => tone('sawtooth', 330, 90, 0.45, 0.06);
+const sfxShatter = () => { hiss(0.3, 2500, 'highpass', 0.35); tone('sine', 900, 300, 0.2, 0.06); };
+const sfxWin = () => { const t = audio.currentTime; [523, 659, 784, 1047].forEach((f, i) => tone('triangle', f, f, 0.3, 0.15, t + i * 0.12)); };
+const sfxLose = () => { const t = audio.currentTime; [392, 330, 262].forEach((f, i) => tone('triangle', f, f, 0.35, 0.12, t + i * 0.18)); };
+
+function playNote(m) {
+  if (!synthOn || !audio) return;
+  stopNote(m);
+  const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
+  o.type = 'triangle'; o.frequency.value = 440 * Math.pow(2, (m - 69) / 12);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.13, t + 0.01); g.gain.exponentialRampToValueAtTime(0.05, t + 0.5);
+  o.connect(g).connect(audio.destination); o.start(t);
+  voices[m] = { o, g };
+}
+function stopNote(m) {
+  const v = voices[m]; if (!v) return;
+  const t = audio.currentTime;
+  v.g.gain.cancelScheduledValues(t); v.g.gain.setValueAtTime(v.g.gain.value, t); v.g.gain.linearRampToValueAtTime(0, t + 0.08); v.o.stop(t + 0.1);
+  delete voices[m];
+}
+
+// ============ input ============
+// Event timestamps share the performance.now() clock; fall back to it if a device reports something odd.
+const stamp = ts => (ts && Math.abs(ts - performance.now()) < 1000) ? ts : performance.now();
+
+function setInput(src) {
+  if (inputSrc === src) return;
+  inputSrc = src; const el = document.getElementById('input'); el.textContent = src === 'midi' ? 'MIDI' : 'keyboard'; el.className = src;
+}
+addEventListener('keydown', e => {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === ' ') { e.preventDefault(); if (!started) start(); return; }
+  if (k === 'enter') { e.preventDefault(); if (started) restart(); return; }
+  const c = CHORDS.find(c => c.key === k);
+  if (!c || keysHeld.has(k)) return;
+  keysHeld.add(k); setInput('keyboard');
+  c.voicing.forEach(hold); readChord(stamp(e.timeStamp));
+});
+function keyUp(k, ts) {
+  if (!keysHeld.delete(k)) return;
+  CHORDS.find(c => c.key === k).voicing.forEach(unhold); readChord(ts);
+}
+addEventListener('keyup', e => keyUp(e.key.toLowerCase(), stamp(e.timeStamp)));
+addEventListener('blur', () => { for (const k of [...keysHeld]) keyUp(k, performance.now()); });
+
+function onMidi(e) {
+  const [status, note, vel] = e.data, type = status & 0xf0, ts = stamp(e.timeStamp);
+  if (type === 0x90 && vel > 0) {
+    setInput('midi');
+    if (!midiHeld.has(note)) { midiHeld.add(note); hold(note); readChord(ts); }
+  } else if (type === 0x80 || type === 0x90) {   // note-on with velocity 0 is a note-off
+    if (midiHeld.delete(note)) { unhold(note); readChord(ts); }
+  }
+}
+if (navigator.requestMIDIAccess) {
+  navigator.requestMIDIAccess().then(midi => {
+    for (const input of midi.inputs.values()) input.onmidimessage = onMidi;
+    midi.onstatechange = e => { if (e.port.type === 'input' && e.port.state === 'connected') e.port.onmidimessage = onMidi; };
+  }).catch(() => {});   // no device, no permission or wrong browser: the keyboard fallback still works
+}
+
+// ============ HUD ============
+function updateHud() {
+  document.getElementById('lives').textContent = '♥'.repeat(lives) + '♡'.repeat(LIVES - lives);
+  document.getElementById('returns').textContent = 'returns ' + returns;
+  document.getElementById('speed').textContent = `ball ${(tDown / 1000).toFixed(1)} s`;
+}
+function toggle(id, get, set) {
+  const b = document.getElementById(id);
+  b.onclick = () => { set(!get()); b.classList.toggle('on', get()); b.textContent = get() ? 'on' : 'off'; b.blur(); };
+}
+toggle('hints', () => hints, v => { hints = v; layout(); });
+toggle('synth', () => synthOn, v => { synthOn = v; if (!v) for (const m of Object.keys(voices)) stopNote(+m); });
+document.getElementById('restart').onclick = e => { restart(); e.target.blur(); };
+
+function start() {
+  ensureAudio(); started = true;
+  document.getElementById('overlay').classList.add('hidden');
+  restart();
+}
+document.getElementById('overlay').onclick = start;
+
+// ============ drawing ============
+const EMOJI = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+
+function burst(x, y, col, n) {
+  const now = performance.now();
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = (0.5 + Math.random()) * 5 * u;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t0: now, life: 350 + Math.random() * 450, col });
+  }
+}
+
+function outlined(txt, x, y, size, colour) {
+  ctx.font = `bold ${size}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(12,10,18,0.9)'; ctx.strokeText(txt, x, y);
+  ctx.fillStyle = colour; ctx.fillText(txt, x, y);
+}
+function panel(title, line) {
+  const w = Math.min(620, W - 40), h = 116, x = (W - w) / 2, y = (AT + AB) / 2 - h / 2;
+  ctx.fillStyle = 'rgba(16,13,24,0.92)'; ctx.fillRect(x, y, w, h);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 26px system-ui'; ctx.fillText(title, W / 2, y + 40);
+  ctx.fillStyle = '#cfcadc'; ctx.font = '15px system-ui'; ctx.fillText(line, W / 2, y + 80);
+}
+
+function drawArena() {
+  const g = ctx.createLinearGradient(0, AT, 0, AB);
+  g.addColorStop(0, '#2a1d3a'); g.addColorStop(0.5, '#1c1a28'); g.addColorStop(1, '#17222b');
+  ctx.fillStyle = g; ctx.fillRect(AX, AT, AW, AB - AT);
+  ctx.strokeStyle = '#3d3752'; ctx.lineWidth = 3; ctx.beginPath();
+  ctx.moveTo(AX, AT); ctx.lineTo(AX, AB); ctx.moveTo(AX + AW, AT); ctx.lineTo(AX + AW, AB); ctx.stroke();
+  ctx.setLineDash([0.4 * u, 0.4 * u]); ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(AX, (AT + AB) / 2); ctx.lineTo(AX + AW, (AT + AB) / 2); ctx.stroke(); ctx.setLineDash([]);
+  // creature health
+  const bw = Math.min(AW * 0.5, 14 * u), bx = AX + (AW - bw) / 2, by = AT + 0.3 * u, seg = bw / HP_MAX;
+  for (let i = 0; i < HP_MAX; i++) {
+    ctx.fillStyle = i < hp ? '#d0465a' : 'rgba(255,255,255,0.1)';
+    ctx.fillRect(bx + i * seg + 1, by, seg - 2, 0.28 * u);
+  }
+}
+
+function drawCreature(now) {
+  const x = AX + r + creature.f * (AW - 2 * r), hitK = clamp01(1 - (now - creature.hitT) / 260);
+  let sc = 1, alpha = 1;
+  if (game === 'won') { const k = clamp01((now - creature.dieT) / 900); sc = 1 - 0.7 * k; alpha = 1 - k; }
+  if (alpha <= 0) return;
+  const ell = (ex, ey, rx, ry, c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(ex, ey, rx, ry, 0, 0, 7); ctx.fill(); };
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.translate(x + (Math.random() * 2 - 1) * hitK * 0.2 * u, cY); ctx.scale(u * sc, u * sc);
+  if (ball.phase === 'held') { ctx.shadowColor = EL[ball.el].col; ctx.shadowBlur = 30; }
+  ctx.fillStyle = '#d9cbb0';                                              // horns
+  for (const sx of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sx * 0.6, -0.8); ctx.lineTo(sx * 1.35, -1.75); ctx.lineTo(sx * 1.05, -0.55); ctx.fill(); }
+  ell(0, 0, 1.55, 1.15, hitK > 0.4 ? '#f0e6ff' : '#4a3566');             // body
+  ctx.shadowBlur = 0;
+  ell(0, 0.4, 0.95, 0.6, '#5d4680');                                      // belly
+  const bp = ballPos(now), dx = bp.x - x, dy = bp.y - cY, d = Math.hypot(dx, dy) || 1, lx = dx / d * 0.1, ly = dy / d * 0.1;
+  for (const sx of [-1, 1]) { ell(sx * 0.48, -0.3, 0.3, 0.32, '#fff'); ell(sx * 0.48 + lx, -0.3 + ly, 0.14, 0.16, '#1b1024'); }
+  ctx.strokeStyle = '#1b1024'; ctx.lineWidth = 0.12; ctx.lineCap = 'round';  // angry brows
+  ctx.beginPath(); ctx.moveTo(-0.8, -0.78); ctx.lineTo(-0.25, -0.6); ctx.moveTo(0.8, -0.78); ctx.lineTo(0.25, -0.6); ctx.stroke();
+  ctx.fillStyle = '#1b1024'; ctx.beginPath(); ctx.ellipse(0, 0.3, 0.5, 0.22, 0, 0, Math.PI); ctx.fill();   // grin
+  ctx.fillStyle = '#fff';
+  for (const tx of [-0.3, 0, 0.3]) { ctx.beginPath(); ctx.moveTo(tx - 0.08, 0.3); ctx.lineTo(tx + 0.08, 0.3); ctx.lineTo(tx, 0.44); ctx.fill(); }
+  if (ball.phase === 'held') { ell(-0.85, 1.45, 0.25, 0.22, '#4a3566'); ell(0.85, 1.45, 0.25, 0.22, '#4a3566'); }   // hands round the ball
+  ctx.restore();
+}
+
+function drawBall(now) {
+  if (ball.phase === 'gone' || (ball.phase === 'miss' && ball.shattered)) return;
+  const p = ballPos(now), e = EL[ball.el];
+  const last = trail[trail.length - 1];
+  if (last && Math.hypot(p.x - last.x, p.y - last.y) > 3 * u) trail = [];
+  trail.push(p); if (trail.length > 12) trail.shift();
+  trail.forEach((t, i) => { ctx.globalAlpha = (i / trail.length) * 0.35; ctx.fillStyle = e.col; ctx.beginPath(); ctx.arc(t.x, t.y, r * (0.4 + 0.5 * i / trail.length), 0, 7); ctx.fill(); });
+  ctx.globalAlpha = 1;
+  const pop = ball.phase === 'held' ? 0.6 + 0.4 * clamp01((now - ball.t0) / 180) : 1, rr = r * pop;
+  const g = ctx.createRadialGradient(p.x - rr * 0.3, p.y - rr * 0.3, rr * 0.1, p.x, p.y, rr);
+  g.addColorStop(0, e.glow); g.addColorStop(1, e.col);
+  ctx.shadowColor = e.col; ctx.shadowBlur = 20; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+  ctx.font = `${Math.round(rr * 1.1)}px ${EMOJI}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e.icon, p.x, p.y + rr * 0.05);
+}
+
+function drawShield(now) {
+  const x0 = AX + 0.3 * u, x1 = AX + AW - 0.3 * u, flashK = shield.flash ? clamp01(1 - (now - shield.flash) / 250) : 0;
+  const th = (0.3 + 0.25 * flashK) * u;
+  ctx.lineCap = 'round'; ctx.lineWidth = th;
+  let label, col;
+  if (shield.kind === 'chord') {
+    const c = CHORDS[shield.c], e = EL[c.el];
+    ctx.shadowColor = e.col; ctx.shadowBlur = 18 + 20 * flashK; ctx.strokeStyle = e.col;
+    ctx.beginPath(); ctx.moveTo(x0, sY); ctx.lineTo(x1, sY); ctx.stroke(); ctx.shadowBlur = 0;
+    label = `${e.icon} ${c.name} · ${e.label.toLowerCase()} shield`; col = e.glow;
+  } else if (shield.kind === 'other') {
+    ctx.strokeStyle = '#6b6577'; ctx.lineWidth = 0.14 * u; ctx.beginPath();
+    for (let x = x0, k = 0; x <= x1; x += 0.5 * u, k++) ctx.lineTo(x, sY + (k % 2 ? -0.15 : 0.15) * u);
+    ctx.stroke();
+    label = shield.text + ': no shield'; col = '#ffb3a8';
+  } else {
+    ctx.setLineDash([0.3 * u, 0.5 * u]); ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 0.1 * u;
+    ctx.beginPath(); ctx.moveTo(x0, sY); ctx.lineTo(x1, sY); ctx.stroke(); ctx.setLineDash([]);
+    label = 'no shield: play a chord'; col = '#8f899f';
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `bold ${Math.max(13, Math.round(0.55 * u))}px system-ui, ${EMOJI}`; ctx.fillStyle = col;
+  ctx.fillText(label, AX + AW / 2, sY + 1.05 * u);
+}
+
+const WHITE = [0, 2, 4, 5, 7, 9, 11], BLACK = [[1, 1], [3, 2], [6, 4], [8, 5], [10, 6]];   // [pitch class, white key to its right]
+function drawPiano(x, y, w, h, lit, ink) {
+  const kw = w / 7;
+  WHITE.forEach((pc, i) => { ctx.fillStyle = lit.includes(pc) ? ink : '#e9e6ef'; ctx.fillRect(x + i * kw + 0.5, y, kw - 1, h); });
+  for (const [pc, i] of BLACK) { ctx.fillStyle = lit.includes(pc) ? ink : '#22202a'; ctx.fillRect(x + i * kw - kw * 0.3, y, kw * 0.6, h * 0.6); }
+}
+
+function drawHints() {
+  const gap = 10, sw = Math.min(W - 32, 760), sx = (W - sw) / 2, cw = (sw - 3 * gap) / 4, ch = hintH - 16, y = H - hintH + 4;
+  CHORDS.forEach((c, i) => {
+    const e = EL[c.el], x = sx + i * (cw + gap), mine = shield.kind === 'chord' && shield.c === i;
+    ctx.fillStyle = '#1f1b29'; ctx.fillRect(x, y, cw, ch);
+    if (mine) { ctx.globalAlpha = 0.22; ctx.fillStyle = e.col; ctx.fillRect(x, y, cw, ch); ctx.globalAlpha = 1; }
+    ctx.strokeStyle = e.col; ctx.lineWidth = mine ? 3 : 1.5; ctx.strokeRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
+    const pad = Math.max(6, cw * 0.06), small = Math.max(11, Math.round(ch * 0.11));
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left'; ctx.fillStyle = '#d8d4e4'; ctx.font = `${small}px system-ui, ${EMOJI}`;
+    ctx.fillText(`${e.icon} ${e.label}`, x + pad, y + ch * 0.14);
+    ctx.textAlign = 'right'; ctx.fillStyle = '#8f899f'; ctx.fillText(`key ${c.key.toUpperCase()}`, x + cw - pad, y + ch * 0.14);
+    ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(ch * 0.25)}px system-ui`;
+    ctx.fillText(c.name, x + pad, y + ch * 0.4);
+    ctx.textAlign = 'right'; ctx.fillStyle = '#c9c5d6'; ctx.font = `${small}px system-ui`;
+    ctx.fillText(c.notes, x + cw - pad, y + ch * 0.42);
+    drawPiano(x + pad, y + ch * 0.58, cw - 2 * pad, ch * 0.34, c.pcs, e.ink);
+  });
+}
+
+function draw(now, dt) {
+  ctx.fillStyle = '#15131c'; ctx.fillRect(0, 0, W, H);
+  const sh = shake && now - shake < 320 ? (1 - (now - shake) / 320) * 0.3 * u : 0;
+  ctx.save(); ctx.translate((Math.random() * 2 - 1) * sh, (Math.random() * 2 - 1) * sh);
+  drawArena();
+  drawShield(now);
+  drawCreature(now);
+  drawBall(now);
+  parts = parts.filter(p => {
+    const k = (now - p.t0) / p.life; if (k >= 1) return false;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 8 * u * dt; p.vx *= 0.97;
+    ctx.globalAlpha = 1 - k; ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(p.x, p.y, 0.12 * u * (1 - k * 0.5), 0, 7); ctx.fill();
+    return true;
+  });
+  ctx.globalAlpha = 1;
+  floats = floats.filter(f => {
+    const k = (now - f.t0) / 900; if (k >= 1) return false;
+    ctx.globalAlpha = 1 - k; outlined(f.text, f.x, f.y - k * 1.2 * u, Math.max(14, Math.round(0.6 * u)), f.col); ctx.globalAlpha = 1;
+    return true;
+  });
+  ctx.restore();
+
+  if (banner && game === 'play') {
+    const k = (now - banner.t) / 3500;
+    if (k > 1) banner = null;
+    else { ctx.globalAlpha = k < 0.8 ? 1 : (1 - k) / 0.2; outlined(banner.text, W / 2, (AT + AB) / 2 + 1.2 * u, Math.max(15, Math.round(0.6 * u)), '#ffd2c4'); ctx.globalAlpha = 1; }
+  }
+  if (hints) drawHints();
+
+  const avg = times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(2) : '–';
+  const best = times.length ? Math.min(...times).toFixed(2) : '–';
+  if (game === 'won') panel('Creature defeated!', `${returns} returns · ${misses} miss${misses === 1 ? '' : 'es'} · chord found in ${avg} s on average, best ${best} s · Enter to play again`);
+  if (game === 'over') panel('Out of hearts', `Creature at ${hp}/${HP_MAX} · ${returns} returns · chord found in ${avg} s on average · Enter to try again`);
+}
+
+let lastT = performance.now();
+function frame() {
+  requestAnimationFrame(frame);
+  const now = performance.now(), dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+  if (started) update(now, dt);
+  draw(now, dt);
+}
+layout();
+restart();
+frame();
+</script>
+</body>
+</html>
