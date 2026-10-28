@@ -20,19 +20,25 @@ func setup(x0: float, x1: float) -> void:
 	set_sag(SLACK)
 
 
-## The vine is a curve through both posts; `sag` is how far its middle hangs.
-func set_sag(sag: float) -> void:
-	var bend := Vector2(width / 2.0, 2.0 * sag)
+## How far across the liana (0..1) the world position `x` is.
+func across(x: float) -> float:
+	return clampf(to_local(Vector2(x, 0.0)).x / width, 0.05, 0.95)
+
+
+## The vine hangs `sag` below the posts at its lowest point, `at` of the way across: the middle
+## when nobody is in it, under the gorilla when it lands.
+func set_sag(sag: float, at := 0.5) -> void:
 	var points := PackedVector2Array()
 	for k in 13:
-		points.append(_along(bend, k / 12.0))
+		points.append(_along(k / 12.0, sag, at))
 	_vine.points = points
 	for i in _leaves.get_child_count():
 		var t := 0.1 + 0.16 * i
 		var leaf: Node2D = _leaves.get_child(i)
-		leaf.position = _along(bend, t) + Vector2(0.0, 0.12 * Staff.STEP)
+		leaf.position = _along(t, sag, at) + Vector2(0.0, 0.12 * Staff.STEP)
 		leaf.rotation = t * 6.0
 
 
-func _along(bend: Vector2, t: float) -> Vector2:
-	return Vector2.ZERO.lerp(bend, t).lerp(bend.lerp(Vector2(width, 0.0), t), t)
+func _along(t: float, sag: float, at: float) -> Vector2:
+	var u := t / at if t < at else (1.0 - t) / (1.0 - at)   # 0 at a post, 1 at the lowest point
+	return Vector2(t * width, sag * (1.0 - (1.0 - u) * (1.0 - u)))

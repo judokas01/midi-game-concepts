@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ct86db8stdpkm"
-path="res://.godot/imported/branch_thick.svg-88a1facb22e3bf82031f49fc4cd8e2df.ctex"
+uid="uid://dsosiif880ro3"
+path="res://.godot/imported/branch_bark.svg-6b3a400eff050119c6875682b283062c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/branch_thick.svg"
-dest_files=["res://.godot/imported/branch_thick.svg-88a1facb22e3bf82031f49fc4cd8e2df.ctex"]
+source_file="res://art/branch_bark.svg"
+dest_files=["res://.godot/imported/branch_bark.svg-6b3a400eff050119c6875682b283062c.ctex"]
 
 [params]
 

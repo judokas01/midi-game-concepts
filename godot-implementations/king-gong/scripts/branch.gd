@@ -1,22 +1,19 @@
 extends Node2D
-## One note of the tune: a branch on its staff line, thin for one beat and thick for two.
-## The sprite is split in two halves that bend when the gorilla hangs on too long and
-## come apart when the branch breaks.
+## One note of the tune: a branch on its staff line, as long as the note lasts. It is two
+## halves meeting at the grip, which bend when the gorilla hangs on too long and come apart
+## when the branch breaks.
 
 const Song := preload("res://scripts/song.gd")
 const Staff := preload("res://scripts/staff.gd")
-const THIN := preload("res://art/branch_thin.svg")
-const THICK := preload("res://art/branch_thick.svg")
 
-var thickness := 0.0
-
+var _half := 0.0
 var _done := false
 var _broken := false
 var _has_banana := false
 var _break: Tween
 
-@onready var _left: Sprite2D = $Left
-@onready var _right: Sprite2D = $Right
+@onready var _left: Node2D = $Left
+@onready var _right: Node2D = $Right
 @onready var _cracks: Node2D = $Cracks
 @onready var _banana: Node2D = $Banana
 @onready var _label: Label = $NoteLabel
@@ -24,16 +21,15 @@ var _break: Tween
 
 func setup(note: Song.Note) -> void:
 	position = Staff.note_pos(note)
-	var thick := note.beats >= 2
-	_left.texture = THICK if thick else THIN
-	_right.texture = _left.texture
-	thickness = (0.6 if thick else 0.26) * Staff.STEP
-	_cracks.scale.y = thickness / (0.6 * Staff.STEP)   # crack.svg is drawn for a thick branch
-	_label.position.y = -thickness / 2.0 - 0.12 * Staff.STEP - _label.size.y
+	_half = Staff.branch_length(note) / 2.0
+	# each half pivots on its outer end
+	_left.position.x = -_half
+	$Left/Wood.set_point_position(1, Vector2(_half, 0.0))
+	_right.position.x = _half
+	$Right/Wood.set_point_position(0, Vector2(-_half, 0.0))
+	_banana.position.x = minf(_banana.position.x, 0.9 * _half)   # a short branch holds it nearer the middle
 	_has_banana = note.banana
 	_banana.visible = _has_banana
-	$Banana/Stem.set_point_position(1, Vector2(0.0, thickness / 2.0 + 0.3 * Staff.STEP))
-	$Banana/Fruit.position.y = thickness / 2.0 + 0.8 * Staff.STEP
 	set_strain(0.0, 0.0)
 
 
@@ -57,7 +53,7 @@ func take_banana() -> void:
 func set_strain(sag: float, crack: float) -> void:
 	if _broken:
 		return
-	var bend := atan2(sag, Staff.HALF_BRANCH)
+	var bend := atan2(sag, _half)
 	_left.rotation = bend
 	_right.rotation = -bend
 	_cracks.position.y = sag

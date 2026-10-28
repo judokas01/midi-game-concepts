@@ -55,7 +55,7 @@ func show_source(source: String) -> void:
 
 
 func show_tempo(bpm: float) -> void:
-	_legend.text = "thin branch = 1 beat · thick branch = 2 beats · liana below = rest, let go and bounce · %d BPM, the beat restarts at every grab" % roundi(bpm)
+	_legend.text = "short branch = 1 beat · twice as long = 2 beats · liana below = rest, let go and bounce · %d BPM, the beat restarts at every grab" % roundi(bpm)
 
 
 func hide_overlay() -> void:

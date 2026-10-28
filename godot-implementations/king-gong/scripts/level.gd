@@ -25,7 +25,7 @@ var _lianas_by_note := {}    # note index -> liana
 @onready var _pops: Node2D = $Pops
 
 
-func build(notes: Array[Song.Note], bars: Array[float]) -> void:
+func build(notes: Array[Song.Note]) -> void:
 	for holder: Node in [_lianas, _branches, _pops, ledger, trunks]:
 		for child in holder.get_children():
 			holder.remove_child(child)
@@ -41,18 +41,20 @@ func build(notes: Array[Song.Note], bars: Array[float]) -> void:
 		if note.rest_after > 0:
 			var new_liana: Liana = LianaScene.instantiate()
 			_lianas.add_child(new_liana)
-			new_liana.setup(note.rx0u * Staff.BEAT_W - 0.2 * Staff.STEP, note.rx1u * Staff.BEAT_W + 0.2 * Staff.STEP)
+			var rest := note.beat + note.beats
+			new_liana.setup(Staff.x_of(rest) - 0.2 * Staff.STEP, Staff.x_of(rest + note.rest_after) + 0.2 * Staff.STEP)
 			_lianas_by_note[i] = new_liana
 		if note.step == 0:
 			var bush := Sprite2D.new()
 			bush.texture = LEDGER_BUSH
 			bush.position = Staff.note_pos(note)
 			ledger.add_child(bush)
-	for bar in bars:
+	var last := notes[-1]
+	for bar in range(4, ceili(last.beat + last.beats), 4):   # a bar line every four beats
 		var trunk := ColorRect.new()
 		trunk.color = TRUNK_COLOUR
 		trunk.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		trunk.position = Vector2(bar * Staff.BEAT_W - 0.16 * Staff.STEP, Staff.SKY_TOP)
+		trunk.position = Vector2(Staff.x_of(bar) - 0.16 * Staff.STEP, Staff.SKY_TOP)
 		trunk.size = Vector2(0.32 * Staff.STEP, Staff.FLOOR_Y - Staff.SKY_TOP)
 		trunks.add_child(trunk)
 

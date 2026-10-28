@@ -187,7 +187,7 @@ grow_horizontal = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.721569, 0.768627, 0.678431, 1)
 theme_override_font_sizes/font_size = 15
-text = "thin branch = 1 beat · thick branch = 2 beats · liana below = rest, let go and bounce · 60 BPM, the beat restarts at every grab"
+text = "short branch = 1 beat · twice as long = 2 beats · liana below = rest, let go and bounce · 60 BPM, the beat restarts at every grab"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -406,7 +406,7 @@ mouse_filter = 2
 bbcode_enabled = true
 text = "[center]Swing the gorilla through the treetops. The five long bushes are the staff lines; every branch sits on a note. Play that note to grab the branch.
 
-[b]Hold the note as long as the branch is thick[/b]: thin = 1 beat, thick = 2 beats. Let go too early and you drop, hang on too long and the branch breaks. A liana below a gap is a rest: let go on time and bounce off it.
+[b]Hold the note as long as the branch is long[/b]: a short branch is 1 beat, one twice as long is 2 beats. Let go too early and you drop, hang on too long and the branch breaks. A liana below a gap is a rest: let go on time and bounce off it.
 
 A wrong note is a fall too. Magic bananas bounce you back up. You start with 3, and more hang from some branches.
 

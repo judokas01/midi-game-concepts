@@ -87,14 +87,26 @@ func stop_all_notes() -> void:
 		stop_note(midi)
 
 
-## Ticks count the beats of the branch just grabbed, from that grab; the last (higher) one
-## is the moment to move on.
-func schedule_ticks(grab_ms: float, beat_ms: float, count: int) -> void:
+## Ticks count the beats of the branch just grabbed (held for `hold` beats, then `rest` beats
+## of rest), from that grab. When a rest follows, the let-go gets a tick even off the beat. The
+## last (higher) one is the moment to grab the next branch.
+func schedule_ticks(grab_ms: float, beat_ms: float, hold: float, rest: float) -> void:
 	cancel_ticks()
-	for k in range(1, count + 1):
-		var frame := _frame_at(grab_ms + k * beat_ms)
-		if frame >= _pushed:
-			_ticks.append({frame = frame, clip = _tick_hi if k == count else _tick_lo})
+	var lo: Array[float] = []
+	for k in range(1, ceili(hold + rest)):
+		lo.append(float(k))
+	if rest > 0.0 and not lo.has(hold):
+		lo.append(hold)
+		lo.sort()
+	for beat in lo:
+		_queue_tick(grab_ms + beat * beat_ms, _tick_lo)
+	_queue_tick(grab_ms + (hold + rest) * beat_ms, _tick_hi)
+
+
+func _queue_tick(t_ms: float, clip: PackedVector2Array) -> void:
+	var frame := _frame_at(t_ms)
+	if frame >= _pushed:
+		_ticks.append({frame = frame, clip = clip})
 
 
 func cancel_ticks() -> void:

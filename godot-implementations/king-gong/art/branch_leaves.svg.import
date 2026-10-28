@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cj8r4qdn555q3"
-path="res://.godot/imported/branch_thin.svg-220b4928c506a0ebf9312e84b059fa82.ctex"
+uid="uid://b0rx0ltdkukdd"
+path="res://.godot/imported/branch_leaves.svg-e436c96b31fc691c65e482b768c2cfa4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/branch_thin.svg"
-dest_files=["res://.godot/imported/branch_thin.svg-220b4928c506a0ebf9312e84b059fa82.ctex"]
+source_file="res://art/branch_leaves.svg"
+dest_files=["res://.godot/imported/branch_leaves.svg-e436c96b31fc691c65e482b768c2cfa4.ctex"]
 
 [params]
 

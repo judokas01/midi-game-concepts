@@ -17,11 +17,12 @@ enum State { WAIT, HANG, AIR, REST, FALL, BOUNCE, OVER, WON }
 
 const S := Staff.STEP
 const START_BANANAS := 3
-const TOL := 0.35          # timing window either side of the ideal moment, in beats
+const TOL := 0.35          # timing window either side of the ideal moment, in beats (see tol_ms)
 const GRACE := 25.0        # ms: an event that arrives just in time beats the frame-loop timeout
 const SWING := 0.85        # pendulum half-angle, radians
 const RP := 1.5            # shoulders hang this many staff steps below the grip
-const LIANA_DIP := 0.95    # liana midpoint below LIANA_Y when the gorilla lands, in steps
+const LIANA_DIP := 0.95    # liana below LIANA_Y where the gorilla lands, in steps
+const HOP := 1.5           # height of a bounce along the liana during a long rest, in steps
 
 # settings, set from the HUD
 var bpm := 60.0
@@ -29,7 +30,6 @@ var labels := true
 var tick_on := true
 
 var notes: Array[Song.Note] = []
-var bars: Array[float] = []
 var bananas := 0
 var falls := 0
 var done_up_to := 0
@@ -44,7 +44,7 @@ var rel_t := 0.0
 var rel_pose: Pose
 var perch_stump := true
 var creaked := false
-var boinged := false
+var bounced := 0           # landings in the liana so far this rest
 var fall_pos := Vector2.ZERO
 var fall_vel := Vector2.ZERO
 var fall_rot := 0.0
@@ -119,11 +119,7 @@ func start() -> void:
 
 func restart() -> void:
 	notes = Song.parse()
-	bars.clear()
-	for n in notes:
-		if n.beat > 0 and n.beat % 4 == 0:
-			bars.append(n.xu - 0.45)
-	world.build(notes, bars)
+	world.build(notes)
 	_refresh_labels()
 	hud.clear_messages()
 	bananas = START_BANANAS
@@ -147,21 +143,41 @@ func beat_ms() -> float:
 	return 60000.0 / bpm
 
 
-func tol_ms() -> float:
-	return TOL * beat_ms()
+## The timing window either side of branch `i`'s let-go and of the next grab, in ms. A note or
+## rest shorter than a beat narrows it, so an eighth can't be held like a quarter.
+func tol_ms(i: int) -> float:
+	var shortest := minf(1.0, notes[i].beats)
+	if notes[i].rest_after > 0.0:
+		shortest = minf(shortest, notes[i].rest_after)
+	return TOL * shortest * beat_ms()
 
 
 func windows(i: int, g: float) -> Dictionary:
 	var n := notes[i]
 	var end := g + n.beats * beat_ms()
 	var next := end + n.rest_after * beat_ms()
-	var tol := tol_ms()
-	return {end = end, rel_lo = end - tol, rel_hi = end + tol, next = next, next_lo = next - tol, next_hi = next + tol}
+	var tol := tol_ms(i)
+	return {end = end, tol = tol, rel_lo = end - tol, rel_hi = end + tol, next = next, next_lo = next - tol, next_hi = next + tol}
 
 
+## A rest is one bounce on the liana per beat of it, at least one. The gorilla lets go at `t0`,
+## each bounce takes `each` ms and lands 45% of the way in, and the last one throws it up to
+## the next branch, due at `t2`.
 func rest_times() -> Dictionary:
 	var t2: float = windows(cur, grab_t).next
-	return {t0 = rel_t, t1 = rel_t + (t2 - rel_t) * 0.45, t2 = t2}
+	var bounces := maxi(1, roundi(notes[cur].rest_after))
+	return {t0 = rel_t, t2 = t2, bounces = bounces, each = (t2 - rel_t) / bounces}
+
+
+func _landing_t(rt: Dictionary, b: int) -> float:
+	return rt.t0 + (b + 0.45) * rt.each
+
+
+## The landings are spread along the liana, one per beat of the rest.
+func _landing_pos(rt: Dictionary, b: int) -> Vector2:
+	var n := notes[cur]
+	var x := Staff.x_of(n.beat + n.beats + (b + 0.5) * n.rest_after / rt.bounces)
+	return Vector2(x, Staff.LIANA_Y + LIANA_DIP * S - 1.7 * S)
 
 
 ## Where the gorilla floats on its magic banana, waiting to retry branch `r`.
@@ -234,7 +250,7 @@ func note_off(m: int, ts: float) -> void:
 	state = State.REST if notes[i].rest_after > 0 else State.AIR
 	rel_t = ts
 	rel_pose = render
-	boinged = false
+	bounced = 0
 
 
 func _grab(j: int, ts: float, jump: bool) -> void:
@@ -244,7 +260,7 @@ func _grab(j: int, ts: float, jump: bool) -> void:
 	grab_t = ts
 	creaked = false
 	if tick_on:
-		synth.schedule_ticks(ts, beat_ms(), notes[j].beats + notes[j].rest_after)
+		synth.schedule_ticks(ts, beat_ms(), notes[j].beats, notes[j].rest_after)
 	else:
 		synth.cancel_ticks()
 	synth.sfx(&"grab")
@@ -299,15 +315,17 @@ func _update(dt: float) -> void:
 	match state:
 		State.HANG:
 			var w := windows(cur, grab_t)
-			if not creaked and now > w.end + tol_ms() * 0.3:
+			if not creaked and now > w.end + w.tol * 0.3:
 				creaked = true
 				synth.sfx(&"creak")
 			if now > w.rel_hi + GRACE:
 				_break_branch(cur)
 		State.AIR, State.REST:
-			if state == State.REST and not boinged and now > rest_times().t1:
-				boinged = true
-				synth.sfx(&"boing")
+			if state == State.REST:
+				var rt := rest_times()
+				if bounced < rt.bounces and now > _landing_t(rt, bounced):
+					bounced += 1
+					synth.sfx(&"boing")
 			if now > windows(cur, grab_t).next_hi + GRACE:
 				_fall("Too late. Missed the branch", cur + 1)
 		State.FALL:
@@ -391,12 +409,12 @@ func _show_strain() -> void:
 	_strained = hung
 	if hung < 0:
 		return
-	var end := grab_t + notes[hung].beats * beat_ms()
-	var crack := clampf((now - end) / tol_ms(), 0.0, 1.0) if now > end else 0.0
+	var w := windows(hung, grab_t)
+	var crack := clampf((now - w.end) / w.tol, 0.0, 1.0) if now > w.end else 0.0
 	world.branch(hung).set_strain((0.08 + crack * 0.35) * S, crack)
 
 
-## The liana under a rest dips as the gorilla drops into it, then springs back.
+## The liana under a rest dips where the gorilla lands in it, then springs back, once per bounce.
 func _show_liana() -> void:
 	var resting := cur if state == State.REST else -1
 	if _dipping != resting and _dipping >= 0:
@@ -405,10 +423,11 @@ func _show_liana() -> void:
 	if resting < 0:
 		return
 	var rt := rest_times()
-	var d: float = now - rt.t1
-	var span: float = rt.t2 - rt.t0
-	var k := clampf(1.0 + d / (0.06 * span), 0.0, 1.0) if d < 0.0 else clampf(1.0 - d / (0.3 * span), 0.0, 1.0)
-	world.liana(resting).set_sag(Liana.SLACK + (LIANA_DIP + 0.3 - 0.45) * S * k)
+	var b := clampi(roundi((now - rt.t0) / rt.each - 0.45), 0, rt.bounces - 1)   # the nearest landing
+	var d := now - _landing_t(rt, b)
+	var k: float = clampf(1.0 + d / (0.06 * rt.each), 0.0, 1.0) if d < 0.0 else clampf(1.0 - d / (0.3 * rt.each), 0.0, 1.0)
+	var liana := world.liana(resting)
+	liana.set_sag(Liana.SLACK + (LIANA_DIP + 0.3 - 0.45) * S * k, lerpf(0.5, liana.across(_landing_pos(rt, b).x), k))
 
 
 func _show_prompt() -> void:
@@ -452,17 +471,24 @@ func _pose() -> Pose:
 			hang.reach_k = smoothstep(0.0, 1.0, (p - 0.35) / 0.6)
 			return hang
 		State.REST:
-			var n := notes[cur]
+			# drop into the liana, bounce along it once per beat, then up to the next branch
 			var j := notes[cur + 1]
 			var rt := rest_times()
-			var l := Vector2((n.rx0u + n.rx1u) / 2.0 * Staff.BEAT_W, Staff.LIANA_Y + LIANA_DIP * S - 1.7 * S)
-			var e := Staff.note_pos(j) + Vector2(-sin(a), cos(a)) * RP * S
-			if now < rt.t1:
-				var drop := clampf((now - rt.t0) / (rt.t1 - rt.t0), 0.0, 1.0)
+			var b := clampi(floori((now - rt.t0) / rt.each - 0.45), -1, rt.bounces - 1)   # the last landing so far
+			if b < 0:
+				var l := _landing_pos(rt, 0)
+				var drop := clampf((now - rt.t0) / (_landing_t(rt, 0) - rt.t0), 0.0, 1.0)
 				var into := Vector2(lerpf(rel_pose.pos.x, l.x, drop), lerpf(rel_pose.pos.y, l.y, drop * drop))
 				return Pose.new(into, lerpf(rel_pose.rot, 0.0, drop), &"up")
-			var k := clampf((now - rt.t1) / (rt.t2 - rt.t1), 0.0, 1.0)
-			var rising := Pose.new(Vector2(lerpf(l.x, e.x, k), lerpf(l.y, e.y, 1.0 - (1.0 - k) * (1.0 - k))), 0.0,
+			var from := _landing_pos(rt, b)
+			var since := now - _landing_t(rt, b)
+			if b < rt.bounces - 1:
+				var v: float = since / rt.each
+				var to := _landing_pos(rt, b + 1)
+				return Pose.new(Vector2(lerpf(from.x, to.x, v), from.y - 4.0 * v * (1.0 - v) * HOP * S), 0.0, &"up")
+			var e := Staff.note_pos(j) + Vector2(-sin(a), cos(a)) * RP * S
+			var k := clampf(since / (rt.t2 - _landing_t(rt, b)), 0.0, 1.0)
+			var rising := Pose.new(Vector2(lerpf(from.x, e.x, k), lerpf(from.y, e.y, 1.0 - (1.0 - k) * (1.0 - k))), 0.0,
 				&"reach" if k > 0.4 else &"up")
 			rising.target = j
 			return rising

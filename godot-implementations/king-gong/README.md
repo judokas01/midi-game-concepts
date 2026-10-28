@@ -1,7 +1,7 @@
 # King Gong — Godot port
 
 A faithful port of the browser spike in [concepts/002-king-gong](../../concepts/002-king-gong/README.md):
-same song, rules, timing window, tuning, look and controls, running natively in Godot 4.7 so
+same song, rules, timing window, tuning and controls, running natively in Godot 4.7 so
 the two can be compared. The rules and the fun hypothesis live in the concept card; nothing
 here changes them.
 
@@ -29,6 +29,15 @@ Which input is live (MIDI or keyboard) is shown top-right, next to bananas, prog
 
 ## Differences from the spike
 
+- **Branch length is the note length.** The spike shows a 2-beat note as a thick branch.
+  Here every branch is equally thick and 2.2 staff steps long per beat, and the level is
+  laid out in time: each beat of a note or a rest takes 3 steps across. Durations in
+  `song.gd` are in beats and can be any length (`4` whole note, `0.5` eighth note).
+  For values the spike's song never uses:
+  - The timing window is ±0.35 of a beat, or of the note or its rest when that is shorter,
+    so an eighth can't be held like a quarter.
+  - A rest is one bounce along the liana per beat, so a long rest can be counted.
+  - The beat tick also marks a let-go into a rest that doesn't fall on a whole beat.
 - **Input timing.** Godot input events carry no timestamp, so a note is stamped when the
   event is dispatched, once per frame: about 16 ms of resolution at 60 fps against a
   ±350 ms window at 60 BPM. The spike uses Web MIDI's own timestamps.
@@ -52,7 +61,7 @@ them around:
 | Path | What |
 | --- | --- |
 | `main.tscn` | Sky, parallax layers (canopy, staff-line bushes, clef, floor), the world, camera, HUD |
-| `scenes/branch.tscn` | One note: the branch sprite split in two halves, cracks, banana, label |
+| `scenes/branch.tscn` | One note: two halves of bark (Line2Ds) meeting at the grip, end twig and leaves, cracks, banana, label |
 | `scenes/liana.tscn` | One rest: two posts, the vine (a Line2D) and its leaves |
 | `scenes/gorilla.tscn` | Body sprite, scared body, arms (Line2Ds), hands, banana balloon, prompt |
 | `scenes/glowing_banana.tscn` | The banana that pops out of the ground or flies to the counter |
