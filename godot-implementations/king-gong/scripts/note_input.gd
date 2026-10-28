@@ -11,18 +11,26 @@ signal source_changed(source: String)
 signal start_requested
 signal restart_requested
 
+const Song := preload("res://scripts/song.gd")
 const KEYS: Array[Key] = [KEY_A, KEY_S, KEY_D, KEY_F, KEY_G, KEY_H, KEY_J, KEY_K]
-const KEY_MIDI: Array[int] = [60, 62, 64, 65, 67, 69, 71, 72]
+const KEY_MIDI: Array[int] = [60, 62, 64, 65, 67, 69, 71, 72]   # C4 to C5, before octave_shift
 const KEY_LABELS := "ASDFGHJK"
 const RESCAN_S := 2.0
 
 var source := "keyboard"
+var octave_shift := 0      # octaves the keys are moved by: -1 in the bass clef
 var _rescan := RESCAN_S
 
 
-static func key_for(midi: int) -> String:
-	var i := KEY_MIDI.find(midi)
-	return KEY_LABELS[i] if i >= 0 else ""
+## The computer key that plays `midi`, while the keyboard is the live input.
+func key_for(midi: int) -> String:
+	var i := KEY_MIDI.find(midi - 12 * octave_shift)
+	return KEY_LABELS[i] if i >= 0 and source == "keyboard" else ""
+
+
+## What the keys play, "C4 D4 E4 F4 G4 A4 B4 C5".
+func key_notes() -> String:
+	return " ".join(KEY_MIDI.map(func(m: int) -> String: return Song.note_name(m + 12 * octave_shift)))
 
 
 func _ready() -> void:
@@ -62,7 +70,7 @@ func _input(event: InputEvent) -> void:
 	var idx := KEYS.find(key.keycode)
 	if not key.pressed:
 		if idx >= 0:
-			note_off.emit(KEY_MIDI[idx], t)
+			note_off.emit(KEY_MIDI[idx] + 12 * octave_shift, t)
 		return
 	if key.echo or key.ctrl_pressed or key.meta_pressed or key.alt_pressed:
 		return
@@ -72,7 +80,7 @@ func _input(event: InputEvent) -> void:
 		restart_requested.emit()
 	elif idx >= 0:
 		_set_source("keyboard")
-		note_on.emit(KEY_MIDI[idx], t)
+		note_on.emit(KEY_MIDI[idx] + 12 * octave_shift, t)
 	else:
 		return
 	get_viewport().set_input_as_handled()

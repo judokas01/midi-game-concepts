@@ -18,8 +18,9 @@ launching if you can; if none is found at start-up the game looks again every 2 
 
 | Input | Does what |
 | --- | --- |
-| MIDI notes (C4–A4 used) | Grab the branch on that note; hold for its length; release to let go |
-| Keyboard `A S D F G H J K` | C4 D4 E4 F4 G4 A4 B4 C5, fallback when no MIDI device is connected |
+| MIDI notes (C4–A4 used, C3–A3 in the bass clef) | Grab the branch on that note; hold for its length; release to let go |
+| Keyboard `A S D F G H J K` | C4 D4 E4 F4 G4 A4 B4 C5 (an octave lower in the bass clef), fallback when no MIDI device is connected |
+| Treble clef / Bass clef | On the start screen: which clef to read the song in |
 | `Space` / click | Start |
 | `Enter` / Restart button | Restart the song |
 | Tempo slider | 40–120 BPM (default 60) |
@@ -38,6 +39,10 @@ Which input is live (MIDI or keyboard) is shown top-right, next to bananas, prog
     so an eighth can't be held like a quarter.
   - A rest is one bounce along the liana per beat, so a long rest can be counted.
   - The beat tick also marks a let-go into a rest that doesn't fall on a whole beat.
+- **Bass clef.** The spike is treble only. Here the start screen also offers the bass
+  clef, which plays the song an octave down (C3–A3) so it sits inside the bass staff.
+  The level behind the start screen redraws as you choose; the choice holds until you
+  quit.
 - **Input timing.** Godot input events carry no timestamp, so a note is stamped when the
   event is dispatched, once per frame: about 16 ms of resolution at 60 fps against a
   ±350 ms window at 60 BPM. The spike uses Web MIDI's own timestamps.
@@ -73,7 +78,7 @@ them around:
 | `scripts/level.gd` | Builds the level from the song: places branches, lianas, trees |
 | `scripts/staff.gd` | Where things sit: staff step, line heights, floor |
 | `scripts/branch.gd`, `liana.gd`, `gorilla.gd` | What each of those scenes can do |
-| `scripts/song.gd` | The tune and its parsing into branches |
+| `scripts/song.gd` | The tune, its parsing into branches, and the two clefs |
 | `scripts/metronome.gd` | The beat tick |
 | `scripts/note_input.gd` | MIDI and keyboard input |
 | `scripts/hud.gd` | Top bar, overlay, messages |

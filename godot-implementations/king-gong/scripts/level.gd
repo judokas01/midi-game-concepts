@@ -1,6 +1,6 @@
 extends Node2D
 ## Lays the song out as a level: a branch per note, a liana per rest, the start stump and the
-## nest; plus, in the layers behind, the C4 ledger bushes and the bar-line trunks.
+## nest; plus, in the layers behind, the ledger bushes below the staff and the bar-line trunks.
 
 const Song := preload("res://scripts/song.gd")
 const Staff := preload("res://scripts/staff.gd")
@@ -68,9 +68,9 @@ func liana(i: int) -> Liana:
 
 
 ## Note names on the branches, with the computer key when playing on the keyboard.
-func show_labels(notes: Array[Song.Note], on: bool, keyboard: bool) -> void:
+func show_labels(notes: Array[Song.Note], on: bool, keys: NoteInput) -> void:
 	for i in notes.size():
-		var key := NoteInput.key_for(notes[i].midi) if keyboard else ""
+		var key := keys.key_for(notes[i].midi)
 		var text := notes[i].name + (" · " + key if key != "" else "")
 		branch(i).set_label(text if on else "")
 

@@ -7,9 +7,9 @@ const STEP := 36.0                     # half a staff line spacing
 const BEAT_W := 3.0 * STEP             # horizontal pixels per beat
 const BRANCH_PER_BEAT := 2.2 * STEP    # a branch is this long per beat of its note; the rest is gap
 const SKY_TOP := 44.0
-const C4_Y := SKY_TOP + 11.6 * STEP    # the C4 ledger line
-const LIANA_Y := C4_Y + 4.1 * STEP
-const FLOOR_Y := C4_Y + 5.7 * STEP
+const LEDGER_Y := SKY_TOP + 11.6 * STEP   # the ledger line below the staff: C4 in the treble clef, E2 in the bass
+const LIANA_Y := LEDGER_Y + 4.1 * STEP
+const FLOOR_Y := LEDGER_Y + 5.7 * STEP
 
 
 static func x_of(beat: float) -> float:
@@ -17,7 +17,7 @@ static func x_of(beat: float) -> float:
 
 
 static func y_of(step: float) -> float:
-	return C4_Y - step * STEP
+	return LEDGER_Y - step * STEP
 
 
 ## The middle of a note's branch, where the gorilla grips it.

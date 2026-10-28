@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/level.gd" id="2_level"]
@@ -32,6 +32,11 @@ font = SubResource("SystemFont_clef")
 font_size = 468
 font_color = Color(0.14902, 0.305882, 0.172549, 0.7)
 
+[sub_resource type="LabelSettings" id="LabelSettings_bass_clef"]
+font = SubResource("SystemFont_clef")
+font_size = 330
+font_color = Color(0.14902, 0.305882, 0.172549, 0.7)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar"]
 content_margin_left = 10.0
 content_margin_top = 6.0
@@ -62,6 +67,8 @@ bg_color = Color(0.0627451, 0.0862745, 0.0627451, 0.88)
 [sub_resource type="SystemFont" id="SystemFont_bold"]
 font_names = PackedStringArray("Segoe UI", "Arial", "sans-serif")
 font_weight = 700
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_clef"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_game")
@@ -103,7 +110,7 @@ centered = false
 [node name="Clef" type="Parallax2D" parent="."]
 scroll_scale = Vector2(0, 0)
 
-[node name="Glyph" type="Label" parent="Clef"]
+[node name="Treble" type="Label" parent="Clef"]
 offset_left = 7.2
 offset_top = -71.4
 offset_right = 268.2
@@ -111,6 +118,16 @@ offset_bottom = 552.6
 mouse_filter = 2
 text = "𝄞"
 label_settings = SubResource("LabelSettings_clef")
+
+[node name="Bass" type="Label" parent="Clef"]
+visible = false
+offset_left = 13.3
+offset_top = -36.7
+offset_right = 197.3
+offset_bottom = 403.3
+mouse_filter = 2
+text = "𝄢"
+label_settings = SubResource("LabelSettings_bass_clef")
 
 [node name="World" type="Node2D" parent="." node_paths=PackedStringArray("ledger", "trunks")]
 script = ExtResource("2_level")
@@ -392,10 +409,52 @@ text = "[center]Swing the gorilla through the treetops. The five long bushes are
 
 A wrong note is a fall too. Magic bananas bounce you back up. You start with 3, and more hang from some branches.
 
-There is no backing track: the song starts when you grab the first branch and every grab restarts the beat.
+There is no backing track: the song starts when you grab the first branch and every grab restarts the beat.[/center]"
+fit_content = true
+scroll_active = false
 
-No MIDI? Keys [b]A S D F G H J K[/b] = C4 D4 E4 F4 G4 A4 B4 C5.
+[node name="Clef" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
 
-[b]Click or press Space to start[/b][/center]"
+[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Clef"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
+text = "Clef"
+
+[node name="Treble" type="Button" parent="Hud/Overlay/Center/Box/Clef"]
+custom_minimum_size = Vector2(110, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_clef")
+text = "Treble clef"
+
+[node name="Bass" type="Button" parent="Hud/Overlay/Center/Box/Clef"]
+custom_minimum_size = Vector2(110, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_group = SubResource("ButtonGroup_clef")
+text = "Bass clef"
+
+[node name="Keys" type="RichTextLabel" parent="Hud/Overlay/Center/Box"]
+layout_mode = 2
+mouse_filter = 2
+bbcode_enabled = true
+text = "[center]No MIDI? Keys [b]A S D F G H J K[/b] = C4 D4 E4 F4 G4 A4 B4 C5.[/center]"
+fit_content = true
+scroll_active = false
+
+[node name="Start" type="RichTextLabel" parent="Hud/Overlay/Center/Box"]
+layout_mode = 2
+mouse_filter = 2
+bbcode_enabled = true
+text = "[center][b]Click or press Space to start[/b][/center]"
 fit_content = true
 scroll_active = false

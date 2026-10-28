@@ -7,7 +7,9 @@ signal restart_pressed
 signal tempo_changed(bpm: float)
 signal labels_toggled(on: bool)
 signal tick_toggled(on: bool)
+signal clef_chosen(clef: Song.Clef)
 
+const Song := preload("res://scripts/song.gd")
 const Staff := preload("res://scripts/staff.gd")
 const GlowingBanana := preload("res://scenes/glowing_banana.tscn")
 const SOURCE_COLOURS := {"keyboard": Color("3a3f49"), "MIDI": Color("2e8b57")}
@@ -23,6 +25,7 @@ var _banner_fade: Tween
 @onready var _progress: Label = $Bar/Row/Progress
 @onready var _falls: Label = $Bar/Row/Falls
 @onready var _overlay: Control = $Overlay
+@onready var _overlay_keys: RichTextLabel = $Overlay/Center/Box/Keys
 @onready var _banner: Label = $Banner
 @onready var _legend: Label = $Legend
 @onready var _keys: Label = $Keys
@@ -35,6 +38,8 @@ func _ready() -> void:
 	_toggle($Bar/Row/Labels/Toggle, labels_toggled)
 	_toggle($Bar/Row/Tick/Toggle, tick_toggled)
 	$Bar/Row/Restart.pressed.connect(func() -> void: restart_pressed.emit())
+	$Overlay/Center/Box/Clef/Treble.pressed.connect(func() -> void: clef_chosen.emit(Song.Clef.TREBLE))
+	$Overlay/Center/Box/Clef/Bass.pressed.connect(func() -> void: clef_chosen.emit(Song.Clef.BASS))
 	_overlay.gui_input.connect(_on_overlay_input)
 	# own copy, so recolouring it does not touch the scene's shared style
 	_source.add_theme_stylebox_override("normal", _source.get_theme_stylebox("normal").duplicate())
@@ -50,6 +55,12 @@ func show_source(source: String) -> void:
 	_source.text = source
 	(_source.get_theme_stylebox("normal") as StyleBoxFlat).bg_color = SOURCE_COLOURS[source]
 	_keys.visible = source == "keyboard"
+
+
+## What the computer keys play, on the start screen and under the floor.
+func show_key_notes(names: String) -> void:
+	_keys.text = "keys  A S D F G H J K  =  " + names
+	_overlay_keys.text = "[center]No MIDI? Keys [b]A S D F G H J K[/b] = %s.[/center]" % names
 
 
 func show_tempo(bpm: float) -> void:

@@ -28,6 +28,7 @@ const HOP := 1.5           # height of a bounce along the liana during a long re
 var bpm := 60.0
 var labels := true
 var tick_on := true
+var clef := Song.Clef.TREBLE   # chosen on the start screen
 
 var notes: Array[Song.Note] = []
 var bananas := 0
@@ -85,11 +86,12 @@ func _ready() -> void:
 	hud.tempo_changed.connect(func(v: float) -> void: bpm = v)
 	hud.labels_toggled.connect(_on_labels_toggled)
 	hud.tick_toggled.connect(_on_tick_toggled)
+	hud.clef_chosen.connect(set_clef)
 	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in ["--autoplay", "--perf"] or a.begins_with("--shots=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
 	now = now_ms()
 	_last = now
-	restart()
+	set_clef(clef)
 
 
 func _process(_delta: float) -> void:
@@ -115,7 +117,7 @@ func start() -> void:
 
 
 func restart() -> void:
-	notes = Song.parse()
+	notes = Song.parse(clef)
 	world.build(notes)
 	_refresh_labels()
 	hud.clear_messages()
@@ -133,6 +135,17 @@ func restart() -> void:
 	camera.position.x = _camera_x()
 	camera.reset_smoothing()
 	_update_hud()
+
+
+## The bass clef plays the song an octave down, the keyboard fallback too. The level is laid
+## out again behind the start screen.
+func set_clef(c: Song.Clef) -> void:
+	clef = c
+	note_input.octave_shift = Song.OCTAVE_SHIFT[c]
+	hud.show_key_notes(note_input.key_notes())
+	$Clef/Treble.visible = c == Song.Clef.TREBLE
+	$Clef/Bass.visible = c == Song.Clef.BASS
+	restart()
 
 
 func beat_ms() -> float:
@@ -355,7 +368,7 @@ func _on_source_changed(source: String) -> void:
 
 
 func _refresh_labels() -> void:
-	world.show_labels(notes, labels, note_input.source == "keyboard")
+	world.show_labels(notes, labels, note_input)
 
 
 func _on_tick_toggled(on: bool) -> void:
@@ -405,7 +418,7 @@ func _show_prompt() -> void:
 		gorilla.show_prompt("", 0.0)
 		return
 	var n := notes[cur]
-	var key := NoteInput.key_for(n.midi) if note_input.source == "keyboard" else ""
+	var key := note_input.key_for(n.midi)
 	var text := "Play the next branch to grab it"
 	if labels:
 		text = "Play %s%s to grab" % [n.name, " (key %s)" % key if key != "" else ""]
