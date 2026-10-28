@@ -24,7 +24,7 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | Keyboard `Z X C V B N M` | Treble + chords only: one key per chord, by its root (C D E F G A B). This song uses `Z` = C, `V` = F, `B` = G |
 | Treble clef / Bass clef / Treble + chords | On the start screen: how to play the song |
 | Chord hint | On the start screen, with chords: the sign on each log shows the chord's name, or its notes in the bass clef |
-| `Space` / click | Start |
+| `Space` / click / any MIDI note | Start, on the start screen. The note only starts the game; it grabs nothing |
 | `Enter` / Restart button | Restart the song |
 | Tempo slider | 40–120 BPM (default 60) |
 | Labels / Beat tick | Same toggles as the spike |

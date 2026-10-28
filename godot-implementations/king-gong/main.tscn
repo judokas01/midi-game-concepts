@@ -508,6 +508,6 @@ scroll_active = false
 layout_mode = 2
 mouse_filter = 2
 bbcode_enabled = true
-text = "[center][b]Click or press Space to start[/b][/center]"
+text = "[center][b]Play any note on your MIDI keyboard, click or press Space to start[/b][/center]"
 fit_content = true
 scroll_active = false

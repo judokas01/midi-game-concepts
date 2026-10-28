@@ -90,6 +90,7 @@ func _input(event: InputEvent) -> void:
 		if midi.message == MIDI_MESSAGE_NOTE_ON and midi.velocity > 0:
 			_set_source("MIDI")
 			note_on.emit(midi.pitch, t)
+			start_requested.emit()   # any note starts the game; after note_on, so that note grabs nothing
 		elif midi.message == MIDI_MESSAGE_NOTE_OFF or midi.message == MIDI_MESSAGE_NOTE_ON:
 			note_off.emit(midi.pitch, t)   # note-on with velocity 0 IS a note-off
 		return
