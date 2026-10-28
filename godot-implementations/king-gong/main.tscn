@@ -1,10 +1,36 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=26 format=3]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
-[ext_resource type="Script" path="res://scripts/view.gd" id="2_view"]
+[ext_resource type="Script" path="res://scripts/level.gd" id="2_level"]
 [ext_resource type="Script" path="res://scripts/synth.gd" id="3_synth"]
 [ext_resource type="Script" path="res://scripts/note_input.gd" id="4_input"]
 [ext_resource type="Script" path="res://scripts/hud.gd" id="5_hud"]
+[ext_resource type="PackedScene" path="res://scenes/gorilla.tscn" id="6_gorilla"]
+[ext_resource type="Texture2D" path="res://art/canopy.svg" id="7_canopy"]
+[ext_resource type="Texture2D" path="res://art/staff_lines.svg" id="8_bushes"]
+[ext_resource type="Texture2D" path="res://art/floor_mounds.svg" id="9_mounds"]
+[ext_resource type="Texture2D" path="res://art/stump.svg" id="10_stump"]
+[ext_resource type="Texture2D" path="res://art/nest_tree.svg" id="11_nest"]
+[ext_resource type="Texture2D" path="res://art/banana.svg" id="12_banana"]
+[ext_resource type="LabelSettings" path="res://ui/banner.tres" id="13_banner"]
+
+[sub_resource type="Gradient" id="Gradient_sky"]
+offsets = PackedFloat32Array(0.0611, 0.5804, 0.9267)
+colors = PackedColorArray(0.843137, 0.909804, 0.823529, 1, 0.72549, 0.839216, 0.705882, 1, 0.533333, 0.678431, 0.52549, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_sky"]
+gradient = SubResource("Gradient_sky")
+width = 4
+height = 256
+fill_to = Vector2(0, 1)
+
+[sub_resource type="SystemFont" id="SystemFont_clef"]
+font_names = PackedStringArray("Segoe UI Symbol", "Noto Music", "serif")
+
+[sub_resource type="LabelSettings" id="LabelSettings_clef"]
+font = SubResource("SystemFont_clef")
+font_size = 468
+font_color = Color(0.14902, 0.305882, 0.172549, 0.7)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar"]
 content_margin_left = 10.0
@@ -26,6 +52,13 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 16.0
+content_margin_top = 18.0
+content_margin_right = 16.0
+content_margin_bottom = 18.0
+bg_color = Color(0.0627451, 0.0862745, 0.0627451, 0.88)
+
 [sub_resource type="SystemFont" id="SystemFont_bold"]
 font_names = PackedStringArray("Segoe UI", "Arial", "sans-serif")
 font_weight = 700
@@ -33,8 +66,94 @@ font_weight = 700
 [node name="Game" type="Node2D"]
 script = ExtResource("1_game")
 
-[node name="View" type="Node2D" parent="."]
-script = ExtResource("2_view")
+[node name="Sky" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="Gradient" type="TextureRect" parent="Sky"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_sky")
+expand_mode = 1
+
+[node name="Canopy" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.35, 1)
+repeat_size = Vector2(2048, 0)
+
+[node name="Fringe" type="Sprite2D" parent="Canopy"]
+texture = ExtResource("7_canopy")
+centered = false
+
+[node name="Trunks" type="Node2D" parent="."]
+
+[node name="StaffLines" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.55, 1)
+repeat_size = Vector2(2048, 0)
+
+[node name="Bushes" type="Sprite2D" parent="StaffLines"]
+position = Vector2(0, 85.6)
+texture = ExtResource("8_bushes")
+centered = false
+
+[node name="Ledger" type="Node2D" parent="."]
+
+[node name="Clef" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0, 0)
+
+[node name="Glyph" type="Label" parent="Clef"]
+offset_left = 7.2
+offset_top = -71.4
+offset_right = 268.2
+offset_bottom = 552.6
+mouse_filter = 2
+text = "𝄞"
+label_settings = SubResource("LabelSettings_clef")
+
+[node name="World" type="Node2D" parent="." node_paths=PackedStringArray("ledger", "trunks")]
+script = ExtResource("2_level")
+ledger = NodePath("../Ledger")
+trunks = NodePath("../Trunks")
+
+[node name="Stump" type="Sprite2D" parent="World"]
+texture = ExtResource("10_stump")
+centered = false
+offset = Vector2(-28, -10)
+
+[node name="Nest" type="Sprite2D" parent="World"]
+texture = ExtResource("11_nest")
+centered = false
+offset = Vector2(-60, -10)
+
+[node name="Lianas" type="Node2D" parent="World"]
+
+[node name="Branches" type="Node2D" parent="World"]
+
+[node name="Pops" type="Node2D" parent="World"]
+
+[node name="Gorilla" parent="World" instance=ExtResource("6_gorilla")]
+
+[node name="Floor" type="Parallax2D" parent="."]
+repeat_size = Vector2(2048, 0)
+
+[node name="Dirt" type="ColorRect" parent="Floor"]
+offset_top = 667.2
+offset_right = 2048.0
+offset_bottom = 1267.2
+mouse_filter = 2
+color = Color(0.172549, 0.164706, 0.109804, 1)
+
+[node name="Mounds" type="Sprite2D" parent="Floor"]
+position = Vector2(0, 647.2)
+texture = ExtResource("9_mounds")
+centered = false
+
+[node name="Camera" type="Camera2D" parent="."]
+anchor_mode = 0
+position_smoothing_enabled = true
+position_smoothing_speed = 3.5
 
 [node name="Synth" type="Node" parent="."]
 script = ExtResource("3_synth")
@@ -45,8 +164,78 @@ script = ExtResource("4_input")
 [node name="Hud" type="CanvasLayer" parent="."]
 script = ExtResource("5_hud")
 
+[node name="Flyers" type="Node2D" parent="Hud"]
+
+[node name="Banner" type="Label" parent="Hud"]
+visible = false
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 122.6
+offset_bottom = 152.6
+grow_horizontal = 2
+mouse_filter = 2
+label_settings = ExtResource("13_banner")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Legend" type="Label" parent="Hud"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 676.0
+offset_bottom = 696.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.721569, 0.768627, 0.678431, 1)
+theme_override_font_sizes/font_size = 15
+text = "thin branch = 1 beat · thick branch = 2 beats · liana below = rest, let go and bounce · 60 BPM, the beat restarts at every grab"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Keys" type="Label" parent="Hud"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 696.0
+offset_bottom = 716.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.560784, 0.611765, 0.52549, 1)
+theme_override_font_sizes/font_size = 15
+text = "keys  A S D F G H J K  =  C4 D4 E4 F4 G4 A4 B4 C5"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EndPanel" type="PanelContainer" parent="Hud"]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -280.0
+offset_top = 115.6
+offset_right = 280.0
+offset_bottom = 231.6
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Lines" type="VBoxContainer" parent="Hud/EndPanel"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Hud/EndPanel/Lines"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = SubResource("SystemFont_bold")
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+
+[node name="Line" type="Label" parent="Hud/EndPanel/Lines"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.811765, 0.847059, 0.8, 1)
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+
 [node name="Bar" type="PanelContainer" parent="Hud"]
-layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
 grow_horizontal = 2
@@ -160,11 +349,14 @@ text = "keyboard"
 layout_mode = 2
 theme_override_constants/separation = 3
 
-[node name="Icon" type="Control" parent="Hud/Bar/Row/Bananas"]
-custom_minimum_size = Vector2(18, 16)
+[node name="Icon" type="TextureRect" parent="Hud/Bar/Row/Bananas"]
+custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
+texture = ExtResource("12_banana")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Count" type="Label" parent="Hud/Bar/Row/Bananas"]
 layout_mode = 2
@@ -179,7 +371,6 @@ layout_mode = 2
 text = "falls 0"
 
 [node name="Overlay" type="ColorRect" parent="Hud"]
-layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

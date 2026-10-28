@@ -1,5 +1,6 @@
 extends CanvasLayer
-## The top bar (settings and score) and the start overlay.
+## Everything drawn over the game: the top bar (settings and score), the start overlay, why
+## you fell, the end panel, the legend, and bananas flying to the counter.
 
 signal start_pressed
 signal restart_pressed
@@ -8,19 +9,26 @@ signal labels_toggled(on: bool)
 signal tick_toggled(on: bool)
 signal synth_toggled(on: bool)
 
-const View := preload("res://scripts/view.gd")
+const Staff := preload("res://scripts/staff.gd")
+const GlowingBanana := preload("res://scenes/glowing_banana.tscn")
 const SOURCE_COLOURS := {"keyboard": Color("3a3f49"), "MIDI": Color("2e8b57")}
+
+var _banner_fade: Tween
 
 @onready var _bar: Control = $Bar
 @onready var _tempo: HSlider = $Bar/Row/Tempo/Slider
 @onready var _tempo_value: Label = $Bar/Row/Tempo/Value
 @onready var _source: Label = $Bar/Row/Source
 @onready var _bananas: Control = $Bar/Row/Bananas
-@onready var _banana_icon: Control = $Bar/Row/Bananas/Icon
 @onready var _banana_count: Label = $Bar/Row/Bananas/Count
 @onready var _progress: Label = $Bar/Row/Progress
 @onready var _falls: Label = $Bar/Row/Falls
 @onready var _overlay: Control = $Overlay
+@onready var _banner: Label = $Banner
+@onready var _legend: Label = $Legend
+@onready var _keys: Label = $Keys
+@onready var _end: Control = $EndPanel
+@onready var _flyers: Node2D = $Flyers
 
 
 func _ready() -> void:
@@ -30,17 +38,8 @@ func _ready() -> void:
 	_toggle($Bar/Row/Synth/Toggle, synth_toggled)
 	$Bar/Row/Restart.pressed.connect(func() -> void: restart_pressed.emit())
 	_overlay.gui_input.connect(_on_overlay_input)
-	_banana_icon.draw.connect(_draw_banana_icon)
 	# own copy, so recolouring it does not touch the scene's shared style
 	_source.add_theme_stylebox_override("normal", _source.get_theme_stylebox("normal").duplicate())
-
-
-func bar_height() -> float:
-	return _bar.size.y
-
-
-func banana_anchor() -> Vector2:
-	return _bananas.get_global_rect().get_center()
 
 
 func show_stats(bananas: int, done: int, total: int, falls: int) -> void:
@@ -52,10 +51,56 @@ func show_stats(bananas: int, done: int, total: int, falls: int) -> void:
 func show_source(source: String) -> void:
 	_source.text = source
 	(_source.get_theme_stylebox("normal") as StyleBoxFlat).bg_color = SOURCE_COLOURS[source]
+	_keys.visible = source == "keyboard"
+
+
+func show_tempo(bpm: float) -> void:
+	_legend.text = "thin branch = 1 beat · thick branch = 2 beats · liana below = rest, let go and bounce · %d BPM, the beat restarts at every grab" % roundi(bpm)
 
 
 func hide_overlay() -> void:
 	_overlay.hide()
+
+
+## Why you fell: shown for 2.8 s, fading over the last fifth.
+func show_banner(text: String) -> void:
+	if _banner_fade:
+		_banner_fade.kill()
+	_banner.text = text
+	_banner.modulate.a = 1.0
+	_banner.show()
+	_banner_fade = create_tween()
+	_banner_fade.tween_interval(2.24)
+	_banner_fade.tween_property(_banner, "modulate:a", 0.0, 0.56)
+	_banner_fade.tween_callback(_banner.hide)
+
+
+func show_end(title: String, line: String) -> void:
+	$EndPanel/Lines/Title.text = title
+	$EndPanel/Lines/Line.text = line
+	_end.show()
+
+
+func clear_messages() -> void:
+	if _banner_fade:
+		_banner_fade.kill()
+	_banner.hide()
+	_end.hide()
+
+
+## A collected banana arcs from `from` (screen position) to the counter.
+func fly_banana(from: Vector2) -> void:
+	var fruit: Node2D = GlowingBanana.instantiate()
+	fruit.position = from
+	fruit.rotation = -0.5
+	fruit.scale = Vector2.ONE * 0.6
+	_flyers.add_child(fruit)
+	var to := Vector2(_bananas.get_global_rect().get_center().x, _bar.size.y + 0.4 * Staff.STEP)
+	var flight := fruit.create_tween()
+	flight.tween_method(func(k: float) -> void:
+		fruit.position = from.lerp(to, smoothstep(0.0, 1.0, k)) - Vector2(0.0, sin(PI * k) * 2.0 * Staff.STEP),
+		0.0, 1.0, 0.7)
+	flight.tween_callback(fruit.queue_free)
 
 
 func _toggle(button: Button, changed: Signal) -> void:
@@ -66,6 +111,7 @@ func _toggle(button: Button, changed: Signal) -> void:
 
 func _on_tempo(value: float) -> void:
 	_tempo_value.text = "%d BPM" % value
+	show_tempo(value)
 	tempo_changed.emit(value)
 
 
@@ -73,10 +119,3 @@ func _on_overlay_input(event: InputEvent) -> void:
 	var click := event as InputEventMouseButton
 	if click and click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
 		start_pressed.emit()
-
-
-func _draw_banana_icon() -> void:
-	var pts := View.banana_polygon(_banana_icon.size / 2.0 + Vector2(0.0, -2.0), 7.0, 0.0)
-	_banana_icon.draw_colored_polygon(pts, View.BANANA)
-	pts.append(pts[0])
-	_banana_icon.draw_polyline(pts, View.BANANA, 1.0, true)

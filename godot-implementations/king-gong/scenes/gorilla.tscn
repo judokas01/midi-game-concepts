@@ -1,0 +1,85 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/gorilla.gd" id="1_gorilla"]
+[ext_resource type="Texture2D" path="res://art/hand.svg" id="2_hand"]
+[ext_resource type="Texture2D" path="res://art/gorilla.svg" id="3_body"]
+[ext_resource type="Texture2D" path="res://art/gorilla_scared.svg" id="4_scared"]
+[ext_resource type="Texture2D" path="res://art/glow.svg" id="5_glow"]
+[ext_resource type="Texture2D" path="res://art/banana.svg" id="6_banana"]
+[ext_resource type="Texture2D" path="res://art/sparkle.svg" id="7_sparkle"]
+[ext_resource type="LabelSettings" path="res://ui/callout.tres" id="8_callout"]
+
+[sub_resource type="Gradient" id="Gradient_twinkle"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[node name="Gorilla" type="Node2D"]
+script = ExtResource("1_gorilla")
+
+[node name="ArmLeft" type="Line2D" parent="."]
+points = PackedVector2Array(-16.2, 1.8, -25.2, 34.2)
+width = 11.52
+default_color = Color(0.164706, 0.160784, 0.180392, 1)
+begin_cap_mode = 2
+end_cap_mode = 2
+antialiased = true
+
+[node name="HandLeft" type="Sprite2D" parent="."]
+position = Vector2(-25.2, 34.2)
+texture = ExtResource("2_hand")
+
+[node name="ArmRight" type="Line2D" parent="."]
+points = PackedVector2Array(16.2, 1.8, 25.2, 34.2)
+width = 11.52
+default_color = Color(0.164706, 0.160784, 0.180392, 1)
+begin_cap_mode = 2
+end_cap_mode = 2
+antialiased = true
+
+[node name="HandRight" type="Sprite2D" parent="."]
+position = Vector2(25.2, 34.2)
+texture = ExtResource("2_hand")
+
+[node name="Body" type="Sprite2D" parent="."]
+texture = ExtResource("3_body")
+
+[node name="Scared" type="Sprite2D" parent="."]
+visible = false
+texture = ExtResource("4_scared")
+
+[node name="Balloon" type="Node2D" parent="."]
+visible = false
+position = Vector2(0, -72)
+
+[node name="Glow" type="Sprite2D" parent="Balloon"]
+scale = Vector2(1.2, 1.2)
+texture = ExtResource("5_glow")
+
+[node name="Banana" type="Sprite2D" parent="Balloon"]
+scale = Vector2(1.2, 1.2)
+texture = ExtResource("6_banana")
+
+[node name="Sparkles" type="CPUParticles2D" parent="Balloon"]
+scale = Vector2(1, 0.6)
+amount = 6
+texture = ExtResource("7_sparkle")
+lifetime = 1.2
+preprocess = 1.2
+emission_shape = 6
+emission_ring_inner_radius = 24.0
+emission_ring_radius = 30.0
+gravity = Vector2(0, 0)
+orbit_velocity_min = 0.25
+orbit_velocity_max = 0.3
+color_ramp = SubResource("Gradient_twinkle")
+
+[node name="Prompt" type="Label" parent="."]
+visible = false
+offset_left = -200.0
+offset_top = -65.0
+offset_right = 200.0
+offset_bottom = -35.0
+mouse_filter = 2
+label_settings = ExtResource("8_callout")
+horizontal_alignment = 1
+vertical_alignment = 1

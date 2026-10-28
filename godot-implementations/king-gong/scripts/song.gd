@@ -28,7 +28,6 @@ class Note:
 	var rx1u := 0.0
 	var banana := false
 	var taken := false
-	var broken_t := 0.0
 
 
 static func note_name(midi: int) -> String:

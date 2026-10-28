@@ -34,36 +34,54 @@ Which input is live (MIDI or keyboard) is shown top-right, next to bananas, prog
   ±350 ms window at 60 BPM. The spike uses Web MIDI's own timestamps.
 - **Sound** is synthesised in code, like the spike's Web Audio: notes and effects are
   rendered into samples at start-up, and the beat tick is scheduled on exact sample frames.
-- **Drawing.** The spike redraws every shape each frame. Here the scenery that only scrolls
-  and the branches at rest are built once into meshes, and moving shapes are batched, so a
-  frame is a few dozen draw calls. It looks the same.
+- **Fixed layout.** The spike sizes everything from the window height. Here a staff step is
+  a fixed 36 px on a 1280×720 canvas and the window scales the whole picture.
+- **Small visual liberties.** The floor is drawn in front of the world, so tree trunks and
+  liana posts sink into it. A strained branch bends as two halves meeting at the grip,
+  not along a curve. The legend fits on the floor strip.
 - **Hot-plugging.** A MIDI device plugged in after a device was already found is not
   picked up until restart.
+- **No GPU.** If Windows falls back to its software renderer (no working graphics driver),
+  vsync stutters at about 40 fps, so the game turns vsync off and caps itself at 60 fps.
 
-## Files
+## How it is put together
+
+The art is SVG files in `art/`, the pieces are scenes in `scenes/`, and the code only moves
+them around:
 
 | Path | What |
 | --- | --- |
-| `main.tscn` | The scene: game root, view, synth, input, HUD and start overlay |
-| `scripts/game.gd` | Rules, layout and the gorilla's pose |
+| `main.tscn` | Sky, parallax layers (canopy, staff-line bushes, clef, floor), the world, camera, HUD |
+| `scenes/branch.tscn` | One note: the branch sprite split in two halves, cracks, banana, label |
+| `scenes/liana.tscn` | One rest: two posts, the vine (a Line2D) and its leaves |
+| `scenes/gorilla.tscn` | Body sprite, scared body, arms (Line2Ds), hands, banana balloon, prompt |
+| `scenes/glowing_banana.tscn` | The banana that pops out of the ground or flies to the counter |
+| `art/*.svg` | All the art; see `art/CREDITS.md` |
+| `ui/` | Theme for the bar and overlay, label styles |
+| `scripts/game.gd` | The rules and the gorilla's pose (the same rules as the spike) |
+| `scripts/level.gd` | Builds the level from the song: places branches, lianas, trees |
+| `scripts/staff.gd` | Where things sit: staff step, line heights, floor |
+| `scripts/branch.gd`, `liana.gd`, `gorilla.gd` | What each of those scenes can do |
 | `scripts/song.gd` | The tune and its parsing into branches |
-| `scripts/view.gd` | All drawing |
-| `scripts/shapes.gd`, `scripts/backdrop.gd` | Batched triangle lists and the baked scenery layers |
 | `scripts/synth.gd` | Note synth, effects, beat tick |
 | `scripts/note_input.gd` | MIDI and keyboard input |
-| `scripts/hud.gd`, `ui/theme.tres` | Top bar and overlay |
+| `scripts/hud.gd` | Top bar, overlay, messages |
 | `scripts/dev_autoplay.gd` | Dev check only, see below |
+
+Branches and lianas only appear when the game runs, because `level.gd` lays them out from
+the song. To change how they look, open `scenes/branch.tscn` or `scenes/liana.tscn`, or
+the SVGs.
 
 ## Dev check
 
-Arguments after `--` turn on a bot and diagnostics. The bot plays the song on its own and
-fumbles one branch on purpose, so a fall and a magic banana get used too. Without these
-arguments none of it loads.
+Arguments after `--` turn on a bot and diagnostics; without them none of it loads. The bot
+plays the song on its own. It plays one wrong note and hangs on to one branch until it
+breaks, on purpose, so falls, cracks and magic bananas get used too.
 
 ```powershell
 & "C:/game-dev/godot/Godot_v4.7.2-stable_win64.exe" --path godot-implementations/king-gong -- --autoplay --perf
 ```
 
-- `--autoplay` plays the song, prints the result and quits.
-- `--perf` prints fps and draw time once a second.
-- `--shots=<dir>` saves a screenshot every 2 s.
+- `--autoplay` plays the song, prints the result and quits. Expect `WON falls=2 bananas=5`.
+- `--perf` prints fps and draw calls once a second.
+- `--shots=<dir>` saves a screenshot every second.

@@ -1,0 +1,84 @@
+extends Node2D
+## Lays the song out as a level: a branch per note, a liana per rest, the start stump and the
+## nest; plus, in the layers behind, the C4 ledger bushes and the bar-line trunks.
+
+const Song := preload("res://scripts/song.gd")
+const Staff := preload("res://scripts/staff.gd")
+const NoteInput := preload("res://scripts/note_input.gd")
+const Branch := preload("res://scripts/branch.gd")
+const Liana := preload("res://scripts/liana.gd")
+const BranchScene := preload("res://scenes/branch.tscn")
+const LianaScene := preload("res://scenes/liana.tscn")
+const GlowingBanana := preload("res://scenes/glowing_banana.tscn")
+const LEDGER_BUSH := preload("res://art/ledger_bush.svg")
+const TRUNK_COLOUR := Color(0.376, 0.298, 0.204, 0.28)
+
+@export var ledger: Node2D   ## lives behind the clef, so outside this node
+@export var trunks: Node2D   ## bar lines: faint distant tree trunks
+
+var _lianas_by_note := {}    # note index -> liana
+
+@onready var _stump: Sprite2D = $Stump
+@onready var _nest: Sprite2D = $Nest
+@onready var _lianas: Node2D = $Lianas
+@onready var _branches: Node2D = $Branches
+@onready var _pops: Node2D = $Pops
+
+
+func build(notes: Array[Song.Note], bars: Array[float]) -> void:
+	for holder: Node in [_lianas, _branches, _pops, ledger, trunks]:
+		for child in holder.get_children():
+			holder.remove_child(child)
+			child.queue_free()
+	_lianas_by_note.clear()
+	_stump.position = Staff.stump_spot(notes[0]) + Vector2(0.0, 1.7 * Staff.STEP)
+	_nest.position = Staff.home_spot(notes[-1]) + Vector2(0.0, 1.7 * Staff.STEP)
+	for i in notes.size():
+		var note := notes[i]
+		var new_branch: Branch = BranchScene.instantiate()
+		_branches.add_child(new_branch)
+		new_branch.setup(note)
+		if note.rest_after > 0:
+			var new_liana: Liana = LianaScene.instantiate()
+			_lianas.add_child(new_liana)
+			new_liana.setup(note.rx0u * Staff.BEAT_W - 0.2 * Staff.STEP, note.rx1u * Staff.BEAT_W + 0.2 * Staff.STEP)
+			_lianas_by_note[i] = new_liana
+		if note.step == 0:
+			var bush := Sprite2D.new()
+			bush.texture = LEDGER_BUSH
+			bush.position = Staff.note_pos(note)
+			ledger.add_child(bush)
+	for bar in bars:
+		var trunk := ColorRect.new()
+		trunk.color = TRUNK_COLOUR
+		trunk.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		trunk.position = Vector2(bar * Staff.BEAT_W - 0.16 * Staff.STEP, Staff.SKY_TOP)
+		trunk.size = Vector2(0.32 * Staff.STEP, Staff.FLOOR_Y - Staff.SKY_TOP)
+		trunks.add_child(trunk)
+
+
+func branch(i: int) -> Branch:
+	return _branches.get_child(i)
+
+
+func liana(i: int) -> Liana:
+	return _lianas_by_note.get(i)
+
+
+## Note names on the branches, with the computer key when playing on the keyboard.
+func show_labels(notes: Array[Song.Note], on: bool, keyboard: bool) -> void:
+	for i in notes.size():
+		var key := NoteInput.key_for(notes[i].midi) if keyboard else ""
+		var text := notes[i].name + (" · " + key if key != "" else "")
+		branch(i).set_label(text if on else "")
+
+
+## The magic banana popping up under a fallen gorilla.
+func pop_banana(at: Vector2) -> void:
+	var pop: Node2D = GlowingBanana.instantiate()
+	pop.position = at
+	pop.scale = Vector2.ONE * 0.2
+	_pops.add_child(pop)
+	var grow := pop.create_tween()
+	grow.tween_property(pop, "scale", Vector2.ONE * 1.2, 0.33)
+	grow.tween_callback(pop.queue_free)

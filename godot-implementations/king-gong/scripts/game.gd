@@ -1,57 +1,32 @@
 extends Node2D
-## King Gong, ported from concepts/002-king-gong/spike: the rules, the layout and the
-## gorilla's pose. Drawing lives in view.gd, sound in synth.gd, input in note_input.gd.
+## King Gong, ported from concepts/002-king-gong/spike: the rules and the gorilla's pose.
+## The scene shows the result: World (level.gd) holds the branches and the gorilla, Hud the
+## bar and messages, Synth the sound, NoteInput the MIDI and keyboard.
 
 const Song := preload("res://scripts/song.gd")
+const Staff := preload("res://scripts/staff.gd")
+const Pose := preload("res://scripts/pose.gd")
+const Level := preload("res://scripts/level.gd")
+const Liana := preload("res://scripts/liana.gd")
+const Gorilla := preload("res://scripts/gorilla.gd")
+const Hud := preload("res://scripts/hud.gd")
 const Synth := preload("res://scripts/synth.gd")
 const NoteInput := preload("res://scripts/note_input.gd")
 
 enum State { WAIT, HANG, AIR, REST, FALL, BOUNCE, OVER, WON }
 
+const S := Staff.STEP
 const START_BANANAS := 3
 const TOL := 0.35          # timing window either side of the ideal moment, in beats
 const GRACE := 25.0        # ms: an event that arrives just in time beats the frame-loop timeout
 const SWING := 0.85        # pendulum half-angle, radians
 const RP := 1.5            # shoulders hang this many staff steps below the grip
-const LIANA_DIP := 0.95    # liana midpoint below liana_y when the gorilla lands, in steps
-
-
-## Where the gorilla is and what its arms are doing. Kinds: perch, balloon, hang, reach,
-## up, fall, sit.
-class Pose:
-	var pos: Vector2
-	var rot: float
-	var kind: StringName
-	var grip: Song.Note
-	var hand := 0
-	var target: Song.Note
-	var reach_k := 0.0
-
-	func _init(p: Vector2, r: float, k: StringName) -> void:
-		pos = p
-		rot = r
-		kind = k
-
-
-@onready var view: Node2D = $View
-@onready var synth: Synth = $Synth
-@onready var note_input: NoteInput = $NoteInput
-@onready var hud = $Hud
+const LIANA_DIP := 0.95    # liana midpoint below LIANA_Y when the gorilla lands, in steps
 
 # settings, set from the HUD
 var bpm := 60.0
 var labels := true
 var tick_on := true
-
-# layout, recomputed every frame like the spike does on resize
-var view_size := Vector2.ZERO
-var hud_h := 0.0
-var s := 0.0               # one staff step (half a line spacing), in pixels
-var sky_top := 0.0
-var c4_y := 0.0
-var liana_y := 0.0
-var floor_y := 0.0
-var ppb := 0.0             # pixels per beat unit
 
 var notes: Array[Song.Note] = []
 var bars: Array[float] = []
@@ -76,17 +51,20 @@ var fall_rot := 0.0
 var fall_spin := 0.0
 var land_t := 0.0
 var bounce_t0 := 0.0
-var bounce_from := Vector2.ZERO
 
 var now := 0.0             # ms, this frame
 var render: Pose
-var cam_x := 0.0
-var banner := ""
-var banner_t := 0.0
-var flyers: Array[Dictionary] = []   # collected bananas flying to the counter: {t0, pos}
 var _blend := {}           # eases into a new pose: {from, rot, t0, dur, hop}; empty when idle
-var _cam_set := false
+var _strained := -1        # branch shown bending, if any
+var _dipping := -1         # note whose liana is shown dipping, if any
 var _last := 0.0
+
+@onready var world: Level = $World
+@onready var gorilla: Gorilla = $World/Gorilla
+@onready var camera: Camera2D = $Camera
+@onready var hud: Hud = $Hud
+@onready var synth: Synth = $Synth
+@onready var note_input: NoteInput = $NoteInput
 
 
 static func now_ms() -> float:
@@ -94,22 +72,26 @@ static func now_ms() -> float:
 
 
 func _ready() -> void:
+	# Without a working GPU driver Windows renders in software, and vsync there stutters at
+	# ~40 fps. Capping at 60 without vsync is steady.
+	if RenderingServer.get_video_adapter_name().contains("Basic Render Driver"):
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+		Engine.max_fps = 60
 	note_input.note_on.connect(note_on)
 	note_input.note_off.connect(note_off)
-	note_input.source_changed.connect(hud.show_source)
+	note_input.source_changed.connect(_on_source_changed)
 	note_input.start_requested.connect(start)
 	note_input.restart_requested.connect(_on_restart_key)
 	hud.start_pressed.connect(start)
 	hud.restart_pressed.connect(restart)
 	hud.tempo_changed.connect(func(v: float) -> void: bpm = v)
-	hud.labels_toggled.connect(func(on: bool) -> void: labels = on)
+	hud.labels_toggled.connect(_on_labels_toggled)
 	hud.tick_toggled.connect(_on_tick_toggled)
 	hud.synth_toggled.connect(_on_synth_toggled)
 	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in ["--autoplay", "--perf"] or a.begins_with("--shots=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
 	now = now_ms()
 	_last = now
-	_layout()
 	restart()
 
 
@@ -117,17 +99,14 @@ func _process(_delta: float) -> void:
 	now = now_ms()
 	var dt := minf(0.05, (now - _last) / 1000.0)
 	_last = now
-	_layout()
 	if started:
 		_update(dt)
 	render = _apply_blend(_pose())
-	var cam_target := render.pos.x - view_size.x * 0.3
-	cam_x = cam_x + (cam_target - cam_x) * (1.0 - exp(-dt * 3.5)) if _cam_set else cam_target
-	_cam_set = true
-	if banner != "" and now - banner_t > 2800.0:
-		banner = ""
-	flyers = flyers.filter(func(f: Dictionary) -> bool: return now - f.t0 < 700.0)
-	view.queue_redraw()
+	gorilla.show_pose(render, now)
+	camera.position.x = _camera_x()
+	_show_strain()
+	_show_liana()
+	_show_prompt()
 
 
 func start() -> void:
@@ -144,46 +123,24 @@ func restart() -> void:
 	for n in notes:
 		if n.beat > 0 and n.beat % 4 == 0:
 			bars.append(n.xu - 0.45)
+	world.build(notes, bars)
+	_refresh_labels()
+	hud.clear_messages()
 	bananas = START_BANANAS
 	falls = 0
 	done_up_to = 0
-	banner = ""
-	flyers.clear()
 	synth.stop_all_notes()
 	synth.cancel_ticks()
 	state = State.WAIT
 	cur = 0
 	perch_stump = true
 	_blend = {}
-	_cam_set = false
+	_strained = -1
+	_dipping = -1
 	render = _pose()
+	camera.position.x = _camera_x()
+	camera.reset_smoothing()
 	_update_hud()
-
-
-func input_source() -> String:
-	return note_input.source
-
-
-# ---------------------------------------------------------------- layout
-
-func _layout() -> void:
-	view_size = get_viewport_rect().size
-	hud_h = hud.bar_height()
-	var avail := view_size.y - hud_h
-	s = maxf(14.0, minf(40.0, avail / 18.2))
-	sky_top = hud_h + maxf(0.0, avail - 18.2 * s) * 0.35
-	c4_y = sky_top + 11.6 * s
-	liana_y = c4_y + 4.1 * s
-	floor_y = c4_y + 5.7 * s
-	ppb = 3.0 * s
-
-
-func y_of(step: float) -> float:
-	return c4_y - step * s
-
-
-func pt(n: Song.Note) -> Vector2:
-	return Vector2(n.xu * ppb, y_of(n.step))
 
 
 func beat_ms() -> float:
@@ -207,16 +164,9 @@ func rest_times() -> Dictionary:
 	return {t0 = rel_t, t1 = rel_t + (t2 - rel_t) * 0.45, t2 = t2}
 
 
+## Where the gorilla floats on its magic banana, waiting to retry branch `r`.
 func wait_spot(r: int) -> Vector2:
-	return pt(notes[r]) + Vector2(-2.1 * s, 1.7 * s)
-
-
-func stump_spot() -> Vector2:
-	return pt(notes[0]) + Vector2(-2.6 * s, 1.4 * s)
-
-
-func home_spot() -> Vector2:
-	return pt(notes[-1]) + Vector2(2.9 * s, 1.9 * s)
+	return Staff.note_pos(notes[r]) + Vector2(-2.1, 1.7) * S
 
 
 # ---------------------------------------------------------------- rules
@@ -288,12 +238,11 @@ func note_off(m: int, ts: float) -> void:
 
 
 func _grab(j: int, ts: float, jump: bool) -> void:
-	_blend = {from = render.pos, rot = render.rot, t0 = now_ms(), dur = 260.0 if jump else 150.0, hop = 1.4 * s if jump else 0.0}
+	_blend = {from = render.pos, rot = render.rot, t0 = now_ms(), dur = 260.0 if jump else 150.0, hop = 1.4 * S if jump else 0.0}
 	state = State.HANG
 	cur = j
 	grab_t = ts
 	creaked = false
-	notes[j].broken_t = 0.0
 	if tick_on:
 		synth.schedule_ticks(ts, beat_ms(), notes[j].beats + notes[j].rest_after)
 	else:
@@ -304,16 +253,18 @@ func _grab(j: int, ts: float, jump: bool) -> void:
 func _complete(i: int) -> void:
 	done_up_to = maxi(done_up_to, i + 1)
 	var n := notes[i]
+	world.branch(i).mark_done()
 	if n.banana and not n.taken:
 		n.taken = true
 		bananas += 1
 		synth.sfx(&"collect")
-		flyers.append({t0 = now_ms(), pos = pt(n) + Vector2(0.65 * s - cam_x, 0.7 * s)})
+		world.branch(i).take_banana()
+		hud.fly_banana(get_viewport().get_canvas_transform() * (Staff.note_pos(n) + Vector2(0.65, 0.7) * S))
 	_update_hud()
 
 
 func _break_branch(i: int) -> void:
-	notes[i].broken_t = now_ms()
+	world.branch(i).break_off()
 	synth.sfx(&"crack")
 	_fall("Held too long. The branch broke", i)
 
@@ -327,20 +278,21 @@ func _fall(reason: String, resume: int) -> void:
 	cur = resume
 	fall_pos = render.pos
 	fall_rot = render.rot
-	fall_vel = Vector2(1.5 * s, -3.0 * s)
+	fall_vel = Vector2(1.5, -3.0) * S
 	fall_spin = 3.0 if randf() < 0.5 else -3.0
 	land_t = 0.0
 	_blend = {}
-	banner = reason
-	banner_t = now_ms()
+	hud.show_banner(reason)
 	_update_hud()
 
 
 func _win() -> void:
 	synth.cancel_ticks()
 	synth.sfx(&"win")
-	_blend = {from = render.pos, rot = render.rot, t0 = now_ms(), dur = 450.0, hop = 1.5 * s}
+	_blend = {from = render.pos, rot = render.rot, t0 = now_ms(), dur = 450.0, hop = 1.5 * S}
 	state = State.WON
+	hud.show_end("Home in the nest!", "%d fall%s · %d banana%s left · Enter or Restart to play again"
+		% [falls, "" if falls == 1 else "s", bananas, "" if bananas == 1 else "s"])
 
 
 func _update(dt: float) -> void:
@@ -360,11 +312,11 @@ func _update(dt: float) -> void:
 				_fall("Too late. Missed the branch", cur + 1)
 		State.FALL:
 			if land_t == 0.0:
-				fall_vel.y += 40.0 * s * dt
+				fall_vel.y += 40.0 * S * dt
 				fall_pos += fall_vel * dt
 				fall_rot += fall_spin * dt
-				if fall_pos.y >= floor_y - 1.7 * s:
-					fall_pos.y = floor_y - 1.7 * s
+				if fall_pos.y >= Staff.FLOOR_Y - 1.7 * S:
+					fall_pos.y = Staff.FLOOR_Y - 1.7 * S
 					fall_rot = 0.0
 					land_t = now
 					synth.sfx(&"thud")
@@ -374,13 +326,15 @@ func _update(dt: float) -> void:
 					_update_hud()
 					state = State.BOUNCE
 					bounce_t0 = now
-					bounce_from = fall_pos
+					world.pop_banana(Vector2(fall_pos.x, Staff.FLOOR_Y - 0.25 * S))
 					synth.sfx(&"magic")
 				else:
 					state = State.OVER
+					hud.show_end("Out of magic bananas", "Made it to branch %d of %d · Enter or Restart to try again"
+						% [done_up_to, notes.size()])
 		State.BOUNCE:
 			if now - bounce_t0 > 1100.0:
-				notes[cur].broken_t = 0.0
+				world.branch(cur).restore()
 				state = State.WAIT
 				perch_stump = false
 
@@ -389,9 +343,25 @@ func _update_hud() -> void:
 	hud.show_stats(bananas, done_up_to, notes.size(), falls)
 
 
+# ---------------------------------------------------------------- settings
+
 func _on_restart_key() -> void:
 	if started:
 		restart()
+
+
+func _on_labels_toggled(on: bool) -> void:
+	labels = on
+	_refresh_labels()
+
+
+func _on_source_changed(source: String) -> void:
+	hud.show_source(source)
+	_refresh_labels()
+
+
+func _refresh_labels() -> void:
+	world.show_labels(notes, labels, note_input.source == "keyboard")
 
 
 func _on_tick_toggled(on: bool) -> void:
@@ -406,6 +376,53 @@ func _on_synth_toggled(on: bool) -> void:
 		synth.stop_all_notes()
 
 
+# ---------------------------------------------------------------- what the scene shows
+
+## The camera keeps the gorilla 30% in from the left edge (it eases there by itself).
+func _camera_x() -> float:
+	return render.pos.x - get_viewport_rect().size.x * 0.3
+
+
+## The branch being hung on sags, and cracks once the note has run past its length.
+func _show_strain() -> void:
+	var hung := cur if state == State.HANG else -1
+	if _strained != hung and _strained >= 0:
+		world.branch(_strained).set_strain(0.0, 0.0)
+	_strained = hung
+	if hung < 0:
+		return
+	var end := grab_t + notes[hung].beats * beat_ms()
+	var crack := clampf((now - end) / tol_ms(), 0.0, 1.0) if now > end else 0.0
+	world.branch(hung).set_strain((0.08 + crack * 0.35) * S, crack)
+
+
+## The liana under a rest dips as the gorilla drops into it, then springs back.
+func _show_liana() -> void:
+	var resting := cur if state == State.REST else -1
+	if _dipping != resting and _dipping >= 0:
+		world.liana(_dipping).set_sag(Liana.SLACK)
+	_dipping = resting
+	if resting < 0:
+		return
+	var rt := rest_times()
+	var d: float = now - rt.t1
+	var span: float = rt.t2 - rt.t0
+	var k := clampf(1.0 + d / (0.06 * span), 0.0, 1.0) if d < 0.0 else clampf(1.0 - d / (0.3 * span), 0.0, 1.0)
+	world.liana(resting).set_sag(Liana.SLACK + (LIANA_DIP + 0.3 - 0.45) * S * k)
+
+
+func _show_prompt() -> void:
+	if state != State.WAIT or not started:
+		gorilla.show_prompt("", 0.0)
+		return
+	var n := notes[cur]
+	var key := NoteInput.key_for(n.midi) if note_input.source == "keyboard" else ""
+	var text := "Play the next branch to grab it"
+	if labels:
+		text = "Play %s%s to grab" % [n.name, " (key %s)" % key if key != "" else ""]
+	gorilla.show_prompt(text, (1.4 if perch_stump else 3.0) * S)
+
+
 # ---------------------------------------------------------------- pose
 
 func _pose() -> Pose:
@@ -413,8 +430,8 @@ func _pose() -> Pose:
 	match state:
 		State.WAIT:
 			if perch_stump:
-				return Pose.new(stump_spot(), 0.0, &"perch")
-			return Pose.new(wait_spot(cur) + Vector2(0.0, sin(now / 320.0) * 0.12 * s), 0.0, &"balloon")
+				return Pose.new(Staff.stump_spot(notes[0]), 0.0, &"perch")
+			return Pose.new(wait_spot(cur) + Vector2(0.0, sin(now / 320.0) * 0.12 * S), 0.0, &"balloon")
 		State.HANG, State.AIR:
 			# one pendulum per note: from behind the grip to the front of the swing, arriving when the note's length is up
 			var n := notes[cur]
@@ -423,7 +440,7 @@ func _pose() -> Pose:
 			var th := -a + a * (1.0 - cos(PI * clampf(p, 0.0, 1.0)))
 			if state == State.HANG and p > 1.0:
 				th = a + sin(now / 22.0) * 0.05 * clampf((p - 1.0) * 4.0, 0.0, 1.0)   # straining
-			var pos := pt(n) + Vector2(sin(th), cos(th)) * RP * s
+			var pos := Staff.note_pos(n) + Vector2(sin(th), cos(th)) * RP * S
 			if state == State.AIR:
 				var air := Pose.new(pos, -th, &"reach")
 				air.target = next
@@ -438,8 +455,8 @@ func _pose() -> Pose:
 			var n := notes[cur]
 			var j := notes[cur + 1]
 			var rt := rest_times()
-			var l := Vector2((n.rx0u + n.rx1u) / 2.0 * ppb, liana_y + LIANA_DIP * s - 1.7 * s)
-			var e := pt(j) + Vector2(-sin(a), cos(a)) * RP * s
+			var l := Vector2((n.rx0u + n.rx1u) / 2.0 * Staff.BEAT_W, Staff.LIANA_Y + LIANA_DIP * S - 1.7 * S)
+			var e := Staff.note_pos(j) + Vector2(-sin(a), cos(a)) * RP * S
 			if now < rt.t1:
 				var drop := clampf((now - rt.t0) / (rt.t1 - rt.t0), 0.0, 1.0)
 				var into := Vector2(lerpf(rel_pose.pos.x, l.x, drop), lerpf(rel_pose.pos.y, l.y, drop * drop))
@@ -456,15 +473,15 @@ func _pose() -> Pose:
 		State.BOUNCE:
 			var k := (now - bounce_t0) / 1100.0
 			if k < 0.3:
-				return Pose.new(bounce_from + Vector2(0.0, sin(k / 0.3 * PI) * 0.25 * s), 0.0, &"sit")
+				return Pose.new(fall_pos + Vector2(0.0, sin(k / 0.3 * PI) * 0.25 * S), 0.0, &"sit")
 			var w := wait_spot(cur)
 			var e := clampf((k - 0.3) / 0.7, 0.0, 1.0)
 			var ee := 1.0 - (1.0 - e) * (1.0 - e)
-			var pos := Vector2(lerpf(bounce_from.x, w.x, ee), lerpf(bounce_from.y, w.y, ee) - sin(PI * e) * 2.5 * s)
+			var pos := Vector2(lerpf(fall_pos.x, w.x, ee), lerpf(fall_pos.y, w.y, ee) - sin(PI * e) * 2.5 * S)
 			return Pose.new(pos, 0.0, &"balloon")
 		_:   # WON
-			var h := home_spot()
-			return Pose.new(h - Vector2(0.0, absf(sin(now / 250.0)) * 0.3 * s), 0.0, &"up")
+			var h := Staff.home_spot(notes[-1])
+			return Pose.new(h - Vector2(0.0, absf(sin(now / 250.0)) * 0.3 * S), 0.0, &"up")
 
 
 func _apply_blend(target: Pose) -> Pose:
