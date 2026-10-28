@@ -1,7 +1,7 @@
 extends Node2D
 ## King Gong, ported from concepts/002-king-gong/spike: the rules and the gorilla's pose.
 ## The scene shows the result: World (level.gd) holds the branches and the gorilla, Hud the
-## bar and messages, Synth the sound, NoteInput the MIDI and keyboard.
+## bar and messages, Metronome the beat tick, NoteInput the MIDI and keyboard.
 
 const Song := preload("res://scripts/song.gd")
 const Staff := preload("res://scripts/staff.gd")
@@ -10,7 +10,7 @@ const Level := preload("res://scripts/level.gd")
 const Liana := preload("res://scripts/liana.gd")
 const Gorilla := preload("res://scripts/gorilla.gd")
 const Hud := preload("res://scripts/hud.gd")
-const Synth := preload("res://scripts/synth.gd")
+const Metronome := preload("res://scripts/metronome.gd")
 const NoteInput := preload("res://scripts/note_input.gd")
 
 enum State { WAIT, HANG, AIR, REST, FALL, BOUNCE, OVER, WON }
@@ -43,8 +43,6 @@ var grab_t := 0.0
 var rel_t := 0.0
 var rel_pose: Pose
 var perch_stump := true
-var creaked := false
-var bounced := 0           # landings in the liana so far this rest
 var fall_pos := Vector2.ZERO
 var fall_vel := Vector2.ZERO
 var fall_rot := 0.0
@@ -63,7 +61,7 @@ var _last := 0.0
 @onready var gorilla: Gorilla = $World/Gorilla
 @onready var camera: Camera2D = $Camera
 @onready var hud: Hud = $Hud
-@onready var synth: Synth = $Synth
+@onready var metronome: Metronome = $Metronome
 @onready var note_input: NoteInput = $NoteInput
 
 
@@ -87,7 +85,6 @@ func _ready() -> void:
 	hud.tempo_changed.connect(func(v: float) -> void: bpm = v)
 	hud.labels_toggled.connect(_on_labels_toggled)
 	hud.tick_toggled.connect(_on_tick_toggled)
-	hud.synth_toggled.connect(_on_synth_toggled)
 	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in ["--autoplay", "--perf"] or a.begins_with("--shots=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
 	now = now_ms()
@@ -125,8 +122,7 @@ func restart() -> void:
 	bananas = START_BANANAS
 	falls = 0
 	done_up_to = 0
-	synth.stop_all_notes()
-	synth.cancel_ticks()
+	metronome.cancel_ticks()
 	state = State.WAIT
 	cur = 0
 	perch_stump = true
@@ -190,7 +186,6 @@ func wait_spot(r: int) -> Vector2:
 func note_on(m: int, ts: float) -> void:
 	if not started:
 		return
-	synth.play_note(m)
 	if state == State.WAIT:
 		var n := notes[cur]
 		if m == n.midi:
@@ -232,7 +227,6 @@ func note_on(m: int, ts: float) -> void:
 
 
 func note_off(m: int, ts: float) -> void:
-	synth.stop_note(m)
 	if not started or state != State.HANG or m != notes[cur].midi:
 		return
 	var i := cur
@@ -250,7 +244,6 @@ func note_off(m: int, ts: float) -> void:
 	state = State.REST if notes[i].rest_after > 0 else State.AIR
 	rel_t = ts
 	rel_pose = render
-	bounced = 0
 
 
 func _grab(j: int, ts: float, jump: bool) -> void:
@@ -258,12 +251,10 @@ func _grab(j: int, ts: float, jump: bool) -> void:
 	state = State.HANG
 	cur = j
 	grab_t = ts
-	creaked = false
 	if tick_on:
-		synth.schedule_ticks(ts, beat_ms(), notes[j].beats, notes[j].rest_after)
+		metronome.schedule_ticks(ts, beat_ms(), notes[j].beats, notes[j].rest_after)
 	else:
-		synth.cancel_ticks()
-	synth.sfx(&"grab")
+		metronome.cancel_ticks()
 
 
 func _complete(i: int) -> void:
@@ -273,7 +264,6 @@ func _complete(i: int) -> void:
 	if n.banana and not n.taken:
 		n.taken = true
 		bananas += 1
-		synth.sfx(&"collect")
 		world.branch(i).take_banana()
 		hud.fly_banana(get_viewport().get_canvas_transform() * (Staff.note_pos(n) + Vector2(0.65, 0.7) * S))
 	_update_hud()
@@ -281,15 +271,13 @@ func _complete(i: int) -> void:
 
 func _break_branch(i: int) -> void:
 	world.branch(i).break_off()
-	synth.sfx(&"crack")
 	_fall("Held too long. The branch broke", i)
 
 
 ## `resume` is the branch the magic banana brings you back to.
 func _fall(reason: String, resume: int) -> void:
 	falls += 1
-	synth.cancel_ticks()
-	synth.sfx(&"fall")
+	metronome.cancel_ticks()
 	state = State.FALL
 	cur = resume
 	fall_pos = render.pos
@@ -303,8 +291,7 @@ func _fall(reason: String, resume: int) -> void:
 
 
 func _win() -> void:
-	synth.cancel_ticks()
-	synth.sfx(&"win")
+	metronome.cancel_ticks()
 	_blend = {from = render.pos, rot = render.rot, t0 = now_ms(), dur = 450.0, hop = 1.5 * S}
 	state = State.WON
 	hud.show_end("Home in the nest!", "%d fall%s · %d banana%s left · Enter or Restart to play again"
@@ -314,18 +301,9 @@ func _win() -> void:
 func _update(dt: float) -> void:
 	match state:
 		State.HANG:
-			var w := windows(cur, grab_t)
-			if not creaked and now > w.end + w.tol * 0.3:
-				creaked = true
-				synth.sfx(&"creak")
-			if now > w.rel_hi + GRACE:
+			if now > windows(cur, grab_t).rel_hi + GRACE:
 				_break_branch(cur)
 		State.AIR, State.REST:
-			if state == State.REST:
-				var rt := rest_times()
-				if bounced < rt.bounces and now > _landing_t(rt, bounced):
-					bounced += 1
-					synth.sfx(&"boing")
 			if now > windows(cur, grab_t).next_hi + GRACE:
 				_fall("Too late. Missed the branch", cur + 1)
 		State.FALL:
@@ -337,7 +315,6 @@ func _update(dt: float) -> void:
 					fall_pos.y = Staff.FLOOR_Y - 1.7 * S
 					fall_rot = 0.0
 					land_t = now
-					synth.sfx(&"thud")
 			elif now - land_t > 550.0:
 				if bananas > 0:
 					bananas -= 1
@@ -345,7 +322,6 @@ func _update(dt: float) -> void:
 					state = State.BOUNCE
 					bounce_t0 = now
 					world.pop_banana(Vector2(fall_pos.x, Staff.FLOOR_Y - 0.25 * S))
-					synth.sfx(&"magic")
 				else:
 					state = State.OVER
 					hud.show_end("Out of magic bananas", "Made it to branch %d of %d · Enter or Restart to try again"
@@ -385,13 +361,7 @@ func _refresh_labels() -> void:
 func _on_tick_toggled(on: bool) -> void:
 	tick_on = on
 	if not on:
-		synth.cancel_ticks()
-
-
-func _on_synth_toggled(on: bool) -> void:
-	synth.synth_on = on
-	if not on:
-		synth.stop_all_notes()
+		metronome.cancel_ticks()
 
 
 # ---------------------------------------------------------------- what the scene shows

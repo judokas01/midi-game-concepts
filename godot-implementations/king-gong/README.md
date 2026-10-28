@@ -23,7 +23,7 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | `Space` / click | Start |
 | `Enter` / Restart button | Restart the song |
 | Tempo slider | 40–120 BPM (default 60) |
-| Labels / Beat tick / Synth | Same toggles as the spike |
+| Labels / Beat tick | Same toggles as the spike |
 
 Which input is live (MIDI or keyboard) is shown top-right, next to bananas, progress and falls.
 
@@ -41,8 +41,10 @@ Which input is live (MIDI or keyboard) is shown top-right, next to bananas, prog
 - **Input timing.** Godot input events carry no timestamp, so a note is stamped when the
   event is dispatched, once per frame: about 16 ms of resolution at 60 fps against a
   ±350 ms window at 60 BPM. The spike uses Web MIDI's own timestamps.
-- **Sound** is synthesised in code, like the spike's Web Audio: notes and effects are
-  rendered into samples at start-up, and the beat tick is scheduled on exact sample frames.
+- **The only sound is the beat tick.** You hear your own instrument, so there is no note
+  synth and none of the spike's effects (grab, creak, crack, fall, boing, banana, win).
+  On the computer keyboard that means you hear nothing but the tick. The tick is generated
+  in code like the spike's and scheduled on exact sample frames.
 - **Fixed layout.** The spike sizes everything from the window height. Here a staff step is
   a fixed 36 px on a 1280×720 canvas and the window scales the whole picture.
 - **Small visual liberties.** The floor is drawn in front of the world, so tree trunks and
@@ -72,7 +74,7 @@ them around:
 | `scripts/staff.gd` | Where things sit: staff step, line heights, floor |
 | `scripts/branch.gd`, `liana.gd`, `gorilla.gd` | What each of those scenes can do |
 | `scripts/song.gd` | The tune and its parsing into branches |
-| `scripts/synth.gd` | Note synth, effects, beat tick |
+| `scripts/metronome.gd` | The beat tick |
 | `scripts/note_input.gd` | MIDI and keyboard input |
 | `scripts/hud.gd` | Top bar, overlay, messages |
 | `scripts/dev_autoplay.gd` | Dev check only, see below |

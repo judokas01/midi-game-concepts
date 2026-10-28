@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/level.gd" id="2_level"]
-[ext_resource type="Script" path="res://scripts/synth.gd" id="3_synth"]
+[ext_resource type="Script" path="res://scripts/metronome.gd" id="3_metronome"]
 [ext_resource type="Script" path="res://scripts/note_input.gd" id="4_input"]
 [ext_resource type="Script" path="res://scripts/hud.gd" id="5_hud"]
 [ext_resource type="PackedScene" path="res://scenes/gorilla.tscn" id="6_gorilla"]
@@ -155,8 +155,8 @@ anchor_mode = 0
 position_smoothing_enabled = true
 position_smoothing_speed = 3.5
 
-[node name="Synth" type="Node" parent="."]
-script = ExtResource("3_synth")
+[node name="Metronome" type="Node" parent="."]
+script = ExtResource("3_metronome")
 
 [node name="NoteInput" type="Node" parent="."]
 script = ExtResource("4_input")
@@ -305,24 +305,6 @@ theme_override_font_sizes/font_size = 12
 text = "Beat tick"
 
 [node name="Toggle" type="Button" parent="Hud/Bar/Row/Tick"]
-custom_minimum_size = Vector2(36, 0)
-layout_mode = 2
-focus_mode = 0
-toggle_mode = true
-button_pressed = true
-text = "on"
-
-[node name="Synth" type="HBoxContainer" parent="Hud/Bar/Row"]
-layout_mode = 2
-theme_override_constants/separation = 5
-
-[node name="Caption" type="Label" parent="Hud/Bar/Row/Synth"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.576471, 0.627451, 0.572549, 1)
-theme_override_font_sizes/font_size = 12
-text = "Synth"
-
-[node name="Toggle" type="Button" parent="Hud/Bar/Row/Synth"]
 custom_minimum_size = Vector2(36, 0)
 layout_mode = 2
 focus_mode = 0

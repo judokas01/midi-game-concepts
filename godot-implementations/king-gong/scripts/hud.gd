@@ -7,7 +7,6 @@ signal restart_pressed
 signal tempo_changed(bpm: float)
 signal labels_toggled(on: bool)
 signal tick_toggled(on: bool)
-signal synth_toggled(on: bool)
 
 const Staff := preload("res://scripts/staff.gd")
 const GlowingBanana := preload("res://scenes/glowing_banana.tscn")
@@ -35,7 +34,6 @@ func _ready() -> void:
 	_tempo.value_changed.connect(_on_tempo)
 	_toggle($Bar/Row/Labels/Toggle, labels_toggled)
 	_toggle($Bar/Row/Tick/Toggle, tick_toggled)
-	_toggle($Bar/Row/Synth/Toggle, synth_toggled)
 	$Bar/Row/Restart.pressed.connect(func() -> void: restart_pressed.emit())
 	_overlay.gui_input.connect(_on_overlay_input)
 	# own copy, so recolouring it does not touch the scene's shared style
