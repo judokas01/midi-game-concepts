@@ -8,6 +8,7 @@ const Staff := preload("res://scripts/staff.gd")
 const Pose := preload("res://scripts/pose.gd")
 const Level := preload("res://scripts/level.gd")
 const Liana := preload("res://scripts/liana.gd")
+const ChordLog := preload("res://scripts/chord_log.gd")
 const Gorilla := preload("res://scripts/gorilla.gd")
 const Hud := preload("res://scripts/hud.gd")
 const Metronome := preload("res://scripts/metronome.gd")
@@ -23,12 +24,15 @@ const SWING := 0.85        # pendulum half-angle, radians
 const RP := 1.5            # shoulders hang this many staff steps below the grip
 const LIANA_DIP := 0.95    # liana below LIANA_Y where the gorilla lands, in steps
 const HOP := 1.5           # height of a bounce along the liana during a long rest, in steps
+const SPLIT := 60          # with chords, the notes below middle C are the left hand's
 
 # settings, set from the HUD
 var bpm := 60.0
 var labels := true
 var tick_on := true
-var clef := Song.Clef.TREBLE   # chosen on the start screen
+var clef := Song.Clef.TREBLE   # these three are chosen on the start screen
+var chords := false            # the treble clef with chords: a log to break at every chord change
+var hint := ChordLog.Hint.NAME   # what the sign on each log shows
 
 var notes: Array[Song.Note] = []
 var bananas := 0
@@ -48,6 +52,8 @@ var fall_pos := Vector2.ZERO
 var fall_vel := Vector2.ZERO
 var fall_rot := 0.0
 var fall_spin := 0.0
+var _left := {}            # left-hand notes held down, with chords
+var _blocked := {}         # the next branch's note, played while its log still stood: {j, ts, jump}; empty when none
 var land_t := 0.0
 var bounce_t0 := 0.0
 
@@ -86,12 +92,13 @@ func _ready() -> void:
 	hud.tempo_changed.connect(func(v: float) -> void: bpm = v)
 	hud.labels_toggled.connect(_on_labels_toggled)
 	hud.tick_toggled.connect(_on_tick_toggled)
-	hud.clef_chosen.connect(set_clef)
-	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in ["--autoplay", "--perf"] or a.begins_with("--shots=")):
+	hud.style_chosen.connect(set_style)
+	hud.hint_chosen.connect(set_hint)
+	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in ["--autoplay", "--perf", "--chords"] or a.begins_with("--shots=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
 	now = now_ms()
 	_last = now
-	set_clef(clef)
+	set_style(clef, chords)
 
 
 func _process(_delta: float) -> void:
@@ -117,7 +124,8 @@ func start() -> void:
 
 
 func restart() -> void:
-	notes = Song.parse(clef)
+	notes = Song.parse(clef, chords)
+	note_input.set_chords(notes.map(func(n: Song.Note) -> Song.Chord: return n.chord).filter(func(c: Song.Chord) -> bool: return c != null))
 	world.build(notes)
 	_refresh_labels()
 	hud.clear_messages()
@@ -129,6 +137,7 @@ func restart() -> void:
 	cur = 0
 	perch_stump = true
 	_blend = {}
+	_blocked = {}
 	_strained = -1
 	_dipping = -1
 	render = _pose()
@@ -137,15 +146,22 @@ func restart() -> void:
 	_update_hud()
 
 
-## The bass clef plays the song an octave down, the keyboard fallback too. The level is laid
-## out again behind the start screen.
-func set_clef(c: Song.Clef) -> void:
+## The bass clef plays the song an octave down, the keyboard fallback too. `with_chords` adds
+## the chords to the treble clef. The level is laid out again behind the start screen.
+func set_style(c: Song.Clef, with_chords: bool) -> void:
 	clef = c
+	chords = with_chords
 	note_input.octave_shift = Song.OCTAVE_SHIFT[c]
-	hud.show_key_notes(note_input.key_notes())
 	$Clef/Treble.visible = c == Song.Clef.TREBLE
 	$Clef/Bass.visible = c == Song.Clef.BASS
 	restart()
+	hud.show_key_notes(note_input.key_notes(), note_input.chord_key_notes())
+	hud.show_chord_options(with_chords)
+
+
+func set_hint(h: ChordLog.Hint) -> void:
+	hint = h
+	_refresh_labels()
 
 
 func beat_ms() -> float:
@@ -189,22 +205,32 @@ func _landing_pos(rt: Dictionary, b: int) -> Vector2:
 	return Vector2(x, Staff.LIANA_Y + LIANA_DIP * S - 1.7 * S)
 
 
-## Where the gorilla floats on its magic banana, waiting to retry branch `r`.
+## Where the gorilla floats on its magic banana, waiting to retry branch `r`: left of the
+## branch, and of its log if it has one.
 func wait_spot(r: int) -> Vector2:
-	return Staff.note_pos(notes[r]) + Vector2(-2.1, 1.7) * S
+	var spot := Staff.note_pos(notes[r]) + Vector2(-2.1, 1.7) * S
+	if notes[r].chord:
+		spot.x = minf(spot.x, Staff.x_of(notes[r].beat) - 0.9 * S)
+	return spot
 
 
 # ---------------------------------------------------------------- rules
 
 func note_on(m: int, ts: float) -> void:
+	if chords and m < SPLIT:
+		_left[m] = true
+		_left_changed(ts)
+		return
 	if not started:
 		return
 	if state == State.WAIT:
 		var n := notes[cur]
-		if m == n.midi:
-			_grab(cur, ts, false)
-		else:
+		if m != n.midi:
 			_fall("Wrong note: %s. That branch is %s" % [Song.note_name(m), n.name], cur)
+		elif n.log_up:
+			_blocked = {j = cur, ts = ts, jump = false}
+		else:
+			_grab(cur, ts, false)
 		return
 	if state != State.HANG and state != State.AIR and state != State.REST:
 		return
@@ -234,12 +260,25 @@ func note_on(m: int, ts: float) -> void:
 		else:
 			_fall("Too late. Missed the branch", j)
 		return
+	var jump := state != State.REST and absi(nj.step - notes[i].step) > 2   # more than a third apart
 	if hanging:
 		_complete(i)
-	_grab(j, ts, state != State.REST and absi(nj.step - notes[i].step) > 2)   # more than a third apart: jump
+	if nj.log_up:
+		_blocked = {j = j, ts = ts, jump = jump}   # grabbed once the chord breaks the log
+		if hanging:
+			state = State.AIR
+		return
+	_grab(j, ts, jump)
 
 
 func note_off(m: int, ts: float) -> void:
+	if chords and m < SPLIT:
+		_left.erase(m)
+		_left_changed(ts)
+		return
+	if not _blocked.is_empty() and m == notes[_blocked.j].midi:
+		_blocked = {}   # let go before the log broke: play it again
+		return
 	if not started or state != State.HANG or m != notes[cur].midi:
 		return
 	var i := cur
@@ -259,8 +298,30 @@ func note_off(m: int, ts: float) -> void:
 	rel_pose = render
 
 
+## The left hand's notes changed. If they now make the chord of the log ahead, on time, the
+## gorilla kicks the log down; and grabs the branch if its note was already played.
+func _left_changed(ts: float) -> void:
+	if not started or not state in [State.WAIT, State.HANG, State.AIR, State.REST]:
+		return
+	var j := cur if state == State.WAIT else cur + 1
+	if j >= notes.size() or not notes[j].log_up or not notes[j].chord.is_played_by(_left.keys()):
+		return
+	if state != State.WAIT:
+		var w := windows(cur, grab_t)
+		if ts < w.next_lo or ts > w.next_hi + GRACE:
+			return   # off the beat: the log stays up
+	notes[j].log_up = false
+	gorilla.kick(world.chord_log(j).kick_spot(), now_ms())
+	world.chord_log(j).break_off()
+	if _blocked.is_empty():
+		return
+	# from the magic banana the grab restarts the beat, so it counts from when both are down
+	_grab(j, ts if state == State.WAIT else _blocked.ts, _blocked.jump)
+
+
 func _grab(j: int, ts: float, jump: bool) -> void:
 	_blend = {from = render.pos, rot = render.rot, t0 = now_ms(), dur = 260.0 if jump else 150.0, hop = 1.4 * S if jump else 0.0}
+	_blocked = {}
 	state = State.HANG
 	cur = j
 	grab_t = ts
@@ -287,15 +348,26 @@ func _break_branch(i: int) -> void:
 	_fall("Held too long. The branch broke", i)
 
 
-## `resume` is the branch the magic banana brings you back to.
-func _fall(reason: String, resume: int) -> void:
+## The gorilla runs into the log before branch `j`: the log shakes, the gorilla drops back.
+func _bump_log(j: int) -> void:
+	world.chord_log(j).wobble()
+	var chord := notes[j].chord.name
+	if _blocked.is_empty():
+		_fall("Too late. Missed the branch and its %s chord" % chord, j, true)
+	else:
+		_fall("No %s chord, so the log stayed up. Play it together with %s" % [chord, notes[j].name], j, true)
+
+
+## `resume` is the branch the magic banana brings you back to. `back`: thrown back, off a log.
+func _fall(reason: String, resume: int, back := false) -> void:
 	falls += 1
 	metronome.cancel_ticks()
 	state = State.FALL
 	cur = resume
+	_blocked = {}
 	fall_pos = render.pos
 	fall_rot = render.rot
-	fall_vel = Vector2(1.5, -3.0) * S
+	fall_vel = Vector2(-1.5 if back else 1.5, -3.0) * S
 	fall_spin = 3.0 if randf() < 0.5 else -3.0
 	land_t = 0.0
 	_blend = {}
@@ -318,7 +390,10 @@ func _update(dt: float) -> void:
 				_break_branch(cur)
 		State.AIR, State.REST:
 			if now > windows(cur, grab_t).next_hi + GRACE:
-				_fall("Too late. Missed the branch", cur + 1)
+				if notes[cur + 1].log_up:
+					_bump_log(cur + 1)
+				else:
+					_fall("Too late. Missed the branch", cur + 1)
 		State.FALL:
 			if land_t == 0.0:
 				fall_vel.y += 40.0 * S * dt
@@ -368,7 +443,7 @@ func _on_source_changed(source: String) -> void:
 
 
 func _refresh_labels() -> void:
-	world.show_labels(notes, labels, note_input)
+	world.show_labels(notes, labels, hint, note_input)
 
 
 func _on_tick_toggled(on: bool) -> void:
@@ -419,9 +494,10 @@ func _show_prompt() -> void:
 		return
 	var n := notes[cur]
 	var key := note_input.key_for(n.midi)
-	var text := "Play the next branch to grab it"
+	var branch := "the next branch"
 	if labels:
-		text = "Play %s%s to grab" % [n.name, " (key %s)" % key if key != "" else ""]
+		branch = n.name + (" (key %s)" % key if key != "" else "")
+	var text := ("Play the log's chord and %s" if n.log_up else "Play %s to grab it") % branch
 	gorilla.show_prompt(text, (1.4 if perch_stump else 3.0) * S)
 
 

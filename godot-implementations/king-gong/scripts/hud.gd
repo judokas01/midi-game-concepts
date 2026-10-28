@@ -7,9 +7,11 @@ signal restart_pressed
 signal tempo_changed(bpm: float)
 signal labels_toggled(on: bool)
 signal tick_toggled(on: bool)
-signal clef_chosen(clef: Song.Clef)
+signal style_chosen(clef: Song.Clef, chords: bool)
+signal hint_chosen(hint: ChordLog.Hint)
 
 const Song := preload("res://scripts/song.gd")
+const ChordLog := preload("res://scripts/chord_log.gd")
 const Staff := preload("res://scripts/staff.gd")
 const GlowingBanana := preload("res://scenes/glowing_banana.tscn")
 const SOURCE_COLOURS := {"keyboard": Color("3a3f49"), "MIDI": Color("2e8b57")}
@@ -26,6 +28,8 @@ var _banner_fade: Tween
 @onready var _falls: Label = $Bar/Row/Falls
 @onready var _overlay: Control = $Overlay
 @onready var _overlay_keys: RichTextLabel = $Overlay/Center/Box/Keys
+@onready var _chord_rule: Control = $Overlay/Center/Box/ChordRule
+@onready var _hint: Control = $Overlay/Center/Box/Hint
 @onready var _banner: Label = $Banner
 @onready var _legend: Label = $Legend
 @onready var _keys: Label = $Keys
@@ -38,8 +42,11 @@ func _ready() -> void:
 	_toggle($Bar/Row/Labels/Toggle, labels_toggled)
 	_toggle($Bar/Row/Tick/Toggle, tick_toggled)
 	$Bar/Row/Restart.pressed.connect(func() -> void: restart_pressed.emit())
-	$Overlay/Center/Box/Clef/Treble.pressed.connect(func() -> void: clef_chosen.emit(Song.Clef.TREBLE))
-	$Overlay/Center/Box/Clef/Bass.pressed.connect(func() -> void: clef_chosen.emit(Song.Clef.BASS))
+	$Overlay/Center/Box/Clef/Treble.pressed.connect(func() -> void: style_chosen.emit(Song.Clef.TREBLE, false))
+	$Overlay/Center/Box/Clef/Bass.pressed.connect(func() -> void: style_chosen.emit(Song.Clef.BASS, false))
+	$Overlay/Center/Box/Clef/Chords.pressed.connect(func() -> void: style_chosen.emit(Song.Clef.TREBLE, true))
+	$Overlay/Center/Box/Hint/Name.pressed.connect(func() -> void: hint_chosen.emit(ChordLog.Hint.NAME))
+	$Overlay/Center/Box/Hint/Bass.pressed.connect(func() -> void: hint_chosen.emit(ChordLog.Hint.BASS_CLEF))
 	_overlay.gui_input.connect(_on_overlay_input)
 	# own copy, so recolouring it does not touch the scene's shared style
 	_source.add_theme_stylebox_override("normal", _source.get_theme_stylebox("normal").duplicate())
@@ -57,10 +64,21 @@ func show_source(source: String) -> void:
 	_keys.visible = source == "keyboard"
 
 
-## What the computer keys play, on the start screen and under the floor.
-func show_key_notes(names: String) -> void:
+## What the computer keys play, on the start screen and under the floor. `chords` is what the
+## chord keys play, "Z = C  V = F  B = G", or "" without chords.
+func show_key_notes(names: String, chords: String) -> void:
 	_keys.text = "keys  A S D F G H J K  =  " + names
-	_overlay_keys.text = "[center]No MIDI? Keys [b]A S D F G H J K[/b] = %s.[/center]" % names
+	var overlay := "No MIDI? Keys [b]A S D F G H J K[/b] = %s." % names
+	if chords != "":
+		_keys.text += "   ·   chords  " + chords
+		overlay += " Chords: [b]%s[/b]." % chords
+	_overlay_keys.text = "[center]%s[/center]" % overlay
+
+
+## The start screen explains the logs and offers the chord hints only with chords.
+func show_chord_options(on: bool) -> void:
+	_chord_rule.visible = on
+	_hint.visible = on
 
 
 func show_tempo(bpm: float) -> void:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/level.gd" id="2_level"]
@@ -69,6 +69,8 @@ font_names = PackedStringArray("Segoe UI", "Arial", "sans-serif")
 font_weight = 700
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_clef"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_hint"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_game")
@@ -147,6 +149,8 @@ offset = Vector2(-60, -10)
 [node name="Lianas" type="Node2D" parent="World"]
 
 [node name="Branches" type="Node2D" parent="World"]
+
+[node name="Logs" type="Node2D" parent="World"]
 
 [node name="Pops" type="Node2D" parent="World"]
 
@@ -441,6 +445,55 @@ focus_mode = 0
 theme_override_font_sizes/font_size = 15
 toggle_mode = true
 button_group = SubResource("ButtonGroup_clef")
+text = "Bass clef"
+
+[node name="Chords" type="Button" parent="Hud/Overlay/Center/Box/Clef"]
+custom_minimum_size = Vector2(140, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_group = SubResource("ButtonGroup_clef")
+text = "Treble + chords"
+
+[node name="ChordRule" type="RichTextLabel" parent="Hud/Overlay/Center/Box"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+bbcode_enabled = true
+text = "[center]A coloured log stands wherever the chord changes. [b]Play its chord in the left hand[/b], below middle C, together with the branch's note, and the gorilla kicks the log down. Leave it standing and you bounce off.[/center]"
+fit_content = true
+scroll_active = false
+
+[node name="Hint" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Hint"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
+text = "Chord hint"
+
+[node name="Name" type="Button" parent="Hud/Overlay/Center/Box/Hint"]
+custom_minimum_size = Vector2(110, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_hint")
+text = "Chord name"
+
+[node name="Bass" type="Button" parent="Hud/Overlay/Center/Box/Hint"]
+custom_minimum_size = Vector2(110, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_group = SubResource("ButtonGroup_hint")
 text = "Bass clef"
 
 [node name="Keys" type="RichTextLabel" parent="Hud/Overlay/Center/Box"]
