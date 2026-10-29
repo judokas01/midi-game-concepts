@@ -5,7 +5,8 @@ extends Node
 ##                        purpose, so falls, cracks and magic bananas get exercised too
 ##   -- --chords          plays the treble clef with chords instead. With --autoplay the bot
 ##                        plays each chord before the note on even branches and after it on
-##                        odd ones, and leaves one chord out, so a log gets run into too
+##                        odd ones, right under the note, and leaves one chord out, so a log
+##                        gets run into too
 ##   -- --chords-only     the gorilla plays the tune and the bot only the chords: on the beat,
 ##                        leaving one out; in learn mode once the gorilla waits, one wrong first
 ##   -- --learn           learn mode: the bot plays each next note a moment after the last
@@ -181,13 +182,20 @@ func _press(j: int, m: int, now: float) -> void:
 	if chord and j >= CHORDLESS_AT and not _chordless:
 		_chordless = true
 		chord = null
+	var under: Array = chord.midi.map(func(c: int) -> int: return _under(c, game.notes[j].midi)) if chord else []
 	if chord and j % 2 == 0:
-		_strike(chord.midi, now)
+		_strike(under, now)
 	_held = m
 	_pressed_at = now
 	game.note_on(m, now)
 	if chord and j % 2 == 1:
-		_strike(chord.midi, now)
+		_strike(under, now)
+
+
+## `c` moved by octaves to just under the note `m`: the chord as close under the tune as it
+## goes, often across middle C, as only notes below the next branch's are the left hand's.
+func _under(c: int, m: int) -> int:
+	return m - 1 - posmod(m - 1 - c, 12)
 
 
 ## A chord's `pitches`, struck and let go at once.

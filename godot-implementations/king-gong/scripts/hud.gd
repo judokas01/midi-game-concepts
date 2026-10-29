@@ -41,8 +41,8 @@ const DRILL_BODY := """[center][b]Learn the chords.[/b] The gorilla climbs a mad
 
 The little keyboard at the bottom lights the chord's keys. Pick which chords to practise; every round brings 16 new ones.[/center]"""
 const CHORD_RULES := {
-	Mode.PLAY: "[center]A coloured log stands wherever the chord changes. [b]Play its chord in the left hand[/b], below middle C, together with the branch's note, and the gorilla kicks the log down. Leave it standing and you bounce off.[/center]",
-	Mode.LEARN: "[center]A coloured log stands wherever the chord changes. [b]Play its chord in the left hand[/b], below middle C, and the branch's note in the right: the gorilla waits for both.[/center]",
+	Mode.PLAY: "[center]A coloured log stands wherever the chord changes. [b]Play its chord in the left hand[/b], lower than the branch's note, together with that note, and the gorilla kicks the log down. Leave it standing and you bounce off.[/center]",
+	Mode.LEARN: "[center]A coloured log stands wherever the chord changes. [b]Play its chord in the left hand[/b], lower than the branch's note, and that note in the right: the gorilla waits for both.[/center]",
 }
 const CHORDS_ONLY_RULES := {
 	Mode.PLAY: "[center]The gorilla plays the tune by itself. A coloured log stands wherever the chord changes: [b]play its chord[/b], anywhere on the keyboard, as the gorilla reaches it, and it kicks the log down. Too early or too late and it bounces off.[/center]",

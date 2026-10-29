@@ -20,7 +20,7 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | --- | --- |
 | MIDI notes | Grab the branch on that note; hold for its length; release to let go. The built-in songs use C4–A4, C3–A3 in the bass clef |
 | Keyboard `A S D F G H J K` | C4 D4 E4 F4 G4 A4 B4 C5, moved by octaves to where the song is (an octave lower in the bass clef); fallback when no MIDI device is connected. White keys only: a score's sharps and flats need MIDI |
-| MIDI notes below middle C | Treble + chords: the left hand's chord. Any octave and any order, but only its notes. Below the melody's lowest note, if a score goes under middle C. With Chords only and in the chord drill every note is the chord's |
+| MIDI notes below the next branch's | Treble + chords: the left hand's chord. Any octave and any order, but only its notes. A note lower than the next branch's note is the left hand's until let go, so a wrong note below the tune makes nobody fall, though it spoils a chord. With Chords only and in the chord drill every note is the chord's |
 | Keyboard `Z X C V B N M` | With chords: one key per chord, by its root (C D E F G A B). The start screen and the floor list the song's, e.g. `Z` = C, `V` = F, `B` = G. In the chord drill every root plays the kind of chord the next log wants (`X` = Dm when it wants Am) |
 | Mode: Play / Learn / Chord drill | On the start screen: play a song, [learn it](#learn-mode) untimed, or [drill chords](#chord-drill) |
 | Song `◀` list `▶` | On the start screen: which song to play, the built-in ones and then [your own](#your-own-songs) |
@@ -76,10 +76,10 @@ legend, lights what to play next:
 
 - **The note**, yellow, on the tune's keys: from its lowest note, an octave at least.
 - **The chord**, in its log's colour, in root position on two octaves of its own, left of
-  the tune's: below the tune with Treble + chords (C2–B3 for the built-in songs), C3–B4
-  with Chords only and in the drill. It is lit where the bass-clef hint writes it, moved by
-  octaves to fit. Played in any octave and any order it counts all the same; a note held
-  outside those two octaves shows on the lit key of its name.
+  the tune's: C2–B3 with Treble + chords, C3–B4 with Chords only and in the drill. It is
+  lit where the bass-clef hint writes it, moved by octaves to fit. Played in any octave and
+  any order it counts all the same; a note held outside those two octaves shows on the lit
+  key of its name.
 
 Keys held down show pressed in; a wrong note, or the odd note out of a wrong chord, goes
 grey with a red cross. Every C is marked, and with the computer keyboard live its letters
@@ -141,8 +141,9 @@ A file the importer can't read is left out of the list, with a warning in the co
   quit.
 - **Treble + chords.** Also not in the spike. Each song carries its chords (`song.gd`,
   third column), and wherever the chord changes a log stands across the gap before that
-  branch, coloured by its chord, with a sign on top. Play the chord in the left hand
-  together with the branch's note, in the same ±0.35-beat window as the grab, and the
+  branch, coloured by its chord, with a sign on top. Play the chord in the left hand,
+  lower than the branch's note (any note below the next branch's counts as the left
+  hand's), together with that note, in the same ±0.35-beat window as the grab, and the
   gorilla kicks the log down. Too early, too late or the wrong chord and
   the log stays up: the gorilla runs into it, the log shakes, and it counts as a missed
   branch. After a magic banana the log is still there; break it and grab, untimed, like
@@ -228,7 +229,8 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
 - `--song=<n>` plays another song, counting from 0 in the start screen's order. Songs 1
   to 5 hang three bananas, not four, so expect one banana fewer than for song 0.
 - `--chords` plays Treble + chords instead. With `--autoplay` the bot also plays each
-  chord, once leaves one out and runs into the log: expect `WON falls=3 bananas=4`.
+  chord, right under the branch's note (C4 E4 under a G4), once leaves one out and runs
+  into the log: expect `WON falls=3 bananas=4`.
 - `--chords-only` plays Chords only: the gorilla plays the tune, the bot the chords on the
   beat, leaving one out: expect `WON falls=1 bananas=6`.
 - `--learn` plays learn mode. The bot plays each note a moment after the last grab, once a

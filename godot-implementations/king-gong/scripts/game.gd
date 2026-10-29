@@ -53,7 +53,6 @@ var falls := 0
 var misses := 0            # learn mode and the drill: wrong notes and chords
 var done_up_to := 0
 var started := false
-var split := 60            # with chords, the notes below this are the left hand's: middle C, or the melody's lowest note
 
 # `cur` is the branch being hung on (HANG, AIR, REST) or waited for (WAIT, FALL, BOUNCE).
 # Every window is measured from `grab_t`, the grab of branch `cur`, never from a global clock.
@@ -67,7 +66,7 @@ var fall_pos := Vector2.ZERO
 var fall_vel := Vector2.ZERO
 var fall_rot := 0.0
 var fall_spin := 0.0
-var _left := {}            # left-hand notes held down, with chords; every note when the gorilla plays the tune
+var _left := {}            # left-hand notes held down, with chords, until let go; every note when the gorilla plays the tune
 var _right := {}           # the other notes held down
 var _wrong := {}           # learn mode: notes held down that were wrong
 var _missed_chord := false # learn mode and the drill: a wrong chord was counted, not again until the left hand lets go
@@ -165,7 +164,6 @@ func restart() -> void:
 	else:
 		notes = Song.parse(song, clef, chords)
 		bars = Song.bar_lines(song, notes)
-	split = mini(60, notes.map(func(n: Song.Note) -> int: return n.midi).min())
 	note_input.octave_shift = _keys_octave()
 	world.build(notes, bars)
 	_set_chord_keys()
@@ -313,7 +311,7 @@ func note_on(m: int, ts: float) -> void:
 		if note_input.source == "MIDI" and not hud.choose(m) and not started:
 			start()   # any note that picks nothing; it grabs nothing either
 		return
-	if chords and (by_itself or m < split):
+	if chords and (by_itself or m < _next_note()):
 		_left[m] = true
 		_left_changed(ts, true)
 		return
@@ -374,7 +372,7 @@ func note_on(m: int, ts: float) -> void:
 func note_off(m: int, ts: float) -> void:
 	_right.erase(m)
 	_wrong.erase(m)
-	if chords and (by_itself or m < split):
+	if by_itself or _left.has(m):   # the hand it was played in, though the next note may have moved since
 		_left.erase(m)
 		_stale.erase(m)
 		_left_changed(ts, false)
@@ -458,6 +456,13 @@ func _log_ahead() -> int:
 		return -1
 	var j := cur if state == State.WAIT else cur + 1
 	return j if j < notes.size() and notes[j].log_up else -1
+
+
+## With chords, the notes below this one are the left hand's: the note of the branch waited
+## for, or of the one after the branch hung on (the last branch's own at the end).
+func _next_note() -> int:
+	var j := cur if state in [State.WAIT, State.FALL, State.BOUNCE] else cur + 1
+	return notes[mini(j, notes.size() - 1)].midi
 
 
 ## The chord is in: the gorilla kicks down the log before branch `j`, and grabs the branch if
@@ -776,7 +781,7 @@ func _setup_piano() -> void:
 		return
 	var chord_from := -1
 	if chords:
-		chord_from = 48 if by_itself else 12 * floori((split - 24) / 12.0)   # the two octaves below the tune's
+		chord_from = 48 if by_itself else 36   # C2, the two octaves below middle C, when you play the tune too
 	if by_itself:
 		hud.set_piano(chord_from, -1, -1)
 		return
