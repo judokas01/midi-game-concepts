@@ -437,6 +437,40 @@ There is no backing track: the song starts when you grab the first branch and ev
 fit_content = true
 scroll_active = false
 
+[node name="Song" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Song"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
+text = "Song"
+
+[node name="Previous" type="Button" parent="Hud/Overlay/Center/Box/Song"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "◀"
+
+[node name="Pick" type="OptionButton" parent="Hud/Overlay/Center/Box/Song"]
+custom_minimum_size = Vector2(320, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+clip_text = true
+text_overrun_behavior = 3
+fit_to_longest_item = false
+
+[node name="Next" type="Button" parent="Hud/Overlay/Center/Box/Song"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "▶"
+
 [node name="Clef" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
 layout_mode = 2
 mouse_filter = 2

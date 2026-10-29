@@ -1,9 +1,9 @@
 # King Gong — Godot port
 
 A faithful port of the browser spike in [concepts/002-king-gong](../../concepts/002-king-gong/README.md):
-same song, rules, timing window, tuning and controls, running natively in Godot 4.7 so
-the two can be compared. The rules and the fun hypothesis live in the concept card; nothing
-here changes them.
+same song (and five more), rules, timing window, tuning and controls, running natively in
+Godot 4.7 so the two can be compared. The rules and the fun hypothesis live in the concept
+card; nothing here changes them.
 
 ## Run it
 
@@ -18,13 +18,14 @@ launching if you can; if none is found at start-up the game looks again every 2 
 
 | Input | Does what |
 | --- | --- |
-| MIDI notes (C4–A4 used, C3–A3 in the bass clef) | Grab the branch on that note; hold for its length; release to let go |
-| Keyboard `A S D F G H J K` | C4 D4 E4 F4 G4 A4 B4 C5 (an octave lower in the bass clef), fallback when no MIDI device is connected |
-| MIDI notes below middle C | Treble + chords only: the left hand's chord. Any octave and any order, but only its three notes |
-| Keyboard `Z X C V B N M` | Treble + chords only: one key per chord, by its root (C D E F G A B). This song uses `Z` = C, `V` = F, `B` = G |
+| MIDI notes | Grab the branch on that note; hold for its length; release to let go. The built-in songs use C4–A4, C3–A3 in the bass clef |
+| Keyboard `A S D F G H J K` | C4 D4 E4 F4 G4 A4 B4 C5, moved by octaves to where the song is (an octave lower in the bass clef); fallback when no MIDI device is connected. White keys only: a score's sharps and flats need MIDI |
+| MIDI notes below middle C | Treble + chords only: the left hand's chord. Any octave and any order, but only its three notes. Below the melody's lowest note, if a score goes under middle C |
+| Keyboard `Z X C V B N M` | Treble + chords only: one key per chord, by its root (C D E F G A B). The start screen and the floor list the song's, e.g. `Z` = C, `V` = F, `B` = G |
+| Song `◀` list `▶` | On the start screen: which song to play, the built-in ones and then [your own](#your-own-songs) |
 | Treble clef / Bass clef / Treble + chords | On the start screen: how to play the song |
 | Chord hint | On the start screen, with chords: the sign on each log shows the chord's name, or its notes in the bass clef |
-| MIDI note written on a menu button | Picks that button, on the start screen (C4 to A4) and on the end panel (C4 play again, D4 main menu). Computer keys don't; use the mouse |
+| MIDI note written on a menu button | Picks that button, on the start screen (C3 and D3 step through the songs, C4 to A4 the rest) and on the end panel (C4 play again, D4 main menu). Computer keys don't; use the mouse |
 | `Space` / click / any other MIDI note | Start, on the start screen. The note only starts the game; it grabs nothing |
 | `Enter` / Restart button | Restart the song |
 | `Esc` | Back to the start screen, at any time |
@@ -33,6 +34,34 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | Labels / Beat tick | Same toggles as the spike |
 
 Which input is live (MIDI or keyboard) is shown top-right, next to bananas, progress and falls.
+
+## Your own songs
+
+Put MusicXML scores in `songs/`, next to `project.godot`, and restart the game: they join
+the song list after the built-in songs, by file name. On musescore.com open the score and
+choose Download → MusicXML; in MuseScore Studio, File → Export → MusicXML. Both `.mxl` and
+uncompressed `.musicxml` work. `songs/` is ignored by git, so the scores you are licensed
+to use stay on your machine.
+
+`scripts/score_import.gd` makes a level of each one:
+
+- **Melody:** the first part's top staff, voice 1, and its top note where it has several.
+  In a piano/vocal score that is the vocal line; in a piano arrangement, the right hand.
+- **Chords:** the chord symbols, from whichever part has the most. Each becomes a triad:
+  sevenths and other extensions are left out, sus and power chords are played as major,
+  diminished and augmented stay. A score without chord symbols has no logs.
+- **Key and range:** the song moves to C (or A minor) by its first key signature, then by
+  octaves to sit on the staff, between the ledger line below it and its top line, or up to
+  two steps lower if it must. A melody wider than that (an octave and a sixth) has its top
+  notes folded down an octave. Sharps and flats outside the key stay, as `Eb4` or `F#4`.
+- **Form:** repeats and first and second endings are played out. D.C., D.S., Fine and
+  codas are not; the song runs straight through. An intro before the melody's first note
+  is left out. Bar lines follow the score's measures, pickups and 3/4 included.
+- **Rhythm:** rounded to sixteenths, triplets too. A rest shorter than an eighth is added
+  to the note before it, and grace notes are left out.
+- **Bananas:** after every 24 notes, the next note of a beat or more carries one.
+
+A file the importer can't read is left out of the list, with a warning in the console.
 
 ## Differences from the spike
 
@@ -45,15 +74,24 @@ Which input is live (MIDI or keyboard) is shown top-right, next to bananas, prog
 	so an eighth can't be held like a quarter.
   - A rest is one bounce along the liana per beat, so a long rest can be counted.
   - The beat tick also marks a let-go into a rest that doesn't fall on a whole beat.
+- **More songs.** The spike has Twinkle Twinkle. The start screen here also offers, from
+  easiest to hardest, Mary's Lamb, Ducklings (Alle meine Entchen), Lightly Row (Hänschen
+  klein), Ode to Joy and the chorus of Jingle Bells. All are public domain, written in C,
+  one note at a time between C4 and A4, in 4/4 from the first beat. Ode to Joy is its
+  first eight bars: the middle part drops to G3, below the range. Ode to Joy and Jingle
+  Bells bring dotted notes and eighths. Each song carries the chords songbooks give it,
+  as triads: C, F and G, plus D in Jingle Bells (the songbooks' D7) and Dm in Ducklings,
+  where songbooks write G7 under four Fs that a G triad lacks. A song is a list in
+  `SONGS` in `song.gd`; scores need no code, see [Your own songs](#your-own-songs).
 - **Bass clef.** The spike is treble only. Here the start screen also offers the bass
   clef, which plays the song an octave down (C3–A3) so it sits inside the bass staff.
   The level behind the start screen redraws as you choose; the choice holds until you
   quit.
-- **Treble + chords.** Also not in the spike. The song carries the usual Twinkle chords
-  (C, F, G; `song.gd`, third column), and wherever the chord changes a log stands across
-  the gap before that branch, coloured by its chord, with a sign on top. Play the chord in
-  the left hand together with the branch's note, in the same ±0.35-beat window as the
-  grab, and the gorilla kicks the log down. Too early, too late or the wrong chord and
+- **Treble + chords.** Also not in the spike. Each song carries its chords (`song.gd`,
+  third column), and wherever the chord changes a log stands across the gap before that
+  branch, coloured by its chord, with a sign on top. Play the chord in the left hand
+  together with the branch's note, in the same ±0.35-beat window as the grab, and the
+  gorilla kicks the log down. Too early, too late or the wrong chord and
   the log stays up: the gorilla runs into it, the log shakes, and it counts as a missed
   branch. After a magic banana the log is still there; break it and grab, untimed, like
   any retry. Only the change is played; the chord need not be held. The colours follow
@@ -100,7 +138,8 @@ them around:
 | `scripts/level.gd` | Builds the level from the song: places branches, lianas, trees |
 | `scripts/staff.gd` | Where things sit: staff step, line heights, floor |
 | `scripts/branch.gd`, `liana.gd`, `chord_log.gd`, `gorilla.gd` | What each of those scenes can do |
-| `scripts/song.gd` | The tune and its chords, their parsing into branches, and the two clefs |
+| `scripts/song.gd` | The songs and their chords, their parsing into branches, and the two clefs |
+| `scripts/score_import.gd` | Reads the MusicXML scores in `songs/` into songs |
 | `scripts/metronome.gd` | The beat tick |
 | `scripts/note_input.gd` | MIDI and keyboard input |
 | `scripts/hud.gd` | Top bar, the two menus and their MIDI notes, messages |
@@ -121,6 +160,8 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
 ```
 
 - `--autoplay` plays the song, prints the result and quits. Expect `WON falls=2 bananas=5`.
+- `--song=<n>` plays another song, counting from 0 in the start screen's order. Songs 1
+  to 5 hang three bananas, not four, so expect one banana fewer than for song 0.
 - `--chords` plays Treble + chords instead. With `--autoplay` the bot also plays each
   chord, once leaves one out and runs into the log: expect `WON falls=3 bananas=4`.
 - `--perf` prints fps and draw calls once a second.

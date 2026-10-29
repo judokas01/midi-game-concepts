@@ -24,13 +24,13 @@ const SWING := 0.85        # pendulum half-angle, radians
 const RP := 1.5            # shoulders hang this many staff steps below the grip
 const LIANA_DIP := 0.95    # liana below LIANA_Y where the gorilla lands, in steps
 const HOP := 1.5           # height of a bounce along the liana during a long rest, in steps
-const SPLIT := 60          # with chords, the notes below middle C are the left hand's
 
 # settings, set from the HUD
 var bpm := 60.0
 var labels := true
 var tick_on := true
-var clef := Song.Clef.TREBLE   # these three are chosen on the start screen
+var song := 0                  # which of Song.library(); this and the next four are chosen on the start screen
+var clef := Song.Clef.TREBLE
 var chords := false            # the treble clef with chords: a log to break at every chord change
 var hint := ChordLog.Hint.NAME   # what the sign on each log shows
 var practice := false          # the magic bananas never run out
@@ -40,6 +40,7 @@ var bananas := 0
 var falls := 0
 var done_up_to := 0
 var started := false
+var split := 60            # with chords, the notes below this are the left hand's: middle C, or the melody's lowest note
 
 # `cur` is the branch being hung on (HANG, AIR, REST) or waited for (WAIT, FALL, BOUNCE).
 # Every window is measured from `grab_t`, the grab of branch `cur`, never from a global clock.
@@ -94,11 +95,12 @@ func _ready() -> void:
 	hud.tempo_changed.connect(func(v: float) -> void: bpm = v)
 	hud.labels_toggled.connect(_on_labels_toggled)
 	hud.tick_toggled.connect(_on_tick_toggled)
+	hud.song_chosen.connect(set_song)
 	hud.style_chosen.connect(set_style)
 	hud.hint_chosen.connect(set_hint)
 	hud.practice_toggled.connect(set_practice)
 	hud.menu_pressed.connect(show_menu)
-	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in ["--autoplay", "--perf", "--chords"] or a.begins_with("--shots=")):
+	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in ["--autoplay", "--perf", "--chords"] or a.begins_with("--shots=") or a.begins_with("--song=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
 	now = now_ms()
 	_last = now
@@ -128,9 +130,12 @@ func start() -> void:
 
 
 func restart() -> void:
-	notes = Song.parse(clef, chords)
+	notes = Song.parse(song, clef, chords)
+	split = mini(60, notes.map(func(n: Song.Note) -> int: return n.midi).min())
+	note_input.octave_shift = _keys_octave()
 	note_input.set_chords(notes.map(func(n: Song.Note) -> Song.Chord: return n.chord).filter(func(c: Song.Chord) -> bool: return c != null))
-	world.build(notes)
+	hud.show_key_notes(note_input.key_notes(), note_input.chord_key_notes())
+	world.build(notes, Song.bar_lines(song, notes))
 	_refresh_labels()
 	hud.clear_messages()
 	bananas = START_BANANAS
@@ -150,17 +155,33 @@ func restart() -> void:
 	_update_hud()
 
 
-## The bass clef plays the song an octave down, the keyboard fallback too. `with_chords` adds
-## the chords to the treble clef. The level is laid out again behind the start screen.
+## Lays song `i` out behind the start screen.
+func set_song(i: int) -> void:
+	song = i
+	restart()
+
+
+## The bass clef plays the song lower, the keyboard fallback too. `with_chords` adds the
+## chords to the treble clef. The level is laid out again behind the start screen.
 func set_style(c: Song.Clef, with_chords: bool) -> void:
 	clef = c
 	chords = with_chords
-	note_input.octave_shift = Song.OCTAVE_SHIFT[c]
 	$Clef/Treble.visible = c == Song.Clef.TREBLE
 	$Clef/Bass.visible = c == Song.Clef.BASS
 	restart()
-	hud.show_key_notes(note_input.key_notes(), note_input.chord_key_notes())
 	hud.show_chord_options(with_chords)
+
+
+## The octave of the computer keys, from C: the one that plays the most of the song.
+func _keys_octave() -> int:
+	var best := 0
+	var most := -1
+	for octave in range(-3, 3):
+		var hits := notes.filter(func(n: Song.Note) -> bool: return n.midi >= 60 + 12 * octave and n.midi <= 72 + 12 * octave).size()
+		if hits > most:
+			best = octave
+			most = hits
+	return best
 
 
 func set_hint(h: ChordLog.Hint) -> void:
@@ -238,7 +259,7 @@ func note_on(m: int, ts: float) -> void:
 		if note_input.source == "MIDI" and not hud.choose(m) and not started:
 			start()   # any note that picks nothing; it grabs nothing either
 		return
-	if chords and m < SPLIT:
+	if chords and m < split:
 		_left[m] = true
 		_left_changed(ts)
 		return
@@ -293,7 +314,7 @@ func note_on(m: int, ts: float) -> void:
 
 
 func note_off(m: int, ts: float) -> void:
-	if chords and m < SPLIT:
+	if chords and m < split:
 		_left.erase(m)
 		_left_changed(ts)
 		return

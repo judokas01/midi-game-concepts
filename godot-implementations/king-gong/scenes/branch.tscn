@@ -73,6 +73,7 @@ rotation = -1.2
 texture = ExtResource("6_banana")
 
 [node name="NoteLabel" type="Label" parent="."]
+z_index = 1
 offset_left = -60.0
 offset_top = -42.0
 offset_right = 60.0

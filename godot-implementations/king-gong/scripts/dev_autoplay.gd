@@ -6,6 +6,7 @@ extends Node
 ##   -- --chords          plays the treble clef with chords instead. With --autoplay the bot
 ##                        plays each chord before the note on even branches and after it on
 ##                        odd ones, and leaves one chord out, so a log gets run into too
+##   -- --song=<n>        plays song n of Song.library(), counting from 0, instead of the first
 ##   -- --perf            prints fps and draw calls once a second
 ##   -- --shots=<dir>     saves a screenshot every second into <dir>
 
@@ -13,7 +14,7 @@ const Game := preload("res://scripts/game.gd")
 const Song := preload("res://scripts/song.gd")
 const FLUB_AT := 5         # the bot plays a wrong note when reaching for this branch, once
 const OVERHOLD_AT := 20    # and hangs on to this one until it breaks, once
-const CHORDLESS_AT := 9    # with chords, it plays this branch without its chord, once
+const CHORDLESS_AT := 9    # with chords, it plays the first log from this branch on without its chord, once
 const SHOT_EVERY_MS := 1000.0
 
 @onready var game: Game = get_parent()
@@ -41,6 +42,8 @@ func _ready() -> void:
 			_perf = true
 		elif arg == "--chords":
 			game.set_style.call_deferred(Song.Clef.TREBLE, true)
+		elif arg.begins_with("--song="):
+			game.set_song.call_deferred(int(arg.trim_prefix("--song=")))
 	if _autoplay:
 		game.start.call_deferred()
 
@@ -95,7 +98,7 @@ func _play(now: float) -> void:
 ## Plays `m` for branch `j`, and the chord of its log if one stands.
 func _press(j: int, m: int, now: float) -> void:
 	var chord: Song.Chord = game.notes[j].chord if game.notes[j].log_up else null
-	if chord and j == CHORDLESS_AT and not _chordless:
+	if chord and j >= CHORDLESS_AT and not _chordless:
 		_chordless = true
 		chord = null
 	if chord and j % 2 == 0:

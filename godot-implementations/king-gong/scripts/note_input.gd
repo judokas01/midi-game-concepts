@@ -22,7 +22,7 @@ const CHORD_LABELS := "ZXCVBNM"
 const RESCAN_S := 2.0
 
 var source := "keyboard"
-var octave_shift := 0      # octaves the keys are moved by: -1 in the bass clef
+var octave_shift := 0      # octaves the keys are moved by, to where the song is: -1 in the bass clef
 var _chord_keys := {}      # chord key -> the Song.Chord it plays; empty without chords
 var _rescan := RESCAN_S
 

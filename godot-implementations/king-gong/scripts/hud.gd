@@ -9,6 +9,7 @@ signal restart_pressed
 signal tempo_changed(bpm: float)
 signal labels_toggled(on: bool)
 signal tick_toggled(on: bool)
+signal song_chosen(song: int)
 signal style_chosen(clef: Song.Clef, chords: bool)
 signal hint_chosen(hint: ChordLog.Hint)
 signal practice_toggled(on: bool)
@@ -21,8 +22,8 @@ const GlowingBanana := preload("res://scenes/glowing_banana.tscn")
 const SOURCE_COLOURS := {"keyboard": Color("3a3f49"), "MIDI": Color("2e8b57")}
 # the note that picks each button, by its path under the menu; on the start screen any other
 # note starts the game
-const START_KEYS := {"Clef/Treble": 60, "Clef/Bass": 62, "Clef/Chords": 64, "Hint/Name": 65, "Hint/Bass": 67,
-	"Practice": 69}
+const START_KEYS := {"Song/Previous": 48, "Song/Next": 50, "Clef/Treble": 60, "Clef/Bass": 62, "Clef/Chords": 64,
+	"Hint/Name": 65, "Hint/Bass": 67, "Practice": 69}
 const END_KEYS := {"Again": 60, "Menu": 62}
 const END_DEAF_MS := 800   # the end panel ignores notes this long, so a note still being played can't pick
 
@@ -39,6 +40,7 @@ var _end_listens_at := 0
 @onready var _falls: Label = $Bar/Row/Falls
 @onready var _overlay: Control = $Overlay
 @onready var _start_menu: Control = $Overlay/Center/Box
+@onready var _song: OptionButton = $Overlay/Center/Box/Song/Pick
 @onready var _end_menu: Control = $EndPanel/Lines/Buttons
 @onready var _overlay_keys: RichTextLabel = $Overlay/Center/Box/Keys
 @onready var _chord_rule: Control = $Overlay/Center/Box/ChordRule
@@ -55,6 +57,11 @@ func _ready() -> void:
 	_toggle($Bar/Row/Labels/Toggle, labels_toggled)
 	_toggle($Bar/Row/Tick/Toggle, tick_toggled)
 	$Bar/Row/Restart.pressed.connect(func() -> void: restart_pressed.emit())
+	for song: Dictionary in Song.library():
+		_song.add_item(song.name)
+	_song.item_selected.connect(func(i: int) -> void: song_chosen.emit(i))
+	$Overlay/Center/Box/Song/Previous.pressed.connect(_next_song.bind(-1))
+	$Overlay/Center/Box/Song/Next.pressed.connect(_next_song.bind(1))
 	_on_chosen($Overlay/Center/Box/Clef/Treble, func() -> void: style_chosen.emit(Song.Clef.TREBLE, false))
 	_on_chosen($Overlay/Center/Box/Clef/Bass, func() -> void: style_chosen.emit(Song.Clef.BASS, false))
 	_on_chosen($Overlay/Center/Box/Clef/Chords, func() -> void: style_chosen.emit(Song.Clef.TREBLE, true))
@@ -185,6 +192,12 @@ func fly_banana(from: Vector2) -> void:
 		fruit.position = from.lerp(to, smoothstep(0.0, 1.0, k)) - Vector2(0.0, sin(PI * k) * 2.0 * Staff.STEP),
 		0.0, 1.0, 0.7)
 	flight.tween_callback(fruit.queue_free)
+
+
+## The song `by` places down the list (up if negative), round from the end to the start.
+func _next_song(by: int) -> void:
+	_song.select(posmod(_song.selected + by, _song.item_count))
+	song_chosen.emit(_song.selected)
 
 
 ## `picked` runs when `button`, one of a group, becomes the chosen one: clicked or played.

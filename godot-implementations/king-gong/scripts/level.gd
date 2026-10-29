@@ -30,7 +30,8 @@ var _logs_by_note := {}      # note index -> the chord log before its branch
 @onready var _pops: Node2D = $Pops
 
 
-func build(notes: Array[Song.Note]) -> void:
+## `bars`: where the bar lines go, in beats.
+func build(notes: Array[Song.Note], bars: Array) -> void:
 	for holder: Node in [_lianas, _branches, _logs, _pops, ledger, trunks]:
 		for child in holder.get_children():
 			holder.remove_child(child)
@@ -55,13 +56,12 @@ func build(notes: Array[Song.Note]) -> void:
 			_logs.add_child(new_log)
 			new_log.setup(note)
 			_logs_by_note[i] = new_log
-		if note.step == 0:
+		for step in range(0, note.step - 1, -2):   # a ledger line under the staff for each line down to the note
 			var bush := Sprite2D.new()
 			bush.texture = LEDGER_BUSH
-			bush.position = Staff.note_pos(note)
+			bush.position = Vector2(Staff.note_pos(note).x, Staff.y_of(step))
 			ledger.add_child(bush)
-	var last := notes[-1]
-	for bar in range(4, ceili(last.beat + last.beats), 4):   # a bar line every four beats
+	for bar in bars:
 		var trunk := ColorRect.new()
 		trunk.color = TRUNK_COLOUR
 		trunk.mouse_filter = Control.MOUSE_FILTER_IGNORE
