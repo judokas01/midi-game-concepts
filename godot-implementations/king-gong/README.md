@@ -98,6 +98,14 @@ A file the importer can't read is left out of the list, with a warning in the co
   Boomwhackers by root (C red, D orange, E yellow, F green, G blue, A purple, B pink), a
   minor chord darker. The bass-clef hint writes root position with the root between F2
   and E3, which keeps every chord inside the staff.
+- **The branch breaks as you hold it.** In the spike only the swing tells you how long to
+  hold, and it is hard to read. Here the branch you hang on breaks away in small pieces from
+  its left end, and its last piece, at the right end, falls at the moment to let go. The
+  piece under the gorilla's hand holds until you let go. The timing window is unchanged,
+  ±0.35 of a beat around the end: hang on past it and that last bit sags, cracks and snaps.
+  The swing stays as it was. A reward banana hangs near the right end, from the last piece
+  to fall. (A sunbeam and a banana sliding along the branch were tried as cues too; the
+  breaking branch read best.)
 - **Menus.** The spike has a start overlay and an end message. Here the start screen also
   has practice mode, the end panel offers Play again and Main menu, and every button on
   both carries a MIDI note that picks it, so you never have to leave the piano. The end
@@ -127,7 +135,7 @@ them around:
 | Path | What |
 | --- | --- |
 | `main.tscn` | Sky, parallax layers (canopy, staff-line bushes, clef, floor), the world, camera, HUD |
-| `scenes/branch.tscn` | One note: two halves of bark (Line2Ds) meeting at the grip, end twig and leaves, cracks, banana, label |
+| `scenes/branch.tscn` | One note: two halves of bark (Line2Ds) meeting at the grip, end twig and leaves, cracks, banana, label. When the gorilla grabs it, `branch.gd` cuts the bark into the pieces that fall |
 | `scenes/liana.tscn` | One rest: two posts, the vine (a Line2D) and its leaves |
 | `scenes/chord_log.tscn` | One chord change: the log in two pieces (stump and top), its sign with the name and a small bass staff, splinters and chips |
 | `scenes/gorilla.tscn` | Body sprite, scared body, arms (Line2Ds), hands, banana balloon, prompt |

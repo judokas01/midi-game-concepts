@@ -429,7 +429,7 @@ mouse_filter = 2
 bbcode_enabled = true
 text = "[center]Swing the gorilla through the treetops. The five long bushes are the staff lines; every branch sits on a note. Play that note to grab the branch.
 
-[b]Hold the note as long as the branch is long[/b]: a short branch is 1 beat, one twice as long is 2 beats. Let go too early and you drop, hang on too long and the branch breaks. A liana below a gap is a rest: let go on time and bounce off it.
+[b]Hold the note as long as the branch is long[/b]: a short branch is 1 beat, one twice as long is 2 beats. While you hold, the branch breaks away from the left, and its last piece falls when the note is up: let go then. Let go too early and you drop; hang on too long and the bit in your hand snaps too. A liana below a gap is a rest: let go on time and bounce off it.
 
 A wrong note is a fall too. Magic bananas bounce you back up. You start with 3, and more hang from some branches.
 

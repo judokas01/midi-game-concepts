@@ -62,7 +62,7 @@ var bounce_t0 := 0.0
 var now := 0.0             # ms, this frame
 var render: Pose
 var _blend := {}           # eases into a new pose: {from, rot, t0, dur, hop}; empty when idle
-var _strained := -1        # branch shown bending, if any
+var _hung := -1            # branch shown hung on, if any
 var _dipping := -1         # note whose liana is shown dipping, if any
 var _last := 0.0
 
@@ -116,7 +116,7 @@ func _process(_delta: float) -> void:
 	render = _apply_blend(_pose())
 	gorilla.show_pose(render, now)
 	camera.position.x = _camera_x()
-	_show_strain()
+	_show_hung()
 	_show_liana()
 	_show_prompt()
 
@@ -147,7 +147,7 @@ func restart() -> void:
 	perch_stump = true
 	_blend = {}
 	_blocked = {}
-	_strained = -1
+	_hung = -1
 	_dipping = -1
 	render = _pose()
 	camera.position.x = _camera_x()
@@ -381,7 +381,7 @@ func _complete(i: int) -> void:
 		n.taken = true
 		bananas += 1
 		world.branch(i).take_banana()
-		hud.fly_banana(get_viewport().get_canvas_transform() * (Staff.note_pos(n) + Vector2(0.65, 0.7) * S))
+		hud.fly_banana(get_viewport().get_canvas_transform() * world.branch(i).banana_spot())
 	_update_hud()
 
 
@@ -508,16 +508,19 @@ func _camera_x() -> float:
 	return render.pos.x - get_viewport_rect().size.x * 0.3
 
 
-## The branch being hung on sags, and cracks once the note has run past its length.
-func _show_strain() -> void:
+## The branch being hung on breaks away from the left as the note runs, its last piece
+## falling at the moment to let go; it sags, and cracks once the note has run past its length.
+func _show_hung() -> void:
 	var hung := cur if state == State.HANG else -1
-	if _strained != hung and _strained >= 0:
-		world.branch(_strained).set_strain(0.0, 0.0)
-	_strained = hung
+	if _hung != hung and _hung >= 0:
+		world.branch(_hung).set_strain(0.0, 0.0)
+		world.branch(_hung).let_go()
+	_hung = hung
 	if hung < 0:
 		return
 	var w := windows(hung, grab_t)
 	var crack := clampf((now - w.end) / w.tol, 0.0, 1.0) if now > w.end else 0.0
+	world.branch(hung).crumble((now - grab_t) / (notes[hung].beats * beat_ms()))
 	world.branch(hung).set_strain((0.08 + crack * 0.35) * S, crack)
 
 
