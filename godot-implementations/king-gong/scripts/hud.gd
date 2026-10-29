@@ -1,6 +1,8 @@
 extends CanvasLayer
 ## Everything drawn over the game: the top bar (settings and score), the start overlay, why
-## you fell, the end panel, the legend, and bananas flying to the counter.
+## you fell, the end panel, the legend, and bananas flying to the counter. The two menus, the
+## start overlay and the end panel, can also be worked from the MIDI keyboard: each button
+## has a note, written on it.
 
 signal start_pressed
 signal restart_pressed
@@ -9,14 +11,23 @@ signal labels_toggled(on: bool)
 signal tick_toggled(on: bool)
 signal style_chosen(clef: Song.Clef, chords: bool)
 signal hint_chosen(hint: ChordLog.Hint)
+signal practice_toggled(on: bool)
+signal menu_pressed
 
 const Song := preload("res://scripts/song.gd")
 const ChordLog := preload("res://scripts/chord_log.gd")
 const Staff := preload("res://scripts/staff.gd")
 const GlowingBanana := preload("res://scenes/glowing_banana.tscn")
 const SOURCE_COLOURS := {"keyboard": Color("3a3f49"), "MIDI": Color("2e8b57")}
+# the note that picks each button, by its path under the menu; on the start screen any other
+# note starts the game
+const START_KEYS := {"Clef/Treble": 60, "Clef/Bass": 62, "Clef/Chords": 64, "Hint/Name": 65, "Hint/Bass": 67,
+	"Practice": 69}
+const END_KEYS := {"Again": 60, "Menu": 62}
+const END_DEAF_MS := 800   # the end panel ignores notes this long, so a note still being played can't pick
 
 var _banner_fade: Tween
+var _end_listens_at := 0
 
 @onready var _bar: Control = $Bar
 @onready var _tempo: HSlider = $Bar/Row/Tempo/Slider
@@ -27,6 +38,8 @@ var _banner_fade: Tween
 @onready var _progress: Label = $Bar/Row/Progress
 @onready var _falls: Label = $Bar/Row/Falls
 @onready var _overlay: Control = $Overlay
+@onready var _start_menu: Control = $Overlay/Center/Box
+@onready var _end_menu: Control = $EndPanel/Lines/Buttons
 @onready var _overlay_keys: RichTextLabel = $Overlay/Center/Box/Keys
 @onready var _chord_rule: Control = $Overlay/Center/Box/ChordRule
 @onready var _hint: Control = $Overlay/Center/Box/Hint
@@ -42,18 +55,26 @@ func _ready() -> void:
 	_toggle($Bar/Row/Labels/Toggle, labels_toggled)
 	_toggle($Bar/Row/Tick/Toggle, tick_toggled)
 	$Bar/Row/Restart.pressed.connect(func() -> void: restart_pressed.emit())
-	$Overlay/Center/Box/Clef/Treble.pressed.connect(func() -> void: style_chosen.emit(Song.Clef.TREBLE, false))
-	$Overlay/Center/Box/Clef/Bass.pressed.connect(func() -> void: style_chosen.emit(Song.Clef.BASS, false))
-	$Overlay/Center/Box/Clef/Chords.pressed.connect(func() -> void: style_chosen.emit(Song.Clef.TREBLE, true))
-	$Overlay/Center/Box/Hint/Name.pressed.connect(func() -> void: hint_chosen.emit(ChordLog.Hint.NAME))
-	$Overlay/Center/Box/Hint/Bass.pressed.connect(func() -> void: hint_chosen.emit(ChordLog.Hint.BASS_CLEF))
+	_on_chosen($Overlay/Center/Box/Clef/Treble, func() -> void: style_chosen.emit(Song.Clef.TREBLE, false))
+	_on_chosen($Overlay/Center/Box/Clef/Bass, func() -> void: style_chosen.emit(Song.Clef.BASS, false))
+	_on_chosen($Overlay/Center/Box/Clef/Chords, func() -> void: style_chosen.emit(Song.Clef.TREBLE, true))
+	_on_chosen($Overlay/Center/Box/Hint/Name, func() -> void: hint_chosen.emit(ChordLog.Hint.NAME))
+	_on_chosen($Overlay/Center/Box/Hint/Bass, func() -> void: hint_chosen.emit(ChordLog.Hint.BASS_CLEF))
+	$Overlay/Center/Box/Practice.toggled.connect(func(on: bool) -> void: practice_toggled.emit(on))
+	$EndPanel/Lines/Buttons/Again.pressed.connect(func() -> void: restart_pressed.emit())
+	$EndPanel/Lines/Buttons/Menu.pressed.connect(func() -> void: menu_pressed.emit())
+	for menu: Array in [[_start_menu, START_KEYS], [_end_menu, END_KEYS]]:
+		for path: String in menu[1]:
+			var button: Button = menu[0].get_node(path)
+			button.text += " · " + Song.note_name(menu[1][path])
 	_overlay.gui_input.connect(_on_overlay_input)
 	# own copy, so recolouring it does not touch the scene's shared style
 	_source.add_theme_stylebox_override("normal", _source.get_theme_stylebox("normal").duplicate())
 
 
+## `bananas` < 0: they never run out, in practice mode.
 func show_stats(bananas: int, done: int, total: int, falls: int) -> void:
-	_banana_count.text = str(bananas)
+	_banana_count.text = str(bananas) if bananas >= 0 else "∞"
 	_progress.text = "branch %d/%d" % [done, total]
 	_falls.text = "falls %d" % falls
 
@@ -89,6 +110,40 @@ func hide_overlay() -> void:
 	_overlay.hide()
 
 
+func show_overlay() -> void:
+	_overlay.show()
+
+
+## The start screen or the end panel is up.
+func menu_up() -> bool:
+	return _overlay.visible or _end.visible
+
+
+## Picks the button on MIDI note `m` in the menu that is up, as a click would. True if `m` is
+## one of that menu's notes, even when its button is hidden.
+func choose(m: int) -> bool:
+	var menu := _start_menu
+	var keys := START_KEYS
+	if not _overlay.visible:
+		if not _end.visible or Time.get_ticks_msec() < _end_listens_at:
+			return false
+		menu = _end_menu
+		keys = END_KEYS
+	var path: Variant = keys.find_key(m)
+	if path == null:
+		return false
+	var button: Button = menu.get_node(path)
+	if not button.is_visible_in_tree():
+		return true
+	if not button.toggle_mode:
+		button.pressed.emit()
+	elif button.button_group:
+		button.button_pressed = true
+	else:
+		button.button_pressed = not button.button_pressed
+	return true
+
+
 ## Why you fell: shown for 2.8 s, fading over the last fifth.
 func show_banner(text: String) -> void:
 	if _banner_fade:
@@ -103,9 +158,11 @@ func show_banner(text: String) -> void:
 
 
 func show_end(title: String, line: String) -> void:
+	clear_messages()
 	$EndPanel/Lines/Title.text = title
 	$EndPanel/Lines/Line.text = line
 	_end.show()
+	_end_listens_at = Time.get_ticks_msec() + END_DEAF_MS
 
 
 func clear_messages() -> void:
@@ -128,6 +185,13 @@ func fly_banana(from: Vector2) -> void:
 		fruit.position = from.lerp(to, smoothstep(0.0, 1.0, k)) - Vector2(0.0, sin(PI * k) * 2.0 * Staff.STEP),
 		0.0, 1.0, 0.7)
 	flight.tween_callback(fruit.queue_free)
+
+
+## `picked` runs when `button`, one of a group, becomes the chosen one: clicked or played.
+func _on_chosen(button: Button, picked: Callable) -> void:
+	button.toggled.connect(func(on: bool) -> void:
+		if on:
+			picked.call())
 
 
 func _toggle(button: Button, changed: Signal) -> void:

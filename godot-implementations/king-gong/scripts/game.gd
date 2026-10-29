@@ -33,6 +33,7 @@ var tick_on := true
 var clef := Song.Clef.TREBLE   # these three are chosen on the start screen
 var chords := false            # the treble clef with chords: a log to break at every chord change
 var hint := ChordLog.Hint.NAME   # what the sign on each log shows
+var practice := false          # the magic bananas never run out
 
 var notes: Array[Song.Note] = []
 var bananas := 0
@@ -87,6 +88,7 @@ func _ready() -> void:
 	note_input.source_changed.connect(_on_source_changed)
 	note_input.start_requested.connect(start)
 	note_input.restart_requested.connect(_on_restart_key)
+	note_input.menu_requested.connect(_on_menu_key)
 	hud.start_pressed.connect(start)
 	hud.restart_pressed.connect(restart)
 	hud.tempo_changed.connect(func(v: float) -> void: bpm = v)
@@ -94,6 +96,8 @@ func _ready() -> void:
 	hud.tick_toggled.connect(_on_tick_toggled)
 	hud.style_chosen.connect(set_style)
 	hud.hint_chosen.connect(set_hint)
+	hud.practice_toggled.connect(set_practice)
+	hud.menu_pressed.connect(show_menu)
 	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in ["--autoplay", "--perf", "--chords"] or a.begins_with("--shots=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
 	now = now_ms()
@@ -164,6 +168,18 @@ func set_hint(h: ChordLog.Hint) -> void:
 	_refresh_labels()
 
 
+func set_practice(on: bool) -> void:
+	practice = on
+	_update_hud()
+
+
+## Back to the start screen, with the level laid out again behind it.
+func show_menu() -> void:
+	started = false
+	restart()
+	hud.show_overlay()
+
+
 func beat_ms() -> float:
 	return 60000.0 / bpm
 
@@ -217,6 +233,11 @@ func wait_spot(r: int) -> Vector2:
 # ---------------------------------------------------------------- rules
 
 func note_on(m: int, ts: float) -> void:
+	if hud.menu_up():
+		# menus are worked from the MIDI keyboard; on the computer keyboard there is the mouse
+		if note_input.source == "MIDI" and not hud.choose(m) and not started:
+			start()   # any note that picks nothing; it grabs nothing either
+		return
 	if chords and m < SPLIT:
 		_left[m] = true
 		_left_changed(ts)
@@ -379,8 +400,9 @@ func _win() -> void:
 	metronome.cancel_ticks()
 	_blend = {from = render.pos, rot = render.rot, t0 = now_ms(), dur = 450.0, hop = 1.5 * S}
 	state = State.WON
-	hud.show_end("Home in the nest!", "%d fall%s · %d banana%s left · Enter or Restart to play again"
-		% [falls, "" if falls == 1 else "s", bananas, "" if bananas == 1 else "s"])
+	var left := "practice mode" if practice else "%d banana%s left" % [bananas, "" if bananas == 1 else "s"]
+	hud.show_end("Home in the nest!", "%d fall%s · %s · Enter plays again, Esc for the menu"
+		% [falls, "" if falls == 1 else "s", left])
 
 
 func _update(dt: float) -> void:
@@ -404,15 +426,16 @@ func _update(dt: float) -> void:
 					fall_rot = 0.0
 					land_t = now
 			elif now - land_t > 550.0:
-				if bananas > 0:
-					bananas -= 1
-					_update_hud()
+				if practice or bananas > 0:
+					if not practice:
+						bananas -= 1
+						_update_hud()
 					state = State.BOUNCE
 					bounce_t0 = now
 					world.pop_banana(Vector2(fall_pos.x, Staff.FLOOR_Y - 0.25 * S))
 				else:
 					state = State.OVER
-					hud.show_end("Out of magic bananas", "Made it to branch %d of %d · Enter or Restart to try again"
+					hud.show_end("Out of magic bananas", "Made it to branch %d of %d · Enter tries again, Esc for the menu"
 						% [done_up_to, notes.size()])
 		State.BOUNCE:
 			if now - bounce_t0 > 1100.0:
@@ -422,7 +445,7 @@ func _update(dt: float) -> void:
 
 
 func _update_hud() -> void:
-	hud.show_stats(bananas, done_up_to, notes.size(), falls)
+	hud.show_stats(-1 if practice else bananas, done_up_to, notes.size(), falls)
 
 
 # ---------------------------------------------------------------- settings
@@ -430,6 +453,11 @@ func _update_hud() -> void:
 func _on_restart_key() -> void:
 	if started:
 		restart()
+
+
+func _on_menu_key() -> void:
+	if started:
+		show_menu()
 
 
 func _on_labels_toggled(on: bool) -> void:

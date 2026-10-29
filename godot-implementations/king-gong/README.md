@@ -24,8 +24,11 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | Keyboard `Z X C V B N M` | Treble + chords only: one key per chord, by its root (C D E F G A B). This song uses `Z` = C, `V` = F, `B` = G |
 | Treble clef / Bass clef / Treble + chords | On the start screen: how to play the song |
 | Chord hint | On the start screen, with chords: the sign on each log shows the chord's name, or its notes in the bass clef |
-| `Space` / click / any MIDI note | Start, on the start screen. The note only starts the game; it grabs nothing |
+| MIDI note written on a menu button | Picks that button, on the start screen (C4 to A4) and on the end panel (C4 play again, D4 main menu). Computer keys don't; use the mouse |
+| `Space` / click / any other MIDI note | Start, on the start screen. The note only starts the game; it grabs nothing |
 | `Enter` / Restart button | Restart the song |
+| `Esc` | Back to the start screen, at any time |
+| Practice mode | On the start screen: the magic bananas never run out |
 | Tempo slider | 40–120 BPM (default 60) |
 | Labels / Beat tick | Same toggles as the spike |
 
@@ -57,6 +60,10 @@ Which input is live (MIDI or keyboard) is shown top-right, next to bananas, prog
   Boomwhackers by root (C red, D orange, E yellow, F green, G blue, A purple, B pink), a
   minor chord darker. The bass-clef hint writes root position with the root between F2
   and E3, which keeps every chord inside the staff.
+- **Menus.** The spike has a start overlay and an end message. Here the start screen also
+  has practice mode, the end panel offers Play again and Main menu, and every button on
+  both carries a MIDI note that picks it, so you never have to leave the piano. The end
+  panel ignores notes for 0.8 s, so a note still being played can't pick by accident.
 - **Input timing.** Godot input events carry no timestamp, so a note is stamped when the
   event is dispatched, once per frame: about 16 ms of resolution at 60 fps against a
   ±350 ms window at 60 BPM. The spike uses Web MIDI's own timestamps.
@@ -96,7 +103,7 @@ them around:
 | `scripts/song.gd` | The tune and its chords, their parsing into branches, and the two clefs |
 | `scripts/metronome.gd` | The beat tick |
 | `scripts/note_input.gd` | MIDI and keyboard input |
-| `scripts/hud.gd` | Top bar, overlay, messages |
+| `scripts/hud.gd` | Top bar, the two menus and their MIDI notes, messages |
 | `scripts/dev_autoplay.gd` | Dev check only, see below |
 
 Branches, lianas and logs only appear when the game runs, because `level.gd` lays them out

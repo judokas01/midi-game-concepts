@@ -11,6 +11,7 @@ signal note_off(midi: int, t_ms: float)
 signal source_changed(source: String)
 signal start_requested
 signal restart_requested
+signal menu_requested
 
 const Song := preload("res://scripts/song.gd")
 const KEYS: Array[Key] = [KEY_A, KEY_S, KEY_D, KEY_F, KEY_G, KEY_H, KEY_J, KEY_K]
@@ -90,7 +91,6 @@ func _input(event: InputEvent) -> void:
 		if midi.message == MIDI_MESSAGE_NOTE_ON and midi.velocity > 0:
 			_set_source("MIDI")
 			note_on.emit(midi.pitch, t)
-			start_requested.emit()   # any note starts the game; after note_on, so that note grabs nothing
 		elif midi.message == MIDI_MESSAGE_NOTE_OFF or midi.message == MIDI_MESSAGE_NOTE_ON:
 			note_off.emit(midi.pitch, t)   # note-on with velocity 0 IS a note-off
 		return
@@ -113,6 +113,8 @@ func _input(event: InputEvent) -> void:
 		start_requested.emit()
 	elif key.keycode == KEY_ENTER or key.keycode == KEY_KP_ENTER:
 		restart_requested.emit()
+	elif key.keycode == KEY_ESCAPE:
+		menu_requested.emit()
 	elif idx >= 0:
 		_set_source("keyboard")
 		note_on.emit(KEY_MIDI[idx] + 12 * octave_shift, t)

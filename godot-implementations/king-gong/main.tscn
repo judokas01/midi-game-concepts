@@ -233,7 +233,7 @@ anchor_right = 0.5
 offset_left = -280.0
 offset_top = 115.6
 offset_right = 280.0
-offset_bottom = 231.6
+offset_bottom = 275.6
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
@@ -255,6 +255,26 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.811765, 0.847059, 0.8, 1)
 theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="Hud/EndPanel/Lines"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Again" type="Button" parent="Hud/EndPanel/Lines/Buttons"]
+custom_minimum_size = Vector2(140, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "Play again"
+
+[node name="Menu" type="Button" parent="Hud/EndPanel/Lines/Buttons"]
+custom_minimum_size = Vector2(140, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "Main menu"
 
 [node name="Bar" type="PanelContainer" parent="Hud"]
 anchors_preset = 10
@@ -496,6 +516,15 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_hint")
 text = "Bass clef"
 
+[node name="Practice" type="Button" parent="Hud/Overlay/Center/Box"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+text = "Practice mode: infinite bananas"
+
 [node name="Keys" type="RichTextLabel" parent="Hud/Overlay/Center/Box"]
 layout_mode = 2
 mouse_filter = 2
@@ -508,6 +537,6 @@ scroll_active = false
 layout_mode = 2
 mouse_filter = 2
 bbcode_enabled = true
-text = "[center][b]Play any note on your MIDI keyboard, click or press Space to start[/b][/center]"
+text = "[center][b]Play any other note on your MIDI keyboard, click or press Space to start[/b][/center]"
 fit_content = true
 scroll_active = false
