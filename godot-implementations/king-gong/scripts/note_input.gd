@@ -24,6 +24,7 @@ const RESCAN_S := 2.0
 var source := "keyboard"
 var octave_shift := 0      # octaves the keys are moved by, to where the song is: -1 in the bass clef
 var _chord_keys := {}      # chord key -> the Song.Chord it plays; empty without chords
+var _sounding := {}        # chord key held down -> the chord it played, let go of on release even if the keys changed since
 var _rescan := RESCAN_S
 
 
@@ -103,9 +104,10 @@ func _input(event: InputEvent) -> void:
 	if not key.pressed:
 		if idx >= 0:
 			note_off.emit(KEY_MIDI[idx] + 12 * octave_shift, t)
-		elif chord != null:
-			for m in chord.midi:
+		elif _sounding.has(key.keycode):
+			for m in _sounding[key.keycode].midi:
 				note_off.emit(m, t)
+			_sounding.erase(key.keycode)
 		return
 	if key.echo or key.ctrl_pressed or key.meta_pressed or key.alt_pressed:
 		return
@@ -120,6 +122,7 @@ func _input(event: InputEvent) -> void:
 		note_on.emit(KEY_MIDI[idx] + 12 * octave_shift, t)
 	elif chord != null:
 		_set_source("keyboard")
+		_sounding[key.keycode] = chord
 		for m in chord.midi:
 			note_on.emit(m, t)
 	else:

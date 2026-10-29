@@ -2,6 +2,10 @@ extends Node2D
 ## King Gong, ported from concepts/002-king-gong/spike: the rules and the gorilla's pose.
 ## The scene shows the result: World (level.gd) holds the branches and the gorilla, Hud the
 ## bar and messages, Metronome the beat tick, NoteInput the MIDI and keyboard.
+##
+## Besides playing a song by the spike's rules there is learn mode, where nothing is timed and
+## the gorilla waits for each note and chord, and the chord drill, a made-up tune the gorilla
+## climbs by itself, waiting at every log for its chord.
 
 const Song := preload("res://scripts/song.gd")
 const Staff := preload("res://scripts/staff.gd")
@@ -11,6 +15,7 @@ const Liana := preload("res://scripts/liana.gd")
 const ChordLog := preload("res://scripts/chord_log.gd")
 const Gorilla := preload("res://scripts/gorilla.gd")
 const Hud := preload("res://scripts/hud.gd")
+const Drill := preload("res://scripts/drill.gd")
 const Metronome := preload("res://scripts/metronome.gd")
 const NoteInput := preload("res://scripts/note_input.gd")
 
@@ -29,15 +34,23 @@ const HOP := 1.5           # height of a bounce along the liana during a long re
 var bpm := 60.0
 var labels := true
 var tick_on := true
-var song := 0                  # which of Song.library(); this and the next four are chosen on the start screen
-var clef := Song.Clef.TREBLE
-var chords := false            # the treble clef with chords: a log to break at every chord change
+var mode := Hud.Mode.PLAY      # this and the next seven are chosen on the start screen
+var song := 0                  # which of Song.library()
 var hint := ChordLog.Hint.NAME   # what the sign on each log shows
 var practice := false          # the magic bananas never run out
+var piano := true              # learn mode and the drill: the little keyboard lights what to play
+var drill_kinds: Array = [Drill.Kind.MAJOR]   # the kinds of chord the drill draws from
+var _style := {clef = Song.Clef.TREBLE, chords = false, by_itself = false}   # how the songs are played
+
+# how this level is played: the songs' style, or the drill's
+var clef := Song.Clef.TREBLE
+var chords := false            # the treble clef with chords: a log to break at every chord change
+var by_itself := false         # with chords: the gorilla plays the tune itself, you only the chords
 
 var notes: Array[Song.Note] = []
 var bananas := 0
 var falls := 0
+var misses := 0            # learn mode and the drill: wrong notes and chords
 var done_up_to := 0
 var started := false
 var split := 60            # with chords, the notes below this are the left hand's: middle C, or the melody's lowest note
@@ -54,7 +67,11 @@ var fall_pos := Vector2.ZERO
 var fall_vel := Vector2.ZERO
 var fall_rot := 0.0
 var fall_spin := 0.0
-var _left := {}            # left-hand notes held down, with chords
+var _left := {}            # left-hand notes held down, with chords; every note when the gorilla plays the tune
+var _right := {}           # the other notes held down
+var _wrong := {}           # learn mode: notes held down that were wrong
+var _missed_chord := false # learn mode and the drill: a wrong chord was counted, not again until the left hand lets go
+var _stale := {}           # left-hand notes still held from the last chord played: they make no wrong chord
 var _blocked := {}         # the next branch's note, played while its log still stood: {j, ts, jump}; empty when none
 var land_t := 0.0
 var bounce_t0 := 0.0
@@ -95,16 +112,20 @@ func _ready() -> void:
 	hud.tempo_changed.connect(func(v: float) -> void: bpm = v)
 	hud.labels_toggled.connect(_on_labels_toggled)
 	hud.tick_toggled.connect(_on_tick_toggled)
+	hud.mode_chosen.connect(set_mode)
 	hud.song_chosen.connect(set_song)
 	hud.style_chosen.connect(set_style)
 	hud.hint_chosen.connect(set_hint)
+	hud.kinds_chosen.connect(set_drill_kinds)
 	hud.practice_toggled.connect(set_practice)
+	hud.piano_toggled.connect(set_piano)
 	hud.menu_pressed.connect(show_menu)
-	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in ["--autoplay", "--perf", "--chords"] or a.begins_with("--shots=") or a.begins_with("--song=")):
+	var dev_flags := ["--autoplay", "--perf", "--chords", "--chords-only", "--learn", "--drill"]
+	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in dev_flags or a.begins_with("--shots=") or a.begins_with("--song=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
 	now = now_ms()
 	_last = now
-	set_style(clef, chords)
+	set_style(_style.clef, _style.chords, _style.by_itself)
 
 
 func _process(_delta: float) -> void:
@@ -119,6 +140,7 @@ func _process(_delta: float) -> void:
 	_show_hung()
 	_show_liana()
 	_show_prompt()
+	_show_piano()
 
 
 func start() -> void:
@@ -130,16 +152,30 @@ func start() -> void:
 
 
 func restart() -> void:
-	notes = Song.parse(song, clef, chords)
+	var drill := mode == Hud.Mode.DRILL
+	clef = Song.Clef.TREBLE if drill else _style.clef
+	chords = drill or _style.chords
+	by_itself = drill or _style.by_itself
+	$Clef/Treble.visible = clef == Song.Clef.TREBLE
+	$Clef/Bass.visible = clef == Song.Clef.BASS
+	var bars: Array
+	if drill:   # new chords every time
+		notes = Song.parse_entries(Drill.entries(drill_kinds), clef, true)
+		bars = notes.filter(func(n: Song.Note) -> bool: return n.chord != null and n.beat > 0.0).map(func(n: Song.Note) -> float: return n.beat)
+	else:
+		notes = Song.parse(song, clef, chords)
+		bars = Song.bar_lines(song, notes)
 	split = mini(60, notes.map(func(n: Song.Note) -> int: return n.midi).min())
 	note_input.octave_shift = _keys_octave()
-	note_input.set_chords(notes.map(func(n: Song.Note) -> Song.Chord: return n.chord).filter(func(c: Song.Chord) -> bool: return c != null))
-	hud.show_key_notes(note_input.key_notes(), note_input.chord_key_notes())
-	world.build(notes, Song.bar_lines(song, notes))
-	_refresh_labels()
+	world.build(notes, bars)
+	_set_chord_keys()
 	hud.clear_messages()
-	bananas = START_BANANAS
+	bananas = START_BANANAS if mode == Hud.Mode.PLAY else 0
 	falls = 0
+	misses = 0
+	_wrong.clear()
+	_missed_chord = false
+	_stale.clear()
 	done_up_to = 0
 	metronome.cancel_ticks()
 	state = State.WAIT
@@ -152,7 +188,15 @@ func restart() -> void:
 	render = _pose()
 	camera.position.x = _camera_x()
 	camera.reset_smoothing()
+	_setup_piano()
 	_update_hud()
+
+
+## Play, learn or drill; the level is laid out again behind the start screen.
+func set_mode(m: Hud.Mode) -> void:
+	mode = m
+	restart()
+	hud.show_options(mode, _style.chords, _style.by_itself)
 
 
 ## Lays song `i` out behind the start screen.
@@ -161,15 +205,13 @@ func set_song(i: int) -> void:
 	restart()
 
 
-## The bass clef plays the song lower, the keyboard fallback too. `with_chords` adds the
-## chords to the treble clef. The level is laid out again behind the start screen.
-func set_style(c: Song.Clef, with_chords: bool) -> void:
-	clef = c
-	chords = with_chords
-	$Clef/Treble.visible = c == Song.Clef.TREBLE
-	$Clef/Bass.visible = c == Song.Clef.BASS
+## How the songs are played. The bass clef plays the song lower, the keyboard fallback too.
+## `with_chords` adds the chords to the treble clef; `itself`, the gorilla plays the tune and
+## you only the chords. The level is laid out again behind the start screen.
+func set_style(c: Song.Clef, with_chords: bool, itself := false) -> void:
+	_style = {clef = c, chords = with_chords, by_itself = itself}
 	restart()
-	hud.show_chord_options(with_chords)
+	hud.show_options(mode, with_chords, itself)
 
 
 ## The octave of the computer keys, from C: the one that plays the most of the song.
@@ -189,9 +231,21 @@ func set_hint(h: ChordLog.Hint) -> void:
 	_refresh_labels()
 
 
+## The drill's chords are drawn from these Drill.Kinds.
+func set_drill_kinds(kinds: Array) -> void:
+	drill_kinds = kinds
+	if mode == Hud.Mode.DRILL:
+		restart()
+
+
 func set_practice(on: bool) -> void:
 	practice = on
 	_update_hud()
+
+
+func set_piano(on: bool) -> void:
+	piano = on
+	_setup_piano()
 
 
 ## Back to the start screen, with the level laid out again behind it.
@@ -259,11 +313,15 @@ func note_on(m: int, ts: float) -> void:
 		if note_input.source == "MIDI" and not hud.choose(m) and not started:
 			start()   # any note that picks nothing; it grabs nothing either
 		return
-	if chords and m < split:
+	if chords and (by_itself or m < split):
 		_left[m] = true
-		_left_changed(ts)
+		_left_changed(ts, true)
 		return
+	_right[m] = true
 	if not started:
+		return
+	if mode != Hud.Mode.PLAY:
+		_learn_note(m, ts)
 		return
 	if state == State.WAIT:
 		var n := notes[cur]
@@ -314,14 +372,22 @@ func note_on(m: int, ts: float) -> void:
 
 
 func note_off(m: int, ts: float) -> void:
-	if chords and m < split:
+	_right.erase(m)
+	_wrong.erase(m)
+	if chords and (by_itself or m < split):
 		_left.erase(m)
-		_left_changed(ts)
+		_stale.erase(m)
+		_left_changed(ts, false)
 		return
 	if not _blocked.is_empty() and m == notes[_blocked.j].midi:
 		_blocked = {}   # let go before the log broke: play it again
 		return
 	if not started or state != State.HANG or m != notes[cur].midi:
+		return
+	if mode != Hud.Mode.PLAY:
+		if cur == notes.size() - 1:   # learn mode: let go of the last branch to finish
+			_complete(cur)
+			_win()
 		return
 	var i := cur
 	var w := windows(i, grab_t)
@@ -340,25 +406,130 @@ func note_off(m: int, ts: float) -> void:
 	rel_pose = render
 
 
-## The left hand's notes changed. If they now make the chord of the log ahead, on time, the
-## gorilla kicks the log down; and grabs the branch if its note was already played.
-func _left_changed(ts: float) -> void:
-	if not started or not state in [State.WAIT, State.HANG, State.AIR, State.REST]:
+## Learn mode: the gorilla waits for the next branch's note, however long it takes, and for
+## the chord too if a log stands before it. A wrong note only counts.
+func _learn_note(m: int, ts: float) -> void:
+	if state != State.WAIT and state != State.HANG:
 		return
 	var j := cur if state == State.WAIT else cur + 1
-	if j >= notes.size() or not notes[j].log_up or not notes[j].chord.is_played_by(_left.keys()):
+	if j >= notes.size():
 		return
-	if state != State.WAIT:
-		var w := windows(cur, grab_t)
-		if ts < w.next_lo or ts > w.next_hi + GRACE:
-			return   # off the beat: the log stays up
+	if m != notes[j].midi:
+		_wrong[m] = true
+		_miss("Not %s: the next branch is %s" % [Song.note_name(m), notes[j].name])
+		return
+	var jump := state == State.HANG and (notes[cur].rest_after > 0 or absi(notes[j].step - notes[cur].step) > 2)
+	if state == State.HANG:
+		_complete(cur)
+	if notes[j].log_up:
+		_blocked = {j = j, ts = ts, jump = jump}   # grabbed once the chord breaks the log
+		return
+	_grab(j, ts, jump)
+
+
+## The left hand's notes changed, a note `pressed` or let go. If they now make the chord of the
+## log ahead, on time when playing, the gorilla kicks the log down. In learn mode and the drill
+## a wrong chord counts, played with fresh notes: not while letting go of the last chord.
+func _left_changed(ts: float, pressed: bool) -> void:
+	if _left.is_empty():
+		_missed_chord = false
+	var j := _log_ahead()
+	if j < 0:
+		return
+	var chord := notes[j].chord
+	if chord.is_played_by(_left.keys()):
+		if mode == Hud.Mode.PLAY and state != State.WAIT:
+			var w := windows(cur, grab_t)
+			if ts < w.next_lo or ts > w.next_hi + GRACE:
+				return   # off the beat: the log stays up
+		_break_log(j, ts)
+		return
+	if not pressed or mode == Hud.Mode.PLAY or _missed_chord:
+		return
+	var fresh := _left.keys().filter(func(m: int) -> bool: return not _stale.has(m))
+	if fresh.size() >= chord.midi.size() and not chord.is_played_by(fresh):
+		_missed_chord = true
+		_miss("That isn't %s: play %s" % [chord.name, " ".join(chord.tones)])
+
+
+## The branch whose log the left hand would break now, if that log still stands; else -1.
+func _log_ahead() -> int:
+	if not started or not state in [State.WAIT, State.HANG, State.AIR, State.REST]:
+		return -1
+	var j := cur if state == State.WAIT else cur + 1
+	return j if j < notes.size() and notes[j].log_up else -1
+
+
+## The chord is in: the gorilla kicks down the log before branch `j`, and grabs the branch if
+## its note was already played.
+func _break_log(j: int, ts: float) -> void:
 	notes[j].log_up = false
+	_stale = _left.duplicate()
 	gorilla.kick(world.chord_log(j).kick_spot(), now_ms())
 	world.chord_log(j).break_off()
+	if mode == Hud.Mode.DRILL:
+		_set_chord_keys()
+	_update_hud()
+	if by_itself and state == State.HANG:
+		_catch_up()
 	if _blocked.is_empty():
 		return
-	# from the magic banana the grab restarts the beat, so it counts from when both are down
-	_grab(j, ts if state == State.WAIT else _blocked.ts, _blocked.jump)
+	# from the magic banana, and in learn mode, the grab restarts the beat, so it counts from when both are down
+	_grab(j, ts if state == State.WAIT or mode != Hud.Mode.PLAY else _blocked.ts, _blocked.jump)
+
+
+## The gorilla waited at the end of its branch for the chord: the beat restarts from now, as
+## if the branch had been that much longer.
+func _catch_up() -> void:
+	var late: float = now_ms() - windows(cur, grab_t).end
+	if late <= 0.0:
+		return
+	grab_t += late
+	if tick_on:
+		metronome.schedule_ticks(grab_t, beat_ms(), notes[cur].beats, notes[cur].rest_after)
+
+
+## Chords only: the gorilla plays the tune by itself, on the beat. In learn mode and the drill
+## it waits at the end of a branch while the log after it stands.
+func _play_tune() -> void:
+	match state:
+		State.WAIT:
+			if not _blocked.is_empty():
+				return
+			if notes[cur].log_up:
+				_blocked = {j = cur, ts = now, jump = false}   # grabbed once the chord breaks the log
+			else:
+				_grab(cur, now, false)
+		State.HANG:
+			var w := windows(cur, grab_t)
+			if now < w.end:
+				return
+			if cur == notes.size() - 1:
+				_complete(cur)
+				_win()
+				return
+			if mode != Hud.Mode.PLAY and notes[cur + 1].log_up:
+				return
+			_complete(cur)
+			state = State.REST if notes[cur].rest_after > 0 else State.AIR
+			rel_t = w.end
+			rel_pose = render
+		State.AIR, State.REST:
+			var w := windows(cur, grab_t)
+			if now < w.next or not _blocked.is_empty():
+				return
+			var j := cur + 1
+			var jump := state != State.REST and absi(notes[j].step - notes[cur].step) > 2
+			if notes[j].log_up:
+				_blocked = {j = j, ts = w.next, jump = jump}   # grabbed if the chord comes in time
+			else:
+				_grab(j, w.next, jump)
+
+
+func _miss(why: String) -> void:
+	misses += 1
+	hud.show_banner(why)
+	_update_hud()
 
 
 func _grab(j: int, ts: float, jump: bool) -> void:
@@ -367,7 +538,7 @@ func _grab(j: int, ts: float, jump: bool) -> void:
 	state = State.HANG
 	cur = j
 	grab_t = ts
-	if tick_on:
+	if tick_on and (mode == Hud.Mode.PLAY or by_itself):   # in learn mode there is no beat to keep
 		metronome.schedule_ticks(ts, beat_ms(), notes[j].beats, notes[j].rest_after)
 	else:
 		metronome.cancel_ticks()
@@ -394,7 +565,9 @@ func _break_branch(i: int) -> void:
 func _bump_log(j: int) -> void:
 	world.chord_log(j).wobble()
 	var chord := notes[j].chord.name
-	if _blocked.is_empty():
+	if by_itself:
+		_fall("No %s chord in time, so the log stayed up" % chord, j, true)
+	elif _blocked.is_empty():
 		_fall("Too late. Missed the branch and its %s chord" % chord, j, true)
 	else:
 		_fall("No %s chord, so the log stayed up. Play it together with %s" % [chord, notes[j].name], j, true)
@@ -421,18 +594,32 @@ func _win() -> void:
 	metronome.cancel_ticks()
 	_blend = {from = render.pos, rot = render.rot, t0 = now_ms(), dur = 450.0, hop = 1.5 * S}
 	state = State.WON
-	var left := "practice mode" if practice else "%d banana%s left" % [bananas, "" if bananas == 1 else "s"]
-	hud.show_end("Home in the nest!", "%d fall%s · %s · Enter plays again, Esc for the menu"
-		% [falls, "" if falls == 1 else "s", left])
+	var wrong := "no mistakes" if misses == 0 else "%d mistake%s" % [misses, "" if misses == 1 else "s"]
+	match mode:
+		Hud.Mode.LEARN:
+			hud.show_end("Home in the nest!", "%s · now try it in Play mode · Enter plays again, Esc for the menu" % wrong)
+		Hud.Mode.DRILL:
+			hud.show_end("All %d chords played!" % notes.filter(func(n: Song.Note) -> bool: return n.chord != null).size(),
+				"%s · Enter for new chords, Esc for the menu" % wrong)
+		_:
+			var left := "practice mode" if practice else "%d banana%s left" % [bananas, "" if bananas == 1 else "s"]
+			hud.show_end("Home in the nest!", "%d fall%s · %s · Enter plays again, Esc for the menu"
+				% [falls, "" if falls == 1 else "s", left])
 
 
 func _update(dt: float) -> void:
+	if mode != Hud.Mode.PLAY:
+		var j := _log_ahead()
+		if j >= 0 and notes[j].chord.is_played_by(_left.keys()):
+			_break_log(j, now)   # the chord was held down before its log came up
+	if by_itself:
+		_play_tune()
 	match state:
 		State.HANG:
-			if now > windows(cur, grab_t).rel_hi + GRACE:
+			if mode == Hud.Mode.PLAY and not by_itself and now > windows(cur, grab_t).rel_hi + GRACE:
 				_break_branch(cur)
 		State.AIR, State.REST:
-			if now > windows(cur, grab_t).next_hi + GRACE:
+			if mode == Hud.Mode.PLAY and now > windows(cur, grab_t).next_hi + GRACE:
 				if notes[cur + 1].log_up:
 					_bump_log(cur + 1)
 				else:
@@ -466,7 +653,12 @@ func _update(dt: float) -> void:
 
 
 func _update_hud() -> void:
-	hud.show_stats(-1 if practice else bananas, done_up_to, notes.size(), falls)
+	var progress := "branch %d/%d" % [done_up_to, notes.size()]
+	if mode == Hud.Mode.DRILL:
+		var logs := notes.filter(func(n: Song.Note) -> bool: return n.chord != null)
+		progress = "chord %d/%d" % [logs.filter(func(n: Song.Note) -> bool: return not n.log_up).size(), logs.size()]
+	var missed := "falls %d" % falls if mode == Hud.Mode.PLAY else "wrong %d" % misses
+	hud.show_stats(-1 if practice and mode == Hud.Mode.PLAY else bananas, progress, missed)
 
 
 # ---------------------------------------------------------------- settings
@@ -489,10 +681,27 @@ func _on_labels_toggled(on: bool) -> void:
 func _on_source_changed(source: String) -> void:
 	hud.show_source(source)
 	_refresh_labels()
+	_setup_piano()
 
 
 func _refresh_labels() -> void:
-	world.show_labels(notes, labels, hint, note_input)
+	world.show_labels(notes, labels, ChordLog.Hint.NAME if mode == Hud.Mode.DRILL else hint, note_input, not by_itself)
+
+
+## The chord keys of the keyboard fallback, one per root: the song's chords, or in the drill
+## every root in the kind of chord the next log wants, so a wrong key plays a wrong chord.
+func _set_chord_keys() -> void:
+	var keyed := notes.map(func(n: Song.Note) -> Song.Chord: return n.chord).filter(func(c: Song.Chord) -> bool: return c != null)
+	if mode == Hud.Mode.DRILL:
+		var ahead := notes.filter(func(n: Song.Note) -> bool: return n.log_up)
+		if not ahead.is_empty():
+			var quality: String = ahead[0].chord.name.substr(1)
+			keyed = []
+			for root in Song.LETTERS:
+				keyed.append(Song.parse_chord(root + quality))
+	note_input.set_chords(keyed)
+	hud.show_key_notes(note_input.key_notes(), note_input.chord_key_notes())
+	_refresh_labels()
 
 
 func _on_tick_toggled(on: bool) -> void:
@@ -510,6 +719,7 @@ func _camera_x() -> float:
 
 ## The branch being hung on breaks away from the left as the note runs, its last piece
 ## falling at the moment to let go; it sags, and cracks once the note has run past its length.
+## Where nothing is timed it only sags, and waiting for a chord it never cracks.
 func _show_hung() -> void:
 	var hung := cur if state == State.HANG else -1
 	if _hung != hung and _hung >= 0:
@@ -518,8 +728,11 @@ func _show_hung() -> void:
 	_hung = hung
 	if hung < 0:
 		return
+	if mode != Hud.Mode.PLAY and not by_itself:
+		world.branch(hung).set_strain(0.08 * S, 0.0)
+		return
 	var w := windows(hung, grab_t)
-	var crack := clampf((now - w.end) / w.tol, 0.0, 1.0) if now > w.end else 0.0
+	var crack := clampf((now - w.end) / w.tol, 0.0, 1.0) if now > w.end and mode == Hud.Mode.PLAY else 0.0
 	world.branch(hung).crumble((now - grab_t) / (notes[hung].beats * beat_ms()))
 	world.branch(hung).set_strain((0.08 + crack * 0.35) * S, crack)
 
@@ -550,7 +763,53 @@ func _show_prompt() -> void:
 	if labels:
 		branch = n.name + (" (key %s)" % key if key != "" else "")
 	var text := ("Play the log's chord and %s" if n.log_up else "Play %s to grab it") % branch
+	if by_itself:
+		text = "Play the log's chord" if n.log_up else ""
 	gorilla.show_prompt(text, (1.4 if perch_stump else 3.0) * S)
+
+
+## The little keyboard, in learn mode and the drill: two octaves for the chord, below the tune
+## when you play it too, and the tune's range (an octave at least) for the note.
+func _setup_piano() -> void:
+	if mode == Hud.Mode.PLAY or not piano:
+		hud.set_piano(-1, -1, -1)
+		return
+	var chord_from := -1
+	if chords:
+		chord_from = 48 if by_itself else 12 * floori((split - 24) / 12.0)   # the two octaves below the tune's
+	if by_itself:
+		hud.set_piano(chord_from, -1, -1)
+		return
+	var pitches := notes.map(func(n: Song.Note) -> int: return n.midi)
+	var lo: int = pitches.min()
+	var hi: int = maxi(pitches.max(), lo + 11)
+	var letters := {}
+	for m in range(lo, hi + 1):
+		if note_input.key_for(m) != "":
+			letters[m] = note_input.key_for(m)
+	hud.set_piano(chord_from, lo, hi, letters)
+
+
+## Lights what to play next: the tune's next note and the chord of its log. When the gorilla
+## plays the tune, the chord of the next log, however far ahead.
+func _show_piano() -> void:
+	if mode == Hud.Mode.PLAY or not piano:
+		return
+	var j := cur if state == State.WAIT else cur + 1
+	var note: Song.Note = null
+	var chord: Song.Chord = null
+	if by_itself:
+		for k in range(j, notes.size()):
+			if notes[k].log_up:
+				chord = notes[k].chord
+				break
+	elif j < notes.size() and state != State.WON:
+		note = notes[j]
+		chord = note.chord if note.log_up else null
+	var wrong_left: Array = []
+	if _missed_chord and chord:
+		wrong_left = _left.keys().filter(func(m: int) -> bool: return not chord.midi.any(func(c: int) -> bool: return c % 12 == m % 12))
+	hud.light_piano(chord, note, _left.keys(), _right.keys(), wrong_left, _wrong.keys())
 
 
 # ---------------------------------------------------------------- pose
@@ -568,8 +827,11 @@ func _pose() -> Pose:
 			var next: Song.Note = notes[cur + 1] if cur + 1 < notes.size() else null
 			var p := (now - grab_t) / (n.beats * beat_ms())
 			var th := -a + a * (1.0 - cos(PI * clampf(p, 0.0, 1.0)))
-			if state == State.HANG and p > 1.0:
+			if state == State.HANG and p > 1.0 and mode == Hud.Mode.PLAY:
 				th = a + sin(now / 22.0) * 0.05 * clampf((p - 1.0) * 4.0, 0.0, 1.0)   # straining
+			elif state == State.HANG and p > 1.0:   # waiting: swings back and comes to rest
+				var since := (p - 1.0) * n.beats * beat_ms()
+				th = a * cos(since / 380.0) * exp(-since / 900.0)
 			var pos := Staff.note_pos(n) + Vector2(sin(th), cos(th)) * RP * S
 			if state == State.AIR:
 				var air := Pose.new(pos, -th, &"reach")
@@ -578,7 +840,7 @@ func _pose() -> Pose:
 			var hang := Pose.new(pos, -th, &"hang")
 			hang.grip = n
 			hang.hand = cur % 2
-			hang.target = null if n.rest_after > 0 else next
+			hang.target = null if n.rest_after > 0 and (mode == Hud.Mode.PLAY or by_itself) else next
 			hang.reach_k = smoothstep(0.0, 1.0, (p - 0.35) / 0.6)
 			return hang
 		State.REST:

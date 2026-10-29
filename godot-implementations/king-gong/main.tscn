@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3]
+[gd_scene load_steps=33 format=3]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/level.gd" id="2_level"]
@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" path="res://art/nest_tree.svg" id="11_nest"]
 [ext_resource type="Texture2D" path="res://art/banana.svg" id="12_banana"]
 [ext_resource type="LabelSettings" path="res://ui/banner.tres" id="13_banner"]
+[ext_resource type="Script" path="res://scripts/piano.gd" id="14_piano"]
 
 [sub_resource type="Gradient" id="Gradient_sky"]
 offsets = PackedFloat32Array(0.0611, 0.5804, 0.9267)
@@ -67,6 +68,19 @@ bg_color = Color(0.0627451, 0.0862745, 0.0627451, 0.88)
 [sub_resource type="SystemFont" id="SystemFont_bold"]
 font_names = PackedStringArray("Segoe UI", "Arial", "sans-serif")
 font_weight = 700
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_piano"]
+content_margin_left = 12.0
+content_margin_top = 4.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.113725, 0.14902, 0.12549, 0.94)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_mode"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_clef"]
 
@@ -224,6 +238,66 @@ theme_override_font_sizes/font_size = 15
 text = "keys  A S D F G H J K  =  C4 D4 E4 F4 G4 A4 B4 C5"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="Piano" type="HBoxContainer" parent="Hud"]
+visible = false
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -140.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+alignment = 1
+
+[node name="Panel" type="PanelContainer" parent="Hud/Piano"]
+layout_mode = 2
+size_flags_vertical = 8
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_piano")
+
+[node name="Row" type="HBoxContainer" parent="Hud/Piano/Panel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 18
+
+[node name="Chord" type="VBoxContainer" parent="Hud/Piano/Panel/Row"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Caption" type="Label" parent="Hud/Piano/Panel/Row/Chord"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.576471, 0.627451, 0.572549, 1)
+theme_override_font_sizes/font_size = 12
+text = "chord"
+horizontal_alignment = 1
+
+[node name="Keys" type="Control" parent="Hud/Piano/Panel/Row/Chord"]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+script = ExtResource("14_piano")
+
+[node name="Tune" type="VBoxContainer" parent="Hud/Piano/Panel/Row"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Caption" type="Label" parent="Hud/Piano/Panel/Row/Tune"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.576471, 0.627451, 0.572549, 1)
+theme_override_font_sizes/font_size = 12
+text = "next note"
+horizontal_alignment = 1
+
+[node name="Keys" type="Control" parent="Hud/Piano/Panel/Row/Tune"]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+script = ExtResource("14_piano")
 
 [node name="EndPanel" type="PanelContainer" parent="Hud"]
 visible = false
@@ -411,7 +485,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Box" type="VBoxContainer" parent="Hud/Overlay/Center"]
-custom_minimum_size = Vector2(680, 0)
+custom_minimum_size = Vector2(760, 0)
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 10
@@ -436,6 +510,45 @@ A wrong note is a fall too. Magic bananas bounce you back up. You start with 3, 
 There is no backing track: the song starts when you grab the first branch and every grab restarts the beat.[/center]"
 fit_content = true
 scroll_active = false
+
+[node name="Mode" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Mode"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
+text = "Mode"
+
+[node name="Play" type="Button" parent="Hud/Overlay/Center/Box/Mode"]
+custom_minimum_size = Vector2(110, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_mode")
+text = "Play"
+
+[node name="Learn" type="Button" parent="Hud/Overlay/Center/Box/Mode"]
+custom_minimum_size = Vector2(110, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_group = SubResource("ButtonGroup_mode")
+text = "Learn"
+
+[node name="Drill" type="Button" parent="Hud/Overlay/Center/Box/Mode"]
+custom_minimum_size = Vector2(130, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_group = SubResource("ButtonGroup_mode")
+text = "Chord drill"
 
 [node name="Song" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
 layout_mode = 2
@@ -480,7 +593,7 @@ alignment = 1
 [node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Clef"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
-text = "Clef"
+text = "Part"
 
 [node name="Treble" type="Button" parent="Hud/Overlay/Center/Box/Clef"]
 custom_minimum_size = Vector2(110, 30)
@@ -509,6 +622,15 @@ theme_override_font_sizes/font_size = 15
 toggle_mode = true
 button_group = SubResource("ButtonGroup_clef")
 text = "Treble + chords"
+
+[node name="ChordsOnly" type="Button" parent="Hud/Overlay/Center/Box/Clef"]
+custom_minimum_size = Vector2(120, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_group = SubResource("ButtonGroup_clef")
+text = "Chords only"
 
 [node name="ChordRule" type="RichTextLabel" parent="Hud/Overlay/Center/Box"]
 visible = false
@@ -550,6 +672,51 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_hint")
 text = "Bass clef"
 
+[node name="Kinds" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Kinds"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
+text = "Chords"
+
+[node name="Major" type="Button" parent="Hud/Overlay/Center/Box/Kinds"]
+custom_minimum_size = Vector2(100, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_pressed = true
+text = "Major"
+
+[node name="Minor" type="Button" parent="Hud/Overlay/Center/Box/Kinds"]
+custom_minimum_size = Vector2(100, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+text = "Minor"
+
+[node name="Sevenths" type="Button" parent="Hud/Overlay/Center/Box/Kinds"]
+custom_minimum_size = Vector2(110, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+text = "Sevenths"
+
+[node name="DimAug" type="Button" parent="Hud/Overlay/Center/Box/Kinds"]
+custom_minimum_size = Vector2(110, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+text = "Dim & aug"
+
 [node name="Practice" type="Button" parent="Hud/Overlay/Center/Box"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
@@ -558,6 +725,17 @@ focus_mode = 0
 theme_override_font_sizes/font_size = 15
 toggle_mode = true
 text = "Practice mode: infinite bananas"
+
+[node name="PianoHint" type="Button" parent="Hud/Overlay/Center/Box"]
+visible = false
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_pressed = true
+text = "Keyboard hint"
 
 [node name="Keys" type="RichTextLabel" parent="Hud/Overlay/Center/Box"]
 layout_mode = 2

@@ -81,25 +81,29 @@ const LETTER_STEP := {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
 const LETTERS := "CDEFGAB"
 const ACCIDENTALS := {"": 0, "#": 1, "b": -1}
 const NAMES := ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-const QUALITIES := {"": [0, 4, 7], "m": [0, 3, 7], "dim": [0, 3, 6], "aug": [0, 4, 8]}   # semitones above the root
+const QUALITIES := {"": [0, 4, 7], "m": [0, 3, 7], "dim": [0, 3, 6], "aug": [0, 4, 8],
+	"7": [0, 4, 7, 10], "maj7": [0, 4, 7, 11], "m7": [0, 3, 7, 10]}   # semitones above the root
+const SPELLED := {-2: "bb", -1: "b", 0: "", 1: "#", 2: "##"}   # how far off the white key, as written
 
 static var _library: Array = []
 
 
-## A triad for the left hand: "C", "Am", "F#", "Bbm", "Bdim", "Caug".
+## A chord for the left hand: a triad, "C", "Am", "F#", "Bbm", "Bdim", "Caug", or with its
+## seventh, "G7", "Cmaj7", "Am7". The songs have triads only; the chord drill has the rest.
 class Chord:
 	var name: String
-	var minor := false                # minor or diminished: drawn darker
+	var minor := false                # minor, minor seventh or diminished: drawn darker
 	var midi: Array[int] = []         # as the bass-clef hint writes it: root position, low in the staff
 	var steps: Array[int] = []        # where those sit, in steps above the bass staff's bottom line (G2)
 	var accidentals: Array[int] = []  # 1 sharp, -1 flat, 0 neither
+	var tones: Array[String] = []     # the notes' names, without octave: "C", "Eb", "G"
 
-	## Whether `held` is this chord: its three notes in any octave and any order, and nothing else.
+	## Whether `held` is this chord: its notes in any octave and any order, and nothing else.
 	func is_played_by(held: Array) -> bool:
 		var classes := {}
 		for m: int in held:
 			classes[m % 12] = true
-		return classes.size() == 3 and midi.all(func(m: int) -> bool: return classes.has(m % 12))
+		return classes.size() == midi.size() and midi.all(func(m: int) -> bool: return classes.has(m % 12))
 
 
 class Note:
@@ -132,7 +136,11 @@ static func library() -> Array:
 
 ## Song `song` of library(). `chords` reads the chords too, for the treble clef with chords.
 static func parse(song: int, clef: Clef, chords := false) -> Array[Note]:
-	var entries: Array = library()[song].notes
+	return parse_entries(library()[song].notes, clef, chords)
+
+
+## A song's `entries`, as in SONGS, into branches.
+static func parse_entries(entries: Array, clef: Clef, chords := false) -> Array[Note]:
 	var below := _degree(BELOW_STAFF[clef])
 	var shift := 7 * _octave_shift(entries, below)
 	var out: Array[Note] = []
@@ -192,17 +200,18 @@ static func parse_chord(name: String) -> Chord:
 	c.name = name
 	var root := name.left(2) if name.length() > 1 and name[1] in "#b" else name.left(1)
 	var quality := name.substr(root.length())
-	c.minor = quality in ["m", "dim"]
+	c.minor = quality in ["m", "m7", "dim"]
 	var letter: int = LETTER_STEP[root[0]]
 	var octave := 2 if letter >= LETTER_STEP["F"] else 3   # roots F2 to E3 keep the chord inside the bass staff
 	var root_midi: int = 12 * (octave + 1) + LETTER_SEMI[root[0]] + ACCIDENTALS[root.substr(1)]
-	for k in 3:
+	for k: int in QUALITIES[quality].size():
 		var degree := 7 * octave + letter + 2 * k   # every other white key: a third up each time
 		var natural: int = 12 * (floori(degree / 7.0) + 1) + LETTER_SEMI[LETTERS[degree % 7]]
 		var m: int = root_midi + QUALITIES[quality][k]
 		c.midi.append(m)
 		c.accidentals.append(m - natural)
 		c.steps.append(degree - _degree("G2"))
+		c.tones.append(LETTERS[degree % 7] + SPELLED[m - natural])
 	return c
 
 

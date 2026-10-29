@@ -20,20 +20,72 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | --- | --- |
 | MIDI notes | Grab the branch on that note; hold for its length; release to let go. The built-in songs use C4–A4, C3–A3 in the bass clef |
 | Keyboard `A S D F G H J K` | C4 D4 E4 F4 G4 A4 B4 C5, moved by octaves to where the song is (an octave lower in the bass clef); fallback when no MIDI device is connected. White keys only: a score's sharps and flats need MIDI |
-| MIDI notes below middle C | Treble + chords only: the left hand's chord. Any octave and any order, but only its three notes. Below the melody's lowest note, if a score goes under middle C |
-| Keyboard `Z X C V B N M` | Treble + chords only: one key per chord, by its root (C D E F G A B). The start screen and the floor list the song's, e.g. `Z` = C, `V` = F, `B` = G |
+| MIDI notes below middle C | Treble + chords: the left hand's chord. Any octave and any order, but only its notes. Below the melody's lowest note, if a score goes under middle C. With Chords only and in the chord drill every note is the chord's |
+| Keyboard `Z X C V B N M` | With chords: one key per chord, by its root (C D E F G A B). The start screen and the floor list the song's, e.g. `Z` = C, `V` = F, `B` = G. In the chord drill every root plays the kind of chord the next log wants (`X` = Dm when it wants Am) |
+| Mode: Play / Learn / Chord drill | On the start screen: play a song, [learn it](#learn-mode) untimed, or [drill chords](#chord-drill) |
 | Song `◀` list `▶` | On the start screen: which song to play, the built-in ones and then [your own](#your-own-songs) |
-| Treble clef / Bass clef / Treble + chords | On the start screen: how to play the song |
-| Chord hint | On the start screen, with chords: the sign on each log shows the chord's name, or its notes in the bass clef |
-| MIDI note written on a menu button | Picks that button, on the start screen (C3 and D3 step through the songs, C4 to A4 the rest) and on the end panel (C4 play again, D4 main menu). Computer keys don't; use the mouse |
+| Part: Treble clef / Bass clef / Treble + chords / Chords only | On the start screen: how to play the song. [Chords only](#chords-only): the gorilla plays the tune, you the chords |
+| Chord hint | On the start screen, with chords: the sign on each log shows the chord's name, or its notes in the bass clef. The chord drill always shows the name |
+| Chords: Major / Minor / Sevenths / Dim & aug | On the start screen, chord drill: which chords it draws from. Any mix, one at least |
+| MIDI note written on a menu button | Picks that button, on the start screen (C3 and D3 step through the songs, E3 to G3 pick the mode, C4 to B4 the rest) and on the end panel (C4 play again, D4 main menu). Computer keys don't; use the mouse |
 | `Space` / click / any other MIDI note | Start, on the start screen. The note only starts the game; it grabs nothing |
-| `Enter` / Restart button | Restart the song |
+| `Enter` / Restart button | Restart the song, or in the chord drill a new round |
 | `Esc` | Back to the start screen, at any time |
-| Practice mode | On the start screen: the magic bananas never run out |
+| Practice mode | On the start screen, Play: the magic bananas never run out |
+| Keyboard hint | On the start screen, Learn and chord drill: the [little keyboard](#the-little-keyboard) at the bottom. On by default |
 | Tempo slider | 40–120 BPM (default 60) |
 | Labels / Beat tick | Same toggles as the spike |
 
 Which input is live (MIDI or keyboard) is shown top-right, next to bananas, progress and falls.
+
+## Learning
+
+Two ways to get ready for a level, and a drill for the chords.
+
+### Learn mode
+
+Pick **Learn** on the start screen, then a song and a part. Nothing is timed and the gorilla
+can't fall: it hangs on its branch until you play the next branch's note, however long that
+takes, then swings over. Rests are jumped. With Treble + chords it also waits at each log
+until the left hand plays the chord; the note and the chord can come in either order. A
+wrong note or chord only counts: the banner names the right one, the counter top-right says
+`wrong`, and the end panel how many there were. Let go of the last note to finish. Bananas
+are still there to collect, but there are no magic ones, as there is nothing to fall from.
+
+### Chords only
+
+Pick **Chords only** as the part. The gorilla plays the tune by itself, on the beat, and you
+play only the chords, anywhere on the keyboard. In Play mode each chord must come on time,
+in the same ±0.35-beat window as a grab, or the gorilla bounces off its log, and magic
+bananas work as usual; in Learn mode the gorilla waits at the end of the branch before each
+log until you play its chord, and the beat restarts from there.
+
+### Chord drill
+
+Pick **Chord drill**, then which chords: Major, Minor, Sevenths (7, maj7 and m7) and Dim &
+aug, in any mix. Each round is a made-up tune of 16 chords drawn at random, on the roots C to
+B and never the same twice running, a new one every two beats. The gorilla climbs it by
+itself and waits at every log until you play its chord, anywhere on the keyboard. The tune is
+the chord's own notes between C4 and C5. A banana hangs at every fourth chord. Restart or
+Play again brings 16 new chords.
+
+### The little keyboard
+
+In Learn mode and the chord drill a little piano keyboard at the bottom, in place of the
+legend, lights what to play next:
+
+- **The note**, yellow, on the tune's keys: from its lowest note, an octave at least.
+- **The chord**, in its log's colour, in root position on two octaves of its own, left of
+  the tune's: below the tune with Treble + chords (C2–B3 for the built-in songs), C3–B4
+  with Chords only and in the drill. It is lit where the bass-clef hint writes it, moved by
+  octaves to fit. Played in any octave and any order it counts all the same; a note held
+  outside those two octaves shows on the lit key of its name.
+
+Keys held down show pressed in; a wrong note, or the odd note out of a wrong chord, goes
+grey with a red cross. Every C is marked, and with the computer keyboard live its letters
+are on the keys. With Chords only and in the drill the next chord lights up as soon as the
+last one is played, however far ahead its log is. Turn **Keyboard hint** off on the start
+screen to practise reading the notes alone.
 
 ## Your own songs
 
@@ -106,6 +158,9 @@ A file the importer can't read is left out of the list, with a warning in the co
   The swing stays as it was. A reward banana hangs near the right end, from the last piece
   to fall. (A sunbeam and a banana sliding along the branch were tried as cues too; the
   breaking branch read best.)
+- **Learning.** Not in the spike: [learn mode](#learn-mode), [chords only](#chords-only),
+  the [chord drill](#chord-drill) with sevenths, diminished and augmented chords, and the
+  [little keyboard](#the-little-keyboard) that shows what to play.
 - **Menus.** The spike has a start overlay and an end message. Here the start screen also
   has practice mode, the end panel offers Play again and Main menu, and every button on
   both carries a MIDI note that picks it, so you never have to leave the piano. The end
@@ -134,7 +189,7 @@ them around:
 
 | Path | What |
 | --- | --- |
-| `main.tscn` | Sky, parallax layers (canopy, staff-line bushes, clef, floor), the world, camera, HUD |
+| `main.tscn` | Sky, parallax layers (canopy, staff-line bushes, clef, floor), the world, camera, HUD with the little keyboard |
 | `scenes/branch.tscn` | One note: two halves of bark (Line2Ds) meeting at the grip, end twig and leaves, cracks, banana, label. When the gorilla grabs it, `branch.gd` cuts the bark into the pieces that fall |
 | `scenes/liana.tscn` | One rest: two posts, the vine (a Line2D) and its leaves |
 | `scenes/chord_log.tscn` | One chord change: the log in two pieces (stump and top), its sign with the name and a small bass staff, splinters and chips |
@@ -142,15 +197,17 @@ them around:
 | `scenes/glowing_banana.tscn` | The banana that pops out of the ground or flies to the counter |
 | `art/*.svg` | All the art; see `art/CREDITS.md` |
 | `ui/` | Theme for the bar and overlay, label styles |
-| `scripts/game.gd` | The rules and the gorilla's pose (the same rules as the spike) |
+| `scripts/game.gd` | The rules and the gorilla's pose (the same rules as the spike), and learn mode's |
 | `scripts/level.gd` | Builds the level from the song: places branches, lianas, trees |
 | `scripts/staff.gd` | Where things sit: staff step, line heights, floor |
 | `scripts/branch.gd`, `liana.gd`, `chord_log.gd`, `gorilla.gd` | What each of those scenes can do |
 | `scripts/song.gd` | The songs and their chords, their parsing into branches, and the two clefs |
+| `scripts/drill.gd` | Makes up the chord drill's tune and chords |
+| `scripts/piano.gd` | Draws the little keyboard |
 | `scripts/score_import.gd` | Reads the MusicXML scores in `songs/` into songs |
 | `scripts/metronome.gd` | The beat tick |
 | `scripts/note_input.gd` | MIDI and keyboard input |
-| `scripts/hud.gd` | Top bar, the two menus and their MIDI notes, messages |
+| `scripts/hud.gd` | Top bar, the two menus and their MIDI notes, messages, what the little keyboard lights |
 | `scripts/dev_autoplay.gd` | Dev check only, see below |
 
 Branches, lianas and logs only appear when the game runs, because `level.gd` lays them out
@@ -172,5 +229,12 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   to 5 hang three bananas, not four, so expect one banana fewer than for song 0.
 - `--chords` plays Treble + chords instead. With `--autoplay` the bot also plays each
   chord, once leaves one out and runs into the log: expect `WON falls=3 bananas=4`.
+- `--chords-only` plays Chords only: the gorilla plays the tune, the bot the chords on the
+  beat, leaving one out: expect `WON falls=1 bananas=6`.
+- `--learn` plays learn mode. The bot plays each note a moment after the last grab, once a
+  wrong one: expect `WON falls=0 bananas=4 misses=1`, with `--chords` or `--chords-only` too
+  (there, the wrong one is a chord).
+- `--drill` plays the chord drill, with every kind of chord on, once striking a wrong
+  chord: expect `WON falls=0 bananas=4 misses=1`.
 - `--perf` prints fps and draw calls once a second.
 - `--shots=<dir>` saves a screenshot every second.

@@ -38,18 +38,26 @@ func setup(note: Song.Note) -> void:
 	_sign.position.y = SIGN_Y - position.y - break_y
 	_bark.set_point_position(1, _sign.position)
 	var chord := note.chord
-	var colour: Color = COLOURS[chord.name[0]].darkened(0.35 if chord.minor else 0.0)
+	var colour := colour_of(chord)
 	_stump.default_color = colour
 	_bark.default_color = colour
 	_splinters.self_modulate = colour
 	_chips.color = colour
 	_name.text = chord.name
+	var wide := _name.label_settings.font.get_string_size(chord.name, HORIZONTAL_ALIGNMENT_LEFT, -1, _name.label_settings.font_size).x
+	_name.pivot_offset = _name.size / 2.0
+	_name.scale = Vector2.ONE * minf(1.0, (_name.size.x - 4.0) / wide)   # "Cmaj7" shrinks to fit the board
 	for k in 3:
 		var y := (4 - chord.steps[k]) * SIGN_STEP   # the staff's middle line, D3, is step 4
 		(_staff.get_node("Head%d" % (k + 1)) as Sprite2D).position.y = y
 		var mark: Label = _staff.get_node("Accidental%d" % (k + 1))
 		mark.text = ["♭", "", "♯"][chord.accidentals[k] + 1]
 		mark.position.y = y - mark.size.y / 2.0
+
+
+## By its root, darker for a minor chord.
+static func colour_of(chord: Song.Chord) -> Color:
+	return COLOURS[chord.name[0]].darkened(0.35 if chord.minor else 0.0)
 
 
 ## The chord by name or in the bass clef, and the computer key that plays it, if any.
