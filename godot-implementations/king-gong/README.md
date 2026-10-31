@@ -21,16 +21,16 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | MIDI notes | Grab the branch on that note; hold for its length; release to let go. The built-in songs use C4–A4, C3–A3 in the bass clef |
 | Keyboard `A S D F G H J K` | C4 D4 E4 F4 G4 A4 B4 C5, moved by octaves to where the song is (an octave lower in the bass clef); fallback when no MIDI device is connected. White keys only: a score's sharps and flats need MIDI |
 | MIDI notes below the next branch's | Treble + chords: the left hand's chord. Any octave and any order, but only its notes. A note lower than the next branch's note is the left hand's until let go, so a wrong note below the tune makes nobody fall, though it spoils a chord. With Chords only and in the chord drill every note is the chord's |
-| Keyboard `Z X C V B N M` | With chords: one key per chord, by its root (C D E F G A B). The start screen and the floor list the song's, e.g. `Z` = C, `V` = F, `B` = G. In the chord drill every root plays the kind of chord the next log wants (`X` = Dm when it wants Am) |
+| Keyboard `Z X C V B N M` | With chords: one key per chord, by its root: C D E F G A B, and with `Shift` the black key above (`Shift+N` = Bb). The start screen and the floor list the song's, e.g. `Z` = C, `V` = F, `B` = G. In the chord drill every root plays the kind of chord the next log wants (`X` = Dm when it wants Am) |
 | Mode: Play / Learn / Chord drill | On the start screen: play a song, [learn it](#learn-mode) untimed, or [drill chords](#chord-drill) |
 | Song `◀` list `▶` | On the start screen: which song to play, the built-in ones and then [your own](#your-own-songs) |
 | Part: Treble clef / Bass clef / Treble + chords / Chords only | On the start screen: how to play the song. [Chords only](#chords-only): the gorilla plays the tune, you the chords |
 | Chord hint | On the start screen, with chords: the sign on each log shows the chord's name, or its notes in the bass clef. The chord drill always shows the name |
-| Chords: Major / Minor / Sevenths / Dim & aug | On the start screen, chord drill: which chords it draws from. Any mix, one at least |
-| MIDI note written on a menu button | Picks that button, on the start screen (C3 and D3 step through the songs, E3 to G3 pick the mode, C4 to B4 the rest) and on the end panel (C4 play again, D4 main menu). Computer keys don't; use the mouse |
-| `Space` / click / any other MIDI note | Start, on the start screen. The note only starts the game; it grabs nothing |
+| Chords: Choose | On the start screen, chord drill: opens the [chord menu](#the-chord-menu), which chords it deals and how many a round. The start screen shows the first few |
+| MIDI note written on a menu button | Picks that button, on the start screen (C3 and D3 step through the songs, E3 to G3 pick the mode, C4 to B4 the rest) and on the end panel (C4 play again, D4 main menu). In the chord menu, C4 to B4 pick in the marked row and a note below or above moves the mark. Computer keys don't; use the mouse |
+| `Space` / click / any other MIDI note | Start, on the start screen. The note only starts the game; it grabs nothing. `Space` also closes the chord menu |
 | `Enter` / Restart button | Restart the song, or in the chord drill a new round |
-| `Esc` | Back to the start screen, at any time |
+| `Esc` | Back to the start screen, at any time, the chord menu too |
 | Practice mode | On the start screen, Play: the magic bananas never run out |
 | Keyboard hint | On the start screen, Learn and chord drill: the [little keyboard](#the-little-keyboard) at the bottom. On by default |
 | Tempo slider | 40–120 BPM (default 60) |
@@ -62,12 +62,30 @@ log until you play its chord, and the beat restarts from there.
 
 ### Chord drill
 
-Pick **Chord drill**, then which chords: Major, Minor, Sevenths (7, maj7 and m7) and Dim &
-aug, in any mix. Each round is a made-up tune of 16 chords drawn at random, on the roots C to
-B and never the same twice running, a new one every two beats. The gorilla climbs it by
-itself and waits at every log until you play its chord, anywhere on the keyboard. The tune is
-the chord's own notes between C4 and C5. A banana hangs at every fourth chord. Restart or
-Play again brings 16 new chords.
+Pick **Chord drill**, then **Choose** which chords in the [chord menu](#the-chord-menu): the
+major chords on the white keys until you do. Each round is a made-up tune of 8, 16, 32 or 64
+chords, a new one every two beats, dealt like cards from the ones picked: each comes up as
+often as the others, in a shuffled order, never twice running unless it is the only one. The
+gorilla climbs it by itself and waits at every log until you play its chord, anywhere on the
+keyboard. The tune is the chord's own notes between C4 and C5. A banana hangs at every
+fourth chord. Restart or Play again deals a new round.
+
+### The chord menu
+
+A grid of every chord the drill offers: one row for each kind of chord, under its difficulty
+(Major, Minor, Sevenths with 7, maj7 and m7, Dim & aug), and one column for each of the
+twelve roots, C to B, spelled as the chord is usually written (Db, but C#m). Baug is left out,
+since its fifth is F double sharp; it sounds the same as Gaug and Ebaug anyway. Click a chord
+to pick it, or a row's or a difficulty's name to pick all of it, or none if all of it is
+already picked. One chord at least stays picked. Under the grid, how many chords a round has,
+and **Done**.
+
+On the MIDI keyboard one row is marked with a yellow frame, Major when the menu opens. The
+keys C4 to B4 pick in it, each the button under the key written over its column: C#4 is Db
+in the Major row, C#m in the Minor one. In the round's row C4 D4 E4 F4 pick 8 16 32 64, and
+in Done's row any of them goes back. A note below C4 marks the row above, a note above B4 the
+row below, round from one end to the other. `Space` and `Esc` go back too. What you picked
+lasts until the game is closed.
 
 ### The little keyboard
 
@@ -164,8 +182,9 @@ A file the importer can't read is left out of the list, with a warning in the co
   [little keyboard](#the-little-keyboard) that shows what to play.
 - **Menus.** The spike has a start overlay and an end message. Here the start screen also
   has practice mode, the end panel offers Play again and Main menu, and every button on
-  both carries a MIDI note that picks it, so you never have to leave the piano. The end
-  panel ignores notes for 0.8 s, so a note still being played can't pick by accident.
+  both carries a MIDI note that picks it; the chord drill's chord menu is picked from by
+  playing roots. So you never have to leave the piano. The end panel ignores notes for
+  0.8 s, so a note still being played can't pick by accident.
 - **Input timing.** Godot input events carry no timestamp, so a note is stamped when the
   event is dispatched, once per frame: about 16 ms of resolution at 60 fps against a
   ±350 ms window at 60 BPM. The spike uses Web MIDI's own timestamps.
@@ -203,7 +222,8 @@ them around:
 | `scripts/staff.gd` | Where things sit: staff step, line heights, floor |
 | `scripts/branch.gd`, `liana.gd`, `chord_log.gd`, `gorilla.gd` | What each of those scenes can do |
 | `scripts/song.gd` | The songs and their chords, their parsing into branches, and the two clefs |
-| `scripts/drill.gd` | Makes up the chord drill's tune and chords |
+| `scripts/drill.gd` | Makes up the chord drill's tune and deals its chords; which the chord menu offers, and how they are spelled |
+| `scripts/chord_menu.gd` | The chord drill's chord menu: builds its grid and works it from the MIDI keyboard |
 | `scripts/piano.gd` | Draws the little keyboard |
 | `scripts/score_import.gd` | Reads the MusicXML scores in `songs/` into songs |
 | `scripts/metronome.gd` | The beat tick |
@@ -236,7 +256,7 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
 - `--learn` plays learn mode. The bot plays each note a moment after the last grab, once a
   wrong one: expect `WON falls=0 bananas=4 misses=1`, with `--chords` or `--chords-only` too
   (there, the wrong one is a chord).
-- `--drill` plays the chord drill, with every kind of chord on, once striking a wrong
-  chord: expect `WON falls=0 bananas=4 misses=1`.
+- `--drill` plays the chord drill, with every chord the chord menu offers picked, 16 a
+  round, once striking a wrong chord: expect `WON falls=0 bananas=4 misses=1`.
 - `--perf` prints fps and draw calls once a second.
 - `--shots=<dir>` saves a screenshot every second.

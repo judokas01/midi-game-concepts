@@ -39,7 +39,8 @@ var song := 0                  # which of Song.library()
 var hint := ChordLog.Hint.NAME   # what the sign on each log shows
 var practice := false          # the magic bananas never run out
 var piano := true              # learn mode and the drill: the little keyboard lights what to play
-var drill_kinds: Array = [Drill.Kind.MAJOR]   # the kinds of chord the drill draws from
+var drill_chords: Array = Drill.START_CHORDS   # the chords the drill deals, by name
+var drill_count := Drill.COUNT                 # and how many a round has
 var _style := {clef = Song.Clef.TREBLE, chords = false, by_itself = false}   # how the songs are played
 
 # how this level is played: the songs' style, or the drill's
@@ -103,7 +104,7 @@ func _ready() -> void:
 	note_input.note_on.connect(note_on)
 	note_input.note_off.connect(note_off)
 	note_input.source_changed.connect(_on_source_changed)
-	note_input.start_requested.connect(start)
+	note_input.start_requested.connect(_on_start_key)
 	note_input.restart_requested.connect(_on_restart_key)
 	note_input.menu_requested.connect(_on_menu_key)
 	hud.start_pressed.connect(start)
@@ -115,7 +116,7 @@ func _ready() -> void:
 	hud.song_chosen.connect(set_song)
 	hud.style_chosen.connect(set_style)
 	hud.hint_chosen.connect(set_hint)
-	hud.kinds_chosen.connect(set_drill_kinds)
+	hud.drill_chosen.connect(set_drill)
 	hud.practice_toggled.connect(set_practice)
 	hud.piano_toggled.connect(set_piano)
 	hud.menu_pressed.connect(show_menu)
@@ -159,7 +160,7 @@ func restart() -> void:
 	$Clef/Bass.visible = clef == Song.Clef.BASS
 	var bars: Array
 	if drill:   # new chords every time
-		notes = Song.parse_entries(Drill.entries(drill_kinds), clef, true)
+		notes = Song.parse_entries(Drill.entries(drill_chords, drill_count), clef, true)
 		bars = notes.filter(func(n: Song.Note) -> bool: return n.chord != null and n.beat > 0.0).map(func(n: Song.Note) -> float: return n.beat)
 	else:
 		notes = Song.parse(song, clef, chords)
@@ -229,9 +230,10 @@ func set_hint(h: ChordLog.Hint) -> void:
 	_refresh_labels()
 
 
-## The drill's chords are drawn from these Drill.Kinds.
-func set_drill_kinds(kinds: Array) -> void:
-	drill_kinds = kinds
+## The drill deals `count` chords a round from `chords`, by name.
+func set_drill(chords: Array, count: int) -> void:
+	drill_chords = chords
+	drill_count = count
 	if mode == Hud.Mode.DRILL:
 		restart()
 
@@ -668,13 +670,23 @@ func _update_hud() -> void:
 
 # ---------------------------------------------------------------- settings
 
+## Space: starts, or closes the chord menu back to the start screen.
+func _on_start_key() -> void:
+	if hud.chords_open():
+		hud.close_chords()
+	else:
+		start()
+
+
 func _on_restart_key() -> void:
 	if started:
 		restart()
 
 
 func _on_menu_key() -> void:
-	if started:
+	if hud.chords_open():
+		hud.close_chords()
+	elif started:
 		show_menu()
 
 
@@ -697,15 +709,18 @@ func _refresh_labels() -> void:
 ## every root in the kind of chord the next log wants, so a wrong key plays a wrong chord.
 func _set_chord_keys() -> void:
 	var keyed := notes.map(func(n: Song.Note) -> Song.Chord: return n.chord).filter(func(c: Song.Chord) -> bool: return c != null)
+	var listed := ""
 	if mode == Hud.Mode.DRILL:
 		var ahead := notes.filter(func(n: Song.Note) -> bool: return n.log_up)
 		if not ahead.is_empty():
-			var quality: String = ahead[0].chord.name.substr(1)
+			var quality := Drill.quality_of(ahead[0].chord.name)
 			keyed = []
-			for root in Song.LETTERS:
-				keyed.append(Song.parse_chord(root + quality))
+			for root: String in Drill.ROOTS[quality]:
+				if root != "":
+					keyed.append(Song.parse_chord(root + quality))
+		listed = "Z X C V B N M = C D E F G A B, with Shift a semitone up"   # all twelve would not fit
 	note_input.set_chords(keyed)
-	hud.show_key_notes(note_input.key_notes(), note_input.chord_key_notes())
+	hud.show_key_notes(note_input.key_notes(), listed if listed != "" else note_input.chord_key_notes())
 	_refresh_labels()
 
 

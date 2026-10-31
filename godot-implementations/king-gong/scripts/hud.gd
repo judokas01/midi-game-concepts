@@ -1,8 +1,8 @@
 extends CanvasLayer
-## Everything drawn over the game: the top bar (settings and score), the start overlay, why
-## you fell, the end panel, the legend or the little keyboard, and bananas flying to the
-## counter. The two menus, the start overlay and the end panel, can also be worked from the
-## MIDI keyboard: each button has a note, written on it.
+## Everything drawn over the game: the top bar (settings and score), the start overlay and
+## the chord drill's chord menu, why you fell, the end panel, the legend or the little
+## keyboard, and bananas flying to the counter. The menus can also be worked from the MIDI
+## keyboard: each button on the start overlay and the end panel has a note, written on it.
 
 signal start_pressed
 signal restart_pressed
@@ -13,7 +13,7 @@ signal mode_chosen(mode: Mode)
 signal song_chosen(song: int)
 signal style_chosen(clef: Song.Clef, chords: bool, by_itself: bool)
 signal hint_chosen(hint: ChordLog.Hint)
-signal kinds_chosen(kinds: Array)
+signal drill_chosen(chords: Array, count: int)
 signal practice_toggled(on: bool)
 signal piano_toggled(on: bool)
 signal menu_pressed
@@ -25,6 +25,7 @@ const Song := preload("res://scripts/song.gd")
 const ChordLog := preload("res://scripts/chord_log.gd")
 const Staff := preload("res://scripts/staff.gd")
 const Piano := preload("res://scripts/piano.gd")
+const ChordMenu := preload("res://scripts/chord_menu.gd")
 const GlowingBanana := preload("res://scenes/glowing_banana.tscn")
 const SOURCE_COLOURS := {"keyboard": Color("3a3f49"), "MIDI": Color("2e8b57")}
 const TUNE_COLOUR := Color("f2c230")   # the next note on the little keyboard; a chord's is its log's
@@ -32,14 +33,14 @@ const TUNE_COLOUR := Color("f2c230")   # the next note on the little keyboard; a
 # note starts the game. Buttons never shown together can share a note.
 const START_KEYS := {"Song/Previous": 48, "Song/Next": 50, "Mode/Play": 52, "Mode/Learn": 53, "Mode/Drill": 55,
 	"Clef/Treble": 60, "Clef/Bass": 62, "Clef/Chords": 64, "Clef/ChordsOnly": 65,
-	"Kinds/Major": 60, "Kinds/Minor": 62, "Kinds/Sevenths": 64, "Kinds/DimAug": 65,
+	"Picked/Choose": 60,
 	"Hint/Name": 67, "Hint/Bass": 69, "Practice": 71, "PianoHint": 71}
 const LEARN_BODY := """[center][b]Learn a song before you play it.[/b] The five long bushes are the staff lines and every branch sits on a note. The gorilla waits on its branch until you play the next one's note, as long as it takes: nothing is timed and you can't fall.
 
 The little keyboard at the bottom lights the key to play. Turn it off to practise reading the notes alone.[/center]"""
 const DRILL_BODY := """[center][b]Learn the chords.[/b] The gorilla climbs a made-up tune by itself and stops at every log. Play the chord on the log's sign to knock it down: its notes in any octave and any order.
 
-The little keyboard at the bottom lights the chord's keys. Pick which chords to practise; every round brings 16 new ones.[/center]"""
+The little keyboard at the bottom lights the chord's keys. Choose which chords to practise and how many a round deals.[/center]"""
 const CHORD_RULES := {
 	Mode.PLAY: "[center]A coloured log stands wherever the chord changes. [b]Play its chord in the left hand[/b], lower than the branch's note, together with that note, and the gorilla kicks the log down. Leave it standing and you bounce off.[/center]",
 	Mode.LEARN: "[center]A coloured log stands wherever the chord changes. [b]Play its chord in the left hand[/b], lower than the branch's note, and that note in the right: the gorilla waits for both.[/center]",
@@ -72,7 +73,8 @@ var _chord_from := 48  # the C the chord's keys start on
 @onready var _body: RichTextLabel = $Overlay/Center/Box/Body
 @onready var _chord_rule: RichTextLabel = $Overlay/Center/Box/ChordRule
 @onready var _hint: Control = $Overlay/Center/Box/Hint
-@onready var _kinds: Control = $Overlay/Center/Box/Kinds
+@onready var _picked: Label = $Overlay/Center/Box/Picked/Summary
+@onready var _chord_menu: ChordMenu = $ChordMenu
 @onready var _banner: Label = $Banner
 @onready var _legend: Label = $Legend
 @onready var _keys: Label = $Keys
@@ -102,15 +104,12 @@ func _ready() -> void:
 	_on_chosen($Overlay/Center/Box/Clef/ChordsOnly, func() -> void: style_chosen.emit(Song.Clef.TREBLE, true, true))
 	_on_chosen($Overlay/Center/Box/Hint/Name, func() -> void: hint_chosen.emit(ChordLog.Hint.NAME))
 	_on_chosen($Overlay/Center/Box/Hint/Bass, func() -> void: hint_chosen.emit(ChordLog.Hint.BASS_CLEF))
-	var kind_buttons: Array[Button] = [$Overlay/Center/Box/Kinds/Major, $Overlay/Center/Box/Kinds/Minor,
-		$Overlay/Center/Box/Kinds/Sevenths, $Overlay/Center/Box/Kinds/DimAug]   # in Drill.Kind order
-	for button in kind_buttons:
-		button.toggled.connect(func(_on: bool) -> void:
-			var kinds := range(kind_buttons.size()).filter(func(k: int) -> bool: return kind_buttons[k].button_pressed)
-			if kinds.is_empty():
-				button.set_pressed_no_signal(true)   # one kind at least
-				return
-			kinds_chosen.emit(kinds))
+	$Overlay/Center/Box/Picked/Choose.pressed.connect(open_chords)
+	_chord_menu.closed.connect(func(chords: Array, count: int) -> void:
+		_show_picked(chords, count)
+		_overlay.show()
+		drill_chosen.emit(chords, count))
+	_show_picked(_chord_menu.picked(), _chord_menu.count)
 	$Overlay/Center/Box/Practice.toggled.connect(func(on: bool) -> void: practice_toggled.emit(on))
 	$Overlay/Center/Box/PianoHint.toggled.connect(func(on: bool) -> void: piano_toggled.emit(on))
 	_play_body = _body.text
@@ -163,7 +162,7 @@ func show_options(mode: Mode, chords: bool, by_itself: bool) -> void:
 	if _chord_rule.visible:
 		_chord_rule.text = (CHORDS_ONLY_RULES if by_itself else CHORD_RULES)[mode]
 	_hint.visible = chords and not drill
-	_kinds.visible = drill
+	_picked.get_parent().visible = drill
 	$Overlay/Center/Box/Practice.visible = mode == Mode.PLAY
 	$Overlay/Center/Box/PianoHint.visible = mode != Mode.PLAY
 
@@ -226,14 +225,31 @@ func show_overlay() -> void:
 	_overlay.show()
 
 
-## The start screen or the end panel is up.
+## The start screen, the chord menu or the end panel is up.
 func menu_up() -> bool:
-	return _overlay.visible or _end.visible
+	return _overlay.visible or _chord_menu.visible or _end.visible
+
+
+## The chord drill's chord menu, in place of the start screen until it is closed.
+func open_chords() -> void:
+	_overlay.hide()
+	_chord_menu.open()
+
+
+func chords_open() -> bool:
+	return _chord_menu.visible
+
+
+func close_chords() -> void:
+	_chord_menu.close()
 
 
 ## Picks the button on MIDI note `m` in the menu that is up, as a click would. True if `m` is
-## one of that menu's notes, even when its button is hidden.
+## one of that menu's notes, even when its button is hidden; every note is the chord menu's.
 func choose(m: int) -> bool:
+	if _chord_menu.visible:
+		_chord_menu.play(m)
+		return true
 	var menu := _start_menu
 	var keys := START_KEYS
 	if not _overlay.visible:
@@ -302,6 +318,20 @@ func fly_banana(from: Vector2) -> void:
 		fruit.position = from.lerp(to, smoothstep(0.0, 1.0, k)) - Vector2(0.0, sin(PI * k) * 2.0 * Staff.STEP),
 		0.0, 1.0, 0.7)
 	flight.tween_callback(fruit.queue_free)
+
+
+## The drill's `chords` and `count` on the start screen, "C F G Am · 16 a round": as many
+## names as fit in 40 letters.
+func _show_picked(chords: Array, count: int) -> void:
+	var names := []
+	for chord: String in chords:
+		if " ".join(names + [chord]).length() > 40:
+			break
+		names.append(chord)
+	var text := " ".join(names)
+	if names.size() < chords.size():
+		text += " and %d more" % (chords.size() - names.size())
+	_picked.text = "%s · %d a round" % [text, count]
 
 
 ## The song `by` places down the list (up if negative), round from the end to the start.

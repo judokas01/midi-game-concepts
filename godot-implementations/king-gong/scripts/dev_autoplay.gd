@@ -11,7 +11,7 @@ extends Node
 ##                        leaving one out; in learn mode once the gorilla waits, one wrong first
 ##   -- --learn           learn mode: the bot plays each next note a moment after the last
 ##                        grab, one of them wrong, and lets go at once
-##   -- --drill           the chord drill, drawing on every kind of chord
+##   -- --drill           the chord drill, dealing every chord the chord menu offers
 ##   -- --song=<n>        plays song n of Song.library(), counting from 0, instead of the first
 ##   -- --perf            prints fps and draw calls once a second
 ##   -- --shots=<dir>     saves a screenshot every second into <dir>
@@ -58,7 +58,7 @@ func _ready() -> void:
 		elif arg == "--learn":
 			game.set_mode.call_deferred(Hud.Mode.LEARN)
 		elif arg == "--drill":
-			game.set_drill_kinds.call_deferred(Drill.Kind.values())
+			game.set_drill.call_deferred(Drill.all_chords(), Drill.COUNT)
 			game.set_mode.call_deferred(Hud.Mode.DRILL)
 		elif arg.begins_with("--song="):
 			game.set_song.call_deferred(int(arg.trim_prefix("--song=")))

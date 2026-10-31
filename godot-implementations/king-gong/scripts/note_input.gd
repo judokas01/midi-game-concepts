@@ -17,13 +17,15 @@ const Song := preload("res://scripts/song.gd")
 const KEYS: Array[Key] = [KEY_A, KEY_S, KEY_D, KEY_F, KEY_G, KEY_H, KEY_J, KEY_K]
 const KEY_MIDI: Array[int] = [60, 62, 64, 65, 67, 69, 71, 72]   # C4 to C5, before octave_shift
 const KEY_LABELS := "ASDFGHJK"
-const CHORD_KEYS: Array[Key] = [KEY_Z, KEY_X, KEY_C, KEY_V, KEY_B, KEY_N, KEY_M]   # chords on C D E F G A B
-const CHORD_LABELS := "ZXCVBNM"
+# chords on C to B: Z X C V B N M on the white keys, with shift on the black key above
+const CHORD_KEYS: Array[int] = [KEY_Z, KEY_Z | KEY_MASK_SHIFT, KEY_X, KEY_X | KEY_MASK_SHIFT, KEY_C, KEY_V,
+	KEY_V | KEY_MASK_SHIFT, KEY_B, KEY_B | KEY_MASK_SHIFT, KEY_N, KEY_N | KEY_MASK_SHIFT, KEY_M]
+const CHORD_LABELS := ["Z", "Shift+Z", "X", "Shift+X", "C", "V", "Shift+V", "B", "Shift+B", "N", "Shift+N", "M"]
 const RESCAN_S := 2.0
 
 var source := "keyboard"
 var octave_shift := 0      # octaves the keys are moved by, to where the song is: -1 in the bass clef
-var _chord_keys := {}      # chord key -> the Song.Chord it plays; empty without chords
+var _chord_keys := {}      # chord key, with shift -> the Song.Chord it plays; empty without chords
 var _sounding := {}        # chord key held down -> the chord it played, let go of on release even if the keys changed since
 var _rescan := RESCAN_S
 
@@ -39,29 +41,29 @@ func key_notes() -> String:
 	return " ".join(KEY_MIDI.map(func(m: int) -> String: return Song.note_name(m + 12 * octave_shift)))
 
 
-## One key for each chord of the song: the key under its root's letter. Two chords on the same
-## root, C and Cm, would share a key; the first one gets it.
+## One key for each chord of the song: the key of its root. Two chords on the same root, C and
+## Cm, would share a key; the first one gets it.
 func set_chords(chords: Array) -> void:
 	_chord_keys.clear()
 	for chord: Song.Chord in chords:
-		var key := CHORD_KEYS[Song.LETTERS.find(chord.name[0])]
+		var key := CHORD_KEYS[chord.midi[0] % 12]
 		if not _chord_keys.has(key):
 			_chord_keys[key] = chord
 
 
 ## The computer key that plays `chord`, while the keyboard is the live input.
 func chord_key_for(chord: Song.Chord) -> String:
-	var i := Song.LETTERS.find(chord.name[0])
-	var own: Song.Chord = _chord_keys.get(CHORD_KEYS[i])
-	return CHORD_LABELS[i] if source == "keyboard" and own != null and own.name == chord.name else ""
+	var root := chord.midi[0] % 12
+	var own: Song.Chord = _chord_keys.get(CHORD_KEYS[root])
+	return CHORD_LABELS[root] if source == "keyboard" and own != null and own.name == chord.name else ""
 
 
-## What the chord keys play, "Z = C  V = F  B = G"; empty without chords.
+## What the chord keys play, "Z = C  V = F  Shift+N = Bb"; empty without chords.
 func chord_key_notes() -> String:
 	var pairs: Array[String] = []
-	for i in CHORD_KEYS.size():
-		if _chord_keys.has(CHORD_KEYS[i]):
-			pairs.append("%s = %s" % [CHORD_LABELS[i], _chord_keys[CHORD_KEYS[i]].name])
+	for root in CHORD_KEYS.size():
+		if _chord_keys.has(CHORD_KEYS[root]):
+			pairs.append("%s = %s" % [CHORD_LABELS[root], _chord_keys[CHORD_KEYS[root]].name])
 	return "  ".join(pairs)
 
 
@@ -100,7 +102,7 @@ func _input(event: InputEvent) -> void:
 	if key == null:
 		return
 	var idx := KEYS.find(key.keycode)
-	var chord: Song.Chord = _chord_keys.get(key.keycode)
+	var chord: Song.Chord = _chord_keys.get(key.get_keycode_with_modifiers())
 	if not key.pressed:
 		if idx >= 0:
 			note_off.emit(KEY_MIDI[idx] + 12 * octave_shift, t)
