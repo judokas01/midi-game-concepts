@@ -139,11 +139,12 @@ func show_source(source: String) -> void:
 	_show_floor()
 
 
-## What the computer keys play, on the start screen and under the floor. `chords` is what the
-## chord keys play, "Z = C  V = F  B = G", or "" without chords.
-func show_key_notes(names: String, chords: String) -> void:
-	_keys.text = "keys  A S D F G H J K  =  " + names
-	var overlay := "No MIDI? Keys [b]A S D F G H J K[/b] = %s." % names
+## What the computer keys play, on the start screen and under the floor: `keys` as
+## NoteInput.key_notes() gives them, [["A S D F G H J K", "C4 D4 E4 F4 G4 A4 B4 C5"], ...].
+## `chords` is what the chord keys play, "Z = C  V = F  B = G", or "" without chords.
+func show_key_notes(keys: Array, chords: String) -> void:
+	_keys.text = "keys  " + "   ·   ".join(keys.map(func(k: Array) -> String: return "%s  =  %s" % k))
+	var overlay := "No MIDI? Keys %s." % ", ".join(keys.map(func(k: Array) -> String: return "[b]%s[/b] = %s" % k))
 	if chords != "":
 		_keys.text += "   ·   chords  " + chords
 		overlay += " Chords: [b]%s[/b]." % chords

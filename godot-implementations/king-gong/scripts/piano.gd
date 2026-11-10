@@ -72,8 +72,12 @@ func _draw() -> void:
 		var x := _whites(_lo, m) * WHITE_W - BLACK_W / 2.0
 		var fill := _fill(m, BLACK)
 		draw_rect(Rect2(x, 0.0, BLACK_W, BLACK_H), fill)
-		if _lit.has(m):
-			draw_string(font, Vector2(x - 4.0, BLACK_H - 6.0), _lit[m][1], HORIZONTAL_ALIGNMENT_CENTER, BLACK_W + 8.0, 10, _ink(fill))
+		var ink := _ink(fill)
+		if _lit.has(m):   # above the computer key's letter, if there is one
+			var y := BLACK_H - (20.0 if letters.has(m) else 6.0)
+			draw_string(font, Vector2(x - 4.0, y), _lit[m][1], HORIZONTAL_ALIGNMENT_CENTER, BLACK_W + 8.0, 10, ink)
+		if letters.has(m):
+			draw_string(font, Vector2(x, BLACK_H - 6.0), letters[m], HORIZONTAL_ALIGNMENT_CENTER, BLACK_W, 10, ink if _lit.has(m) else FAINT)
 		if _wrong.has(m):
 			_cross(font, x, BLACK_W, BLACK_H - 12.0)
 

@@ -7,6 +7,7 @@ extends Node
 ##                        plays each chord before the note on even branches and after it on
 ##                        odd ones, right under the note, and leaves one chord out, so a log
 ##                        gets run into too
+##   -- --bass            plays the bass clef instead
 ##   -- --chords-only     the gorilla plays the tune and the bot only the chords: on the beat,
 ##                        leaving one out; in learn mode once the gorilla waits, one wrong first
 ##   -- --learn           learn mode: the bot plays each next note a moment after the last
@@ -53,6 +54,8 @@ func _ready() -> void:
 			_perf = true
 		elif arg == "--chords":
 			game.set_style.call_deferred(Song.Clef.TREBLE, true)
+		elif arg == "--bass":
+			game.set_style.call_deferred(Song.Clef.BASS, false)
 		elif arg == "--chords-only":
 			game.set_style.call_deferred(Song.Clef.TREBLE, true, true)
 		elif arg == "--learn":

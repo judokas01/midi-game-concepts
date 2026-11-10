@@ -14,9 +14,10 @@ signal restart_requested
 signal menu_requested
 
 const Song := preload("res://scripts/song.gd")
-const KEYS: Array[Key] = [KEY_A, KEY_S, KEY_D, KEY_F, KEY_G, KEY_H, KEY_J, KEY_K]
-const KEY_MIDI: Array[int] = [60, 62, 64, 65, 67, 69, 71, 72]   # C4 to C5, before octave_shift
-const KEY_LABELS := "ASDFGHJK"
+# the white keys on the home row, the black ones in the row above, as on a piano
+const KEYS: Array[Key] = [KEY_A, KEY_W, KEY_S, KEY_E, KEY_D, KEY_F, KEY_T, KEY_G, KEY_Y, KEY_H, KEY_U, KEY_J, KEY_K]
+const KEY_MIDI: Array[int] = [60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72]   # C4 to C5, before octave_shift
+const KEY_LABELS := "AWSEDFTGYHUJK"
 # chords on C to B: Z X C V B N M on the white keys, with shift on the black key above
 const CHORD_KEYS: Array[int] = [KEY_Z, KEY_Z | KEY_MASK_SHIFT, KEY_X, KEY_X | KEY_MASK_SHIFT, KEY_C, KEY_V,
 	KEY_V | KEY_MASK_SHIFT, KEY_B, KEY_B | KEY_MASK_SHIFT, KEY_N, KEY_N | KEY_MASK_SHIFT, KEY_M]
@@ -36,9 +37,21 @@ func key_for(midi: int) -> String:
 	return KEY_LABELS[i] if i >= 0 and source == "keyboard" else ""
 
 
-## What the keys play, "C4 D4 E4 F4 G4 A4 B4 C5".
-func key_notes() -> String:
-	return " ".join(KEY_MIDI.map(func(m: int) -> String: return Song.note_name(m + 12 * octave_shift)))
+## What the keys play, as [keys, notes]: ["A S D F G H J K", "C4 D4 E4 F4 G4 A4 B4 C5"], and
+## with `black` the black keys after it, ["W E T Y U", "C#4 D#4 F#4 G#4 A#4"], with `flats`
+## "Db4 Eb4 Gb4 Ab4 Bb4".
+func key_notes(black: bool, flats: bool) -> Array:
+	var out := []
+	for blacks: bool in ([false, true] if black else [false]):
+		var letters: Array[String] = []
+		var names: Array[String] = []
+		for i in KEYS.size():
+			var m := KEY_MIDI[i] + 12 * octave_shift
+			if Song.is_black(m) == blacks:
+				letters.append(KEY_LABELS[i])
+				names.append(Song.note_name(m, flats))
+		out.append([" ".join(letters), " ".join(names)])
+	return out
 
 
 ## One key for each chord of the song: the key of its root. Two chords on the same root, C and

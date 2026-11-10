@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=3]
+[gd_scene load_steps=35 format=3]
 
 [ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/level.gd" id="2_level"]
@@ -15,6 +15,7 @@
 [ext_resource type="LabelSettings" path="res://ui/banner.tres" id="13_banner"]
 [ext_resource type="Script" path="res://scripts/piano.gd" id="14_piano"]
 [ext_resource type="Script" path="res://scripts/chord_menu.gd" id="15_chord_menu"]
+[ext_resource type="Script" path="res://scripts/key_signature.gd" id="16_key_signature"]
 
 [sub_resource type="Gradient" id="Gradient_sky"]
 offsets = PackedFloat32Array(0.0611, 0.5804, 0.9267)
@@ -145,6 +146,9 @@ offset_bottom = 403.3
 mouse_filter = 2
 text = "𝄢"
 label_settings = SubResource("LabelSettings_bass_clef")
+
+[node name="KeySignature" type="Node2D" parent="Clef"]
+script = ExtResource("16_key_signature")
 
 [node name="World" type="Node2D" parent="." node_paths=PackedStringArray("ledger", "trunks")]
 script = ExtResource("2_level")

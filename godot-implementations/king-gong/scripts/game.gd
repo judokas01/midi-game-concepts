@@ -47,6 +47,7 @@ var _style := {clef = Song.Clef.TREBLE, chords = false, by_itself = false}   # h
 var clef := Song.Clef.TREBLE
 var chords := false            # the treble clef with chords: a log to break at every chord change
 var by_itself := false         # with chords: the gorilla plays the tune itself, you only the chords
+var fifths := 0                # the key signature: sharps, or flats below 0 (Song.fifths)
 
 var notes: Array[Song.Note] = []
 var bananas := 0
@@ -120,7 +121,7 @@ func _ready() -> void:
 	hud.practice_toggled.connect(set_practice)
 	hud.piano_toggled.connect(set_piano)
 	hud.menu_pressed.connect(show_menu)
-	var dev_flags := ["--autoplay", "--perf", "--chords", "--chords-only", "--learn", "--drill"]
+	var dev_flags := ["--autoplay", "--perf", "--chords", "--bass", "--chords-only", "--learn", "--drill"]
 	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in dev_flags or a.begins_with("--shots=") or a.begins_with("--song=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
 	now = now_ms()
@@ -156,8 +157,10 @@ func restart() -> void:
 	clef = Song.Clef.TREBLE if drill else _style.clef
 	chords = drill or _style.chords
 	by_itself = drill or _style.by_itself
+	fifths = 0 if drill else Song.key_of(song)   # the drill's tune is the gorilla's, so it needs none
 	$Clef/Treble.visible = clef == Song.Clef.TREBLE
 	$Clef/Bass.visible = clef == Song.Clef.BASS
+	$Clef/KeySignature.show_key(fifths, clef)
 	var bars: Array
 	if drill:   # new chords every time
 		notes = Song.parse_entries(Drill.entries(drill_chords, drill_count), clef, true)
@@ -326,7 +329,7 @@ func note_on(m: int, ts: float) -> void:
 	if state == State.WAIT:
 		var n := notes[cur]
 		if m != n.midi:
-			_fall("Wrong note: %s. That branch is %s" % [Song.note_name(m), n.name], cur)
+			_fall("Wrong note: %s. That branch is %s" % [Song.note_name(m, fifths < 0), n.name], cur)
 		elif n.log_up:
 			_blocked = {j = cur, ts = ts, jump = false}
 		else:
@@ -339,11 +342,11 @@ func note_on(m: int, ts: float) -> void:
 	var w := windows(i, grab_t)
 	var hanging := state == State.HANG
 	if j >= notes.size():
-		_fall("Wrong note: %s. Last branch: hold it, then let go" % Song.note_name(m), i)
+		_fall("Wrong note: %s. Last branch: hold it, then let go" % Song.note_name(m, fifths < 0), i)
 		return
 	var nj := notes[j]
 	if m != nj.midi:
-		_fall("Wrong note: %s. The next branch is %s" % [Song.note_name(m), nj.name], j)
+		_fall("Wrong note: %s. The next branch is %s" % [Song.note_name(m, fifths < 0), nj.name], j)
 		return
 	if hanging and notes[i].rest_after > 0:
 		_fall("Too early. There is a rest: let go and bounce off the liana first", i)
@@ -416,7 +419,7 @@ func _learn_note(m: int, ts: float) -> void:
 		return
 	if m != notes[j].midi:
 		_wrong[m] = true
-		_miss("Not %s: the next branch is %s" % [Song.note_name(m), notes[j].name])
+		_miss("Not %s: the next branch is %s" % [Song.note_name(m, fifths < 0), notes[j].name])
 		return
 	var jump := state == State.HANG and (notes[cur].rest_after > 0 or absi(notes[j].step - notes[cur].step) > 2)
 	if state == State.HANG:
@@ -720,7 +723,9 @@ func _set_chord_keys() -> void:
 					keyed.append(Song.parse_chord(root + quality))
 		listed = "Z X C V B N M = C D E F G A B, with Shift a semitone up"   # all twelve would not fit
 	note_input.set_chords(keyed)
-	hud.show_key_notes(note_input.key_notes(), listed if listed != "" else note_input.chord_key_notes())
+	# the black keys only when the tune you play has any
+	var black := not by_itself and notes.any(func(n: Song.Note) -> bool: return Song.is_black(n.midi))
+	hud.show_key_notes(note_input.key_notes(black, fifths < 0), listed if listed != "" else note_input.chord_key_notes())
 	_refresh_labels()
 
 

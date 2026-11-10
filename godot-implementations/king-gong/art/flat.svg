@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="140" viewBox="-8 -98 60 140">
+  <g fill="#eef5e4" stroke="#eef5e4" stroke-width="5" stroke-linejoin="round">
+    <rect x="-4" y="-94" width="8" height="132" rx="2"/>
+    <path fill-rule="evenodd" d="M 2,-6 C 14,-22 34,-27 43,-18 C 51,-10 47,6 34,16 C 24,24 12,31 2,36 Z M 3,25 C 14,18 28,8 32,-2 C 35,-10 30,-16 22,-14 C 14,-12 8,-6 3,-1 Z"/>
+  </g>
+  <g fill="#1d2b1f">
+    <rect x="-4" y="-94" width="8" height="132" rx="2"/>
+    <path fill-rule="evenodd" d="M 2,-6 C 14,-22 34,-27 43,-18 C 51,-10 47,6 34,16 C 24,24 12,31 2,36 Z M 3,25 C 14,18 28,8 32,-2 C 35,-10 30,-16 22,-14 C 14,-12 8,-6 3,-1 Z"/>
+  </g>
+</svg>

@@ -9,9 +9,12 @@ enum Clef { TREBLE, BASS }
 # [note, beats, chord]: 1 is a quarter note, 2 a half, 4 a whole, 0.5 an eighth. "r" is a rest.
 # A trailing "*" hangs a banana on that branch. A chord ("C", "Am", "F#") starts on that note
 # and lasts until the next one; only the treble clef with chords plays them.
-# Every song here is in C, one note at a time between C4 and A4: the keyboard fallback stops
-# at C5, and an octave down A3 is the bass staff's top line. All are in 4/4 and start on the
-# beat, which is where bar_lines() puts the bar lines without a score's. Two bars a line.
+# A song in another key than C names it, key = "D" ("Bb", "Em"...), and its key signature
+# shows after the clef. Its notes are written as they sound, "F#4" in D, and must all be as
+# the key signature makes them: there are no signs on single notes yet (see check()).
+# The songs here are one note at a time between C4 and A4, or C5 in F: the keyboard fallback
+# stops at C5, and an octave down A3 is the bass staff's top line. All are in 4/4 and start on
+# the beat, which is where bar_lines() puts the bar lines without a score's. Two bars a line.
 const SONGS := [
 	{name = "Twinkle Twinkle", notes = [
 		["C4", 1, "C"], ["C4", 1], ["G4", 1], ["G4", 1], ["A4", 1, "F"], ["A4", 1], ["G4*", 2, "C"],
@@ -63,6 +66,19 @@ const SONGS := [
 		["F4", 1, "F"], ["F4", 1], ["F4", 1], ["F4", 1], ["F4", 1, "C"], ["E4", 1], ["E4", 1], ["E4", 0.5], ["E4", 0.5],
 		["G4", 1, "G"], ["G4", 1], ["F4", 1], ["D4", 1], ["C4", 4, "C"],
 	]},
+	# The last two are earlier songs in keys with a key signature: one sharp used, one flat.
+	{name = "Mary's Lamb in D", key = "D", notes = [
+		["F#4", 1, "D"], ["E4", 1], ["D4", 1], ["E4", 1], ["F#4", 1], ["F#4", 1], ["F#4*", 2],
+		["E4", 1, "A"], ["E4", 1], ["E4", 2], ["F#4", 1, "D"], ["A4", 1], ["A4*", 2],
+		["F#4", 1], ["E4", 1], ["D4", 1], ["E4", 1], ["F#4", 1], ["F#4", 1], ["F#4", 1], ["F#4*", 1],
+		["E4", 1, "A"], ["E4", 1], ["F#4", 1], ["E4", 1], ["D4", 4, "D"],
+	]},
+	{name = "Ode to Joy in F", key = "F", notes = [
+		["A4", 1, "F"], ["A4", 1], ["Bb4", 1], ["C5", 1], ["C5", 1, "C"], ["Bb4", 1], ["A4", 1], ["G4*", 1],
+		["F4", 1, "F"], ["F4", 1], ["G4", 1], ["A4", 1], ["A4", 1.5, "C"], ["G4", 0.5], ["G4*", 2],
+		["A4", 1, "F"], ["A4", 1], ["Bb4", 1], ["C5", 1], ["C5", 1, "C"], ["Bb4", 1], ["A4", 1], ["G4*", 1],
+		["F4", 1, "F"], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1.5, "C"], ["F4", 0.5], ["F4", 2, "F"],
+	]},
 ]
 
 # Scores read at start-up, as songs after SONGS (see score_import.gd).
@@ -72,7 +88,8 @@ const BELOW_STAFF := {Clef.TREBLE: "C4", Clef.BASS: "E2"}
 # A song moves by whole octaves to sit on the staff: the lowest move that keeps every note
 # between the ledger line below it and its top line, or failing that from two steps lower.
 # Notes still outside fold in by octaves. Above the top line a branch's label would run
-# into the top bar. SONGS stay put in the treble clef and go an octave down in the bass.
+# into the top bar. SONGS stay put in the treble clef and go an octave down in the bass,
+# Ode to Joy in F two.
 const TOP_STEP := 10
 const LOWEST_STEP := -2
 
@@ -81,6 +98,8 @@ const LETTER_STEP := {"C": 0, "D": 1, "E": 2, "F": 3, "G": 4, "A": 5, "B": 6}
 const LETTERS := "CDEFGAB"
 const ACCIDENTALS := {"": 0, "#": 1, "b": -1}
 const NAMES := ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+const FLAT_NAMES := ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
+const SHARP_ORDER := "FCGDAEB"   # the order a key signature adds its sharps; its flats, backwards
 const QUALITIES := {"": [0, 4, 7], "m": [0, 3, 7], "dim": [0, 3, 6], "aug": [0, 4, 8],
 	"7": [0, 4, 7, 10], "maj7": [0, 4, 7, 11], "m7": [0, 3, 7, 10]}   # semitones above the root
 const SPELLED := {-2: "bb", -1: "b", 0: "", 1: "#", 2: "##"}   # how far off the white key, as written
@@ -119,19 +138,80 @@ class Note:
 	var log_up := false    # the log before this branch, there for a new chord, still stands
 
 
-static func note_name(midi: int) -> String:
-	return NAMES[midi % 12] + str(floori(midi / 12.0) - 1)
+## "C#4", or with `flats` "Db4", as a song in a key with flats spells it.
+static func note_name(midi: int, flats := false) -> String:
+	return (FLAT_NAMES if flats else NAMES)[midi % 12] + str(floori(midi / 12.0) - 1)
+
+
+static func is_black(midi: int) -> bool:
+	return NAMES[posmod(midi, 12)].length() > 1
 
 
 static func beats_word(beats: float) -> String:
 	return "1 beat" if beats == 1.0 else "%s beats" % String.num(beats)
 
 
-## SONGS, then the scores in SONGS_DIR: the songs on the start screen, in its order.
+## SONGS, then the scores in SONGS_DIR: the songs on the start screen, in its order. A song
+## that fails check() is left out, with an error in the console.
 static func library() -> Array:
 	if _library.is_empty():
-		_library = SONGS + ScoreImport.load_dir(SONGS_DIR)
+		for song: Dictionary in SONGS + ScoreImport.load_dir(SONGS_DIR):
+			var problems := check(song)
+			if problems.is_empty():
+				_library.append(song)
+			else:
+				push_error("Song \"%s\" left out: %s" % [song.name, "; ".join(problems)])
 	return _library
+
+
+## Song `song`'s key signature, as fifths() counts it.
+static func key_of(song: int) -> int:
+	return fifths(library()[song].get("key", "C"))
+
+
+## A key's sharps, or flats below 0: "D" 2, "Bb" -2, "Em" 1. A minor key has its relative
+## major's, three fifths down from its own name's.
+static func fifths(key: String) -> int:
+	var minor := key.ends_with("m")
+	var tonic := key.trim_suffix("m")
+	var f: int = SHARP_ORDER.find(tonic[0]) - 1 + 7 * ACCIDENTALS[tonic.substr(1)]
+	return f - 3 if minor else f
+
+
+## The letters the key signature of `key_fifths` (see fifths()) sharpens (1) or flattens (-1):
+## {"F": 1, "C": 1} for D.
+static func signature(key_fifths: int) -> Dictionary:
+	var out := {}
+	for k in absi(key_fifths):
+		var letter := SHARP_ORDER[k] if key_fifths > 0 else SHARP_ORDER[6 - k]
+		out[letter] = signi(key_fifths)
+	return out
+
+
+## The notes of `song`, as in SONGS, that its key signature can't show: each would need a sign
+## of its own, a natural to cancel a sharp or flat of the key, or one the key doesn't have.
+## The staff has no such signs yet. Empty when there are none.
+static func check(song: Dictionary) -> Array[String]:
+	var key: String = song.get("key", "C")
+	var marked := signature(fifths(key))
+	var bars: Array = song.get("bars", [])
+	var problems: Array[String] = []
+	var beat := 0.0
+	for entry: Array in song.notes:
+		var raw: String = entry[0].trim_suffix("*")
+		if raw != "r":
+			var accidental: int = ACCIDENTALS[raw.substr(1, raw.length() - 2)]
+			var keyed: int = marked.get(raw[0], 0)
+			if accidental != keyed:
+				var bar := 1 + (bars.filter(func(b: float) -> bool: return b <= beat).size() if song.has("bars") else floori(beat / 4.0))
+				if accidental == 0:
+					problems.append("%s in bar %d needs a natural sign: the key of %s makes every %s %s" \
+						% [raw, bar, key, raw[0], "sharp" if keyed > 0 else "flat"])
+				else:
+					problems.append("%s in bar %d needs a %s sign the key of %s doesn't have" \
+						% [raw, bar, "sharp" if accidental > 0 else "flat", key])
+		beat += float(entry[1])
+	return problems
 
 
 ## Song `song` of library(). `chords` reads the chords too, for the treble clef with chords.

@@ -12,3 +12,7 @@ spike. It is drawn in pale greys so the game can tint it with each chord's colou
 `branch_bark.svg` is a tile: the branch scene repeats it along the branch, however long the
 note is. `branch_twig.svg` and `branch_leaves.svg` have their origin (0, 0) where they meet
 the branch's left and right end.
+
+`sharp.svg` and `flat.svg` are the key signature's signs, ink-dark with a pale rim so they
+read on the staff-line bushes. Their origin (0, 0) goes on the line or space: the sharp's
+middle, and the flat's stem level with the middle of its bowl.
