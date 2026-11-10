@@ -1,5 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="36" height="34" viewBox="-8 -16 36 34">
-  <ellipse cx="9" cy="-7.2" rx="12.6" ry="5.76" fill="#3c7232" transform="rotate(-28.65 9 -7.2)"/>
-  <ellipse cx="12.6" cy="3.6" rx="12.6" ry="5.4" fill="#4b8a3e" transform="rotate(22.92 12.6 3.6)"/>
-  <ellipse cx="3.6" cy="9" rx="9.9" ry="4.68" fill="#3c7232" transform="rotate(63.03 3.6 9)"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="24" viewBox="-12 -26 28 24">
+  <g stroke="#2d4f1e" stroke-width="1">
+    <ellipse cx="6.6" cy="-8.4" rx="7" ry="3" fill="#6aaa3a" transform="rotate(-20 6.6 -8.4)"/>
+    <ellipse cx="-3.1" cy="-14.5" rx="9" ry="3.6" fill="#6aaa3a" transform="rotate(70 -3.1 -14.5)"/>
+    <ellipse cx="4.5" cy="-13.8" rx="9" ry="3.6" fill="#8cc63f" transform="rotate(-60 4.5 -13.8)"/>
+  </g>
 </svg>

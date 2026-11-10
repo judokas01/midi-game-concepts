@@ -29,7 +29,10 @@ var _drops: Array[Tween] = []     # the pieces falling
 
 func setup(note: Song.Note) -> void:
 	position = Staff.note_pos(note)
-	_half = Staff.branch_length(note) / 2.0
+	# the wood's round caps reach half its width past its ends: keep them inside the branch's
+	# length, so the gap to the next branch stays open
+	var cap: float = $Left/Wood.width / 2.0
+	_half = maxf(Staff.branch_length(note) / 2.0 - cap, 1.0)
 	_left.position.x = -_half
 	$Left/Wood.set_point_position(1, Vector2(_half, 0.0))
 	_right.position.x = _half

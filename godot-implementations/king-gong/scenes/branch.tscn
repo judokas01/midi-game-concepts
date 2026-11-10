@@ -43,7 +43,7 @@ end_cap_mode = 2
 [node name="Leaves" type="Sprite2D" parent="Right"]
 texture = ExtResource("4_leaves")
 centered = false
-offset = Vector2(-8, -16)
+offset = Vector2(-12, -26)
 
 [node name="Cracks" type="Node2D" parent="."]
 

@@ -197,6 +197,10 @@ A file the importer can't read is left out of the list, with a warning in the co
 - **Small visual liberties.** The floor is drawn in front of the world, so tree trunks and
   liana posts sink into it. A strained branch bends as two halves meeting at the grip,
   not along a curve. The legend fits on the floor strip.
+- **Branch ends stand out.** The spike's leaves reach on past a branch's tip in the same
+  green as the staff-line bushes, so two notes in a row on a line read as one long branch.
+  Here the leaves are a lighter green, outlined, and stand up from the tip, and the bark's
+  round ends stay inside the branch's length, which keeps the gap to the next branch open.
 - **Hot-plugging.** A MIDI device plugged in after a device was already found is not
   picked up until restart.
 - **No GPU.** If Windows falls back to its software renderer (no working graphics driver),
