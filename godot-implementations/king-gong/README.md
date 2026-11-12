@@ -28,15 +28,32 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | Chord hint | On the start screen, with chords: the sign on each log shows the chord's name, or its notes in the bass clef. The chord drill always shows the name |
 | Chords: Choose | On the start screen, chord drill: opens the [chord menu](#the-chord-menu), which chords it deals and how many a round. The start screen shows the first few |
 | MIDI note written on a menu button | Picks that button, on the start screen (C3 and D3 step through the songs, E3 to G3 pick the mode, C4 to B4 the rest) and on the end panel (C4 play again, D4 main menu). In the chord menu, C4 to B4 pick in the marked row and a note below or above moves the mark. Computer keys don't; use the mouse |
-| `Space` / click / any other MIDI note | Start, on the start screen. The note only starts the game; it grabs nothing. `Space` also closes the chord menu |
+| `Space` / click / any other MIDI note | Start, on the start screen. The note only starts the game; it grabs nothing. `Space` also closes the chord menu, and continues from the pause menu |
 | `Enter` / Restart button | Restart the song, or in the chord drill a new round |
-| `Esc` | Back to the start screen, at any time, the chord menu too |
-| Practice mode | On the start screen, Play: the magic bananas never run out |
+| `Esc` | During a song: the [pause menu](#the-pause-menu). From the end panel: back to the start screen. In the chord menu: closes it |
+| `←` / `→` | In the pause menu: the tempo down or up, 5 BPM a step |
+| Practice mode | On the start screen, Play, and in the pause menu: the magic bananas never run out |
 | Keyboard hint | On the start screen, Learn and chord drill: the [little keyboard](#the-little-keyboard) at the bottom. On by default |
-| Tempo slider | 40–120 BPM (default 60) |
-| Labels / Beat tick | Same toggles as the spike |
+| Tempo, Labels, Beat tick | In the pause menu. Tempo 40–120 BPM (default 60); Labels and Beat tick are the spike's toggles |
 
-Which input is live (MIDI or keyboard) is shown top-right, next to bananas, progress and falls.
+There are no bars on screen. A yellow line along the top edge follows the gorilla across the
+level, from the stump (0%) to the nest (100%), with the percentage under its end. The level
+is laid out in time, so a whole note fills four times as much of it as a quarter. The line
+never goes back, on a fall or a swing back. A small pill top-right shows
+the magic bananas (`∞` in practice mode), the falls (`wrong` in Learn mode and the drill) and
+`Esc ‖`, the pause.
+
+## The pause menu
+
+`Esc` during a song freezes it under the pause menu: **Continue**, **Restart song**,
+**Practice mode** (in Play mode), **Tempo** (`◀ 60 BPM ▶`, 40 to 120 in steps of 5, or `←`
+and `→`), **Beat tick**, **Labels** and **Main menu**. `Esc` or `Space` continues too.
+
+You let go of the key to reach for `Esc`, so a branch can't be held through a pause. On
+Continue the gorilla floats up at the branch it hung on, or the next one if it was in the
+air or in a rest, and waits for the note, untimed, as after a magic banana but for free. The
+beat restarts at the grab, so a new tempo starts cleanly. A fall carries on where it was and
+still costs its banana. Notes played or let go while paused are ignored.
 
 ## Learning
 
@@ -89,8 +106,8 @@ lasts until the game is closed.
 
 ### The little keyboard
 
-In Learn mode and the chord drill a little piano keyboard at the bottom, in place of the
-legend, lights what to play next:
+In Learn mode and the chord drill a little piano keyboard at the bottom lights what to play
+next:
 
 - **The note**, yellow, on the tune's keys: from its lowest note, an octave at least.
 - **The chord**, in its log's colour, in root position on two octaves of its own, left of
@@ -207,9 +224,11 @@ A file the importer can't read is left out of the list, with a warning in the co
   the [chord drill](#chord-drill) with sevenths, diminished and augmented chords, and the
   [little keyboard](#the-little-keyboard) that shows what to play.
 - **Menus.** The spike has a start overlay and an end message. Here the start screen also
-  has practice mode, the end panel offers Play again and Main menu, and every button on
-  both carries a MIDI note that picks it; the chord drill's chord menu is picked from by
-  playing roots. So you never have to leave the piano. The end panel ignores notes for
+  has practice mode, `Esc` opens a [pause menu](#the-pause-menu) holding the settings the
+  spike keeps in its top bar, and the end panel offers Play again and Main menu. Every button
+  on the start screen and the end panel carries a MIDI note that picks it, and the chord
+  drill's chord menu is picked from by playing roots; the pause menu has no notes yet. The end
+  panel ignores notes for
   0.8 s, so a note still being played can't pick by accident.
 - **Input timing.** Godot input events carry no timestamp, so a note is stamped when the
   event is dispatched, once per frame: about 16 ms of resolution at 60 fps against a
@@ -222,7 +241,8 @@ A file the importer can't read is left out of the list, with a warning in the co
   a fixed 36 px on a 1280×720 canvas and the window scales the whole picture.
 - **Small visual liberties.** The floor is drawn in front of the world, so tree trunks and
   liana posts sink into it. A strained branch bends as two halves meeting at the grip,
-  not along a curve. The legend fits on the floor strip.
+  not along a curve. There is no legend: the start screen explains the branches, and the
+  settings bar is the pause menu.
 - **Branch ends stand out.** The spike's leaves reach on past a branch's tip in the same
   green as the staff-line bushes, so two notes in a row on a line read as one long branch.
   Here the leaves are a lighter green, outlined, and stand up from the tip, and the bark's
@@ -239,7 +259,7 @@ them around:
 
 | Path | What |
 | --- | --- |
-| `main.tscn` | Sky, parallax layers (canopy, staff-line bushes, clef and key signature, floor), the world, camera, HUD with the little keyboard |
+| `main.tscn` | Sky, parallax layers (canopy, staff-line bushes, clef and key signature, floor), the world, camera, HUD: the counters, the menus, the little keyboard |
 | `scenes/branch.tscn` | One note: two halves of bark (Line2Ds) meeting at the grip, end twig and leaves, cracks, banana, label. When the gorilla grabs it, `branch.gd` cuts the bark into the pieces that fall |
 | `scenes/liana.tscn` | One rest: two posts, the vine (a Line2D) and its leaves |
 | `scenes/chord_log.tscn` | One chord change: the log in two pieces (stump and top), its sign with the name and a small bass staff, splinters and chips |
@@ -255,11 +275,13 @@ them around:
 | `scripts/key_signature.gd` | Puts the song's sharps or flats after the clef |
 | `scripts/drill.gd` | Makes up the chord drill's tune and deals its chords; which the chord menu offers, and how they are spelled |
 | `scripts/chord_menu.gd` | The chord drill's chord menu: builds its grid and works it from the MIDI keyboard |
+| `scripts/pause_menu.gd` | The pause menu: its buttons and toggles, the tempo's steps |
+| `scripts/progress_line.gd` | Draws the progress line along the top, gliding after the gorilla |
 | `scripts/piano.gd` | Draws the little keyboard |
 | `scripts/score_import.gd` | Reads the MusicXML scores in `songs/` into songs |
 | `scripts/metronome.gd` | The beat tick |
 | `scripts/note_input.gd` | MIDI and keyboard input |
-| `scripts/hud.gd` | Top bar, the two menus and their MIDI notes, messages, what the little keyboard lights |
+| `scripts/hud.gd` | The counters, the menus and their MIDI notes, messages, what the little keyboard lights |
 | `scripts/dev_autoplay.gd` | Dev check only, see below |
 
 Branches, lianas and logs only appear when the game runs, because `level.gd` lays them out
@@ -291,5 +313,12 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   (there, the wrong one is a chord).
 - `--drill` plays the chord drill, with every chord the chord menu offers picked, 16 a
   round, once striking a wrong chord: expect `WON falls=0 bananas=4 misses=1`.
+- `--pause` pauses with `Esc` three times, once each: mid-fall, hanging on branch 10 and in
+  the first rest. It lets go of its note while paused, steps the tempo up with `→` and
+  continues with `Space` a second later. Each `paused state=... cur=...` line is followed by
+  `resumed`: the fall as `FALL` on the same branch, the hang as `WAIT` on its branch, the
+  rest as `WAIT` on the next, the tempo 5 BPM higher each time. A pause costs nothing, so
+  expect the same result as without it: `WON falls=2 bananas=5`, or with `--learn` one
+  pause and `WON falls=0 bananas=4 misses=1`.
 - `--perf` prints fps and draw calls once a second.
 - `--shots=<dir>` saves a screenshot every second.

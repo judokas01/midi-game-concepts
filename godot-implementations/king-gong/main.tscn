@@ -1,21 +1,23 @@
-[gd_scene load_steps=35 format=3]
+[gd_scene format=3 uid="uid://p2a62cy2cgvx"]
 
-[ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
-[ext_resource type="Script" path="res://scripts/level.gd" id="2_level"]
-[ext_resource type="Script" path="res://scripts/metronome.gd" id="3_metronome"]
-[ext_resource type="Script" path="res://scripts/note_input.gd" id="4_input"]
-[ext_resource type="Script" path="res://scripts/hud.gd" id="5_hud"]
+[ext_resource type="Script" uid="uid://p7iei44xn5ou" path="res://scripts/game.gd" id="1_game"]
+[ext_resource type="Script" uid="uid://crb77xrbdpwbn" path="res://scripts/level.gd" id="2_level"]
+[ext_resource type="Script" uid="uid://dtn07ws22b7wo" path="res://scripts/metronome.gd" id="3_metronome"]
+[ext_resource type="Script" uid="uid://cok2at1li0liy" path="res://scripts/note_input.gd" id="4_input"]
+[ext_resource type="Script" uid="uid://b23qrmvd6vjdf" path="res://scripts/hud.gd" id="5_hud"]
 [ext_resource type="PackedScene" path="res://scenes/gorilla.tscn" id="6_gorilla"]
-[ext_resource type="Texture2D" path="res://art/canopy.svg" id="7_canopy"]
-[ext_resource type="Texture2D" path="res://art/staff_lines.svg" id="8_bushes"]
-[ext_resource type="Texture2D" path="res://art/floor_mounds.svg" id="9_mounds"]
-[ext_resource type="Texture2D" path="res://art/stump.svg" id="10_stump"]
-[ext_resource type="Texture2D" path="res://art/nest_tree.svg" id="11_nest"]
-[ext_resource type="Texture2D" path="res://art/banana.svg" id="12_banana"]
+[ext_resource type="Texture2D" uid="uid://cumlynfr23g1o" path="res://art/canopy.svg" id="7_canopy"]
+[ext_resource type="Texture2D" uid="uid://cgwjmoll1kj3v" path="res://art/staff_lines.svg" id="8_bushes"]
+[ext_resource type="Texture2D" uid="uid://dfo53ego3a3il" path="res://art/floor_mounds.svg" id="9_mounds"]
+[ext_resource type="Texture2D" uid="uid://ol23dipdgkv2" path="res://art/stump.svg" id="10_stump"]
+[ext_resource type="Texture2D" uid="uid://brn6xgkv3kfvt" path="res://art/nest_tree.svg" id="11_nest"]
+[ext_resource type="Texture2D" uid="uid://cc5g7clva5vn6" path="res://art/banana.svg" id="12_banana"]
 [ext_resource type="LabelSettings" path="res://ui/banner.tres" id="13_banner"]
-[ext_resource type="Script" path="res://scripts/piano.gd" id="14_piano"]
-[ext_resource type="Script" path="res://scripts/chord_menu.gd" id="15_chord_menu"]
-[ext_resource type="Script" path="res://scripts/key_signature.gd" id="16_key_signature"]
+[ext_resource type="Script" uid="uid://cfh3hshel1sk6" path="res://scripts/piano.gd" id="14_piano"]
+[ext_resource type="Script" uid="uid://ch85aiwbg0ctm" path="res://scripts/chord_menu.gd" id="15_chord_menu"]
+[ext_resource type="Script" uid="uid://dijkh0fhcsa0k" path="res://scripts/key_signature.gd" id="16_key_signature"]
+[ext_resource type="Script" uid="uid://c755iykeenyy7" path="res://scripts/pause_menu.gd" id="17_pause_menu"]
+[ext_resource type="Script" uid="uid://dnkqgtw4hw6r6" path="res://scripts/progress_line.gd" id="18_progress_line"]
 
 [sub_resource type="Gradient" id="Gradient_sky"]
 offsets = PackedFloat32Array(0.0611, 0.5804, 0.9267)
@@ -29,6 +31,7 @@ fill_to = Vector2(0, 1)
 
 [sub_resource type="SystemFont" id="SystemFont_clef"]
 font_names = PackedStringArray("Segoe UI Symbol", "Noto Music", "serif")
+subpixel_positioning = 0
 
 [sub_resource type="LabelSettings" id="LabelSettings_clef"]
 font = SubResource("SystemFont_clef")
@@ -39,37 +42,6 @@ font_color = Color(0.14902, 0.305882, 0.172549, 0.7)
 font = SubResource("SystemFont_clef")
 font_size = 330
 font_color = Color(0.14902, 0.305882, 0.172549, 0.7)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
-bg_color = Color(0.113725, 0.14902, 0.12549, 1)
-border_width_bottom = 1
-border_color = Color(0.184314, 0.231373, 0.192157, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_source"]
-content_margin_left = 8.0
-content_margin_top = 2.0
-content_margin_right = 8.0
-content_margin_bottom = 2.0
-bg_color = Color(0.227451, 0.247059, 0.286275, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-content_margin_left = 16.0
-content_margin_top = 18.0
-content_margin_right = 16.0
-content_margin_bottom = 18.0
-bg_color = Color(0.0627451, 0.0862745, 0.0627451, 0.88)
-
-[sub_resource type="SystemFont" id="SystemFont_bold"]
-font_names = PackedStringArray("Segoe UI", "Arial", "sans-serif")
-font_weight = 700
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_piano"]
 content_margin_left = 12.0
@@ -82,19 +54,58 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 16.0
+content_margin_top = 18.0
+content_margin_right = 16.0
+content_margin_bottom = 18.0
+bg_color = Color(0.0627451, 0.0862745, 0.0627451, 0.88)
+
+[sub_resource type="SystemFont" id="SystemFont_bold"]
+font_names = PackedStringArray("Segoe UI", "Arial", "sans-serif")
+font_weight = 700
+subpixel_positioning = 0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
+content_margin_left = 14.0
+content_margin_top = 5.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+bg_color = Color(0.0627451, 0.0862745, 0.0627451, 0.72)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_esc"]
+content_margin_left = 6.0
+content_margin_top = 1.0
+content_margin_right = 6.0
+content_margin_bottom = 1.0
+draw_center = false
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.662745, 0.709804, 0.647059, 0.5)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
 [sub_resource type="ButtonGroup" id="ButtonGroup_mode"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_clef"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_hint"]
 
-[node name="Game" type="Node2D"]
+[node name="Game" type="Node2D" unique_id=2093278088]
 script = ExtResource("1_game")
 
-[node name="Sky" type="CanvasLayer" parent="."]
+[node name="Sky" type="CanvasLayer" parent="." unique_id=698586675]
 layer = -1
 
-[node name="Gradient" type="TextureRect" parent="Sky"]
+[node name="Gradient" type="TextureRect" parent="Sky" unique_id=1258599519]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -104,147 +115,117 @@ mouse_filter = 2
 texture = SubResource("GradientTexture2D_sky")
 expand_mode = 1
 
-[node name="Canopy" type="Parallax2D" parent="."]
+[node name="Canopy" type="Parallax2D" parent="." unique_id=730495740]
 scroll_scale = Vector2(0.35, 1)
 repeat_size = Vector2(2048, 0)
 
-[node name="Fringe" type="Sprite2D" parent="Canopy"]
+[node name="Fringe" type="Sprite2D" parent="Canopy" unique_id=1035081659]
 texture = ExtResource("7_canopy")
 centered = false
 
-[node name="Trunks" type="Node2D" parent="."]
+[node name="Trunks" type="Node2D" parent="." unique_id=218392253]
 
-[node name="StaffLines" type="Parallax2D" parent="."]
+[node name="StaffLines" type="Parallax2D" parent="." unique_id=380187442]
 scroll_scale = Vector2(0.55, 1)
 repeat_size = Vector2(2048, 0)
 
-[node name="Bushes" type="Sprite2D" parent="StaffLines"]
+[node name="Bushes" type="Sprite2D" parent="StaffLines" unique_id=378714199]
 position = Vector2(0, 85.6)
 texture = ExtResource("8_bushes")
 centered = false
 
-[node name="Ledger" type="Node2D" parent="."]
+[node name="Ledger" type="Node2D" parent="." unique_id=82121212]
 
-[node name="Clef" type="Parallax2D" parent="."]
+[node name="Clef" type="Parallax2D" parent="." unique_id=10292697]
 scroll_scale = Vector2(0, 0)
 
-[node name="Treble" type="Label" parent="Clef"]
+[node name="Treble" type="Label" parent="Clef" unique_id=1518472346]
 offset_left = 7.2
 offset_top = -71.4
 offset_right = 268.2
 offset_bottom = 552.6
-mouse_filter = 2
 text = "𝄞"
 label_settings = SubResource("LabelSettings_clef")
 
-[node name="Bass" type="Label" parent="Clef"]
+[node name="Bass" type="Label" parent="Clef" unique_id=42574803]
 visible = false
 offset_left = 13.3
 offset_top = -36.7
 offset_right = 197.3
 offset_bottom = 403.3
-mouse_filter = 2
 text = "𝄢"
 label_settings = SubResource("LabelSettings_bass_clef")
 
-[node name="KeySignature" type="Node2D" parent="Clef"]
+[node name="KeySignature" type="Node2D" parent="Clef" unique_id=498778915]
 script = ExtResource("16_key_signature")
 
-[node name="World" type="Node2D" parent="." node_paths=PackedStringArray("ledger", "trunks")]
+[node name="World" type="Node2D" parent="." unique_id=741401966 node_paths=PackedStringArray("ledger", "trunks")]
 script = ExtResource("2_level")
 ledger = NodePath("../Ledger")
 trunks = NodePath("../Trunks")
 
-[node name="Stump" type="Sprite2D" parent="World"]
+[node name="Stump" type="Sprite2D" parent="World" unique_id=1068806190]
 texture = ExtResource("10_stump")
 centered = false
 offset = Vector2(-28, -10)
 
-[node name="Nest" type="Sprite2D" parent="World"]
+[node name="Nest" type="Sprite2D" parent="World" unique_id=158293261]
 texture = ExtResource("11_nest")
 centered = false
 offset = Vector2(-60, -10)
 
-[node name="Lianas" type="Node2D" parent="World"]
+[node name="Lianas" type="Node2D" parent="World" unique_id=1264187069]
 
-[node name="Branches" type="Node2D" parent="World"]
+[node name="Branches" type="Node2D" parent="World" unique_id=1868277440]
 
-[node name="Logs" type="Node2D" parent="World"]
+[node name="Logs" type="Node2D" parent="World" unique_id=1445582519]
 
-[node name="Pops" type="Node2D" parent="World"]
+[node name="Pops" type="Node2D" parent="World" unique_id=1918003357]
 
-[node name="Gorilla" parent="World" instance=ExtResource("6_gorilla")]
+[node name="Gorilla" parent="World" unique_id=1341876893 instance=ExtResource("6_gorilla")]
 
-[node name="Floor" type="Parallax2D" parent="."]
+[node name="Floor" type="Parallax2D" parent="." unique_id=1292267406]
 repeat_size = Vector2(2048, 0)
 
-[node name="Dirt" type="ColorRect" parent="Floor"]
+[node name="Dirt" type="ColorRect" parent="Floor" unique_id=1001926728]
 offset_top = 667.2
 offset_right = 2048.0
 offset_bottom = 1267.2
 mouse_filter = 2
 color = Color(0.172549, 0.164706, 0.109804, 1)
 
-[node name="Mounds" type="Sprite2D" parent="Floor"]
+[node name="Mounds" type="Sprite2D" parent="Floor" unique_id=1808860191]
 position = Vector2(0, 647.2)
 texture = ExtResource("9_mounds")
 centered = false
 
-[node name="Camera" type="Camera2D" parent="."]
+[node name="Camera" type="Camera2D" parent="." unique_id=265634052]
 anchor_mode = 0
 position_smoothing_enabled = true
 position_smoothing_speed = 3.5
 
-[node name="Metronome" type="Node" parent="."]
+[node name="Metronome" type="Node" parent="." unique_id=1809983515]
 script = ExtResource("3_metronome")
 
-[node name="NoteInput" type="Node" parent="."]
+[node name="NoteInput" type="Node" parent="." unique_id=1692081247]
+process_mode = 3
 script = ExtResource("4_input")
 
-[node name="Hud" type="CanvasLayer" parent="."]
+[node name="Hud" type="CanvasLayer" parent="." unique_id=2110018677]
 script = ExtResource("5_hud")
 
-[node name="Flyers" type="Node2D" parent="Hud"]
-
-[node name="Banner" type="Label" parent="Hud"]
+[node name="Banner" type="Label" parent="Hud" unique_id=1746374453]
 visible = false
 anchors_preset = 10
 anchor_right = 1.0
 offset_top = 122.6
 offset_bottom = 152.6
 grow_horizontal = 2
-mouse_filter = 2
 label_settings = ExtResource("13_banner")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Legend" type="Label" parent="Hud"]
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 676.0
-offset_bottom = 696.0
-grow_horizontal = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.721569, 0.768627, 0.678431, 1)
-theme_override_font_sizes/font_size = 15
-text = "short branch = 1 beat · twice as long = 2 beats · liana below = rest, let go and bounce · 60 BPM, the beat restarts at every grab"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Keys" type="Label" parent="Hud"]
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 696.0
-offset_bottom = 716.0
-grow_horizontal = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.560784, 0.611765, 0.52549, 1)
-theme_override_font_sizes/font_size = 15
-text = "keys  A S D F G H J K  =  C4 D4 E4 F4 G4 A4 B4 C5"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Piano" type="HBoxContainer" parent="Hud"]
+[node name="Piano" type="HBoxContainer" parent="Hud" unique_id=239113325]
 visible = false
 anchors_preset = 12
 anchor_top = 1.0
@@ -257,54 +238,54 @@ grow_vertical = 0
 mouse_filter = 2
 alignment = 1
 
-[node name="Panel" type="PanelContainer" parent="Hud/Piano"]
+[node name="Panel" type="PanelContainer" parent="Hud/Piano" unique_id=306247599]
 layout_mode = 2
 size_flags_vertical = 8
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_piano")
 
-[node name="Row" type="HBoxContainer" parent="Hud/Piano/Panel"]
+[node name="Row" type="HBoxContainer" parent="Hud/Piano/Panel" unique_id=231433740]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 18
 
-[node name="Chord" type="VBoxContainer" parent="Hud/Piano/Panel/Row"]
+[node name="Chord" type="VBoxContainer" parent="Hud/Piano/Panel/Row" unique_id=2103138946]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 2
 
-[node name="Caption" type="Label" parent="Hud/Piano/Panel/Row/Chord"]
+[node name="Caption" type="Label" parent="Hud/Piano/Panel/Row/Chord" unique_id=1878729439]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.576471, 0.627451, 0.572549, 1)
 theme_override_font_sizes/font_size = 12
 text = "chord"
 horizontal_alignment = 1
 
-[node name="Keys" type="Control" parent="Hud/Piano/Panel/Row/Chord"]
+[node name="Keys" type="Control" parent="Hud/Piano/Panel/Row/Chord" unique_id=1729841050]
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
 script = ExtResource("14_piano")
 
-[node name="Tune" type="VBoxContainer" parent="Hud/Piano/Panel/Row"]
+[node name="Tune" type="VBoxContainer" parent="Hud/Piano/Panel/Row" unique_id=1655559375]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 2
 
-[node name="Caption" type="Label" parent="Hud/Piano/Panel/Row/Tune"]
+[node name="Caption" type="Label" parent="Hud/Piano/Panel/Row/Tune" unique_id=1087534609]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.576471, 0.627451, 0.572549, 1)
 theme_override_font_sizes/font_size = 12
 text = "next note"
 horizontal_alignment = 1
 
-[node name="Keys" type="Control" parent="Hud/Piano/Panel/Row/Tune"]
+[node name="Keys" type="Control" parent="Hud/Piano/Panel/Row/Tune" unique_id=1897615050]
 layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
 script = ExtResource("14_piano")
 
-[node name="EndPanel" type="PanelContainer" parent="Hud"]
+[node name="EndPanel" type="PanelContainer" parent="Hud" unique_id=307063075]
 visible = false
 anchors_preset = 5
 anchor_left = 0.5
@@ -317,141 +298,76 @@ grow_horizontal = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="Lines" type="VBoxContainer" parent="Hud/EndPanel"]
+[node name="Lines" type="VBoxContainer" parent="Hud/EndPanel" unique_id=1910920279]
 layout_mode = 2
-alignment = 1
 theme_override_constants/separation = 12
+alignment = 1
 
-[node name="Title" type="Label" parent="Hud/EndPanel/Lines"]
+[node name="Title" type="Label" parent="Hud/EndPanel/Lines" unique_id=1677200270]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = SubResource("SystemFont_bold")
 theme_override_font_sizes/font_size = 26
 horizontal_alignment = 1
 
-[node name="Line" type="Label" parent="Hud/EndPanel/Lines"]
+[node name="Line" type="Label" parent="Hud/EndPanel/Lines" unique_id=154763745]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.811765, 0.847059, 0.8, 1)
 theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
 
-[node name="Buttons" type="HBoxContainer" parent="Hud/EndPanel/Lines"]
+[node name="Buttons" type="HBoxContainer" parent="Hud/EndPanel/Lines" unique_id=1404409068]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="Again" type="Button" parent="Hud/EndPanel/Lines/Buttons"]
+[node name="Again" type="Button" parent="Hud/EndPanel/Lines/Buttons" unique_id=1047966456]
 custom_minimum_size = Vector2(140, 30)
 layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 15
 text = "Play again"
 
-[node name="Menu" type="Button" parent="Hud/EndPanel/Lines/Buttons"]
+[node name="Menu" type="Button" parent="Hud/EndPanel/Lines/Buttons" unique_id=1504829774]
 custom_minimum_size = Vector2(140, 30)
 layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 15
 text = "Main menu"
 
-[node name="Bar" type="PanelContainer" parent="Hud"]
+[node name="Progress" type="Control" parent="Hud" unique_id=610843044]
+layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
+offset_bottom = 30.0
 grow_horizontal = 2
-mouse_filter = 1
-theme_override_styles/panel = SubResource("StyleBoxFlat_bar")
-
-[node name="Row" type="HBoxContainer" parent="Hud/Bar"]
-layout_mode = 2
-theme_override_constants/separation = 14
-
-[node name="Title" type="Label" parent="Hud/Bar/Row"]
-layout_mode = 2
-theme_override_fonts/font = SubResource("SystemFont_bold")
-text = "King Gong"
-
-[node name="Tempo" type="HBoxContainer" parent="Hud/Bar/Row"]
-layout_mode = 2
-theme_override_constants/separation = 5
-
-[node name="Caption" type="Label" parent="Hud/Bar/Row/Tempo"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.576471, 0.627451, 0.572549, 1)
-theme_override_font_sizes/font_size = 12
-text = "Tempo"
-
-[node name="Slider" type="HSlider" parent="Hud/Bar/Row/Tempo"]
-custom_minimum_size = Vector2(110, 0)
-layout_mode = 2
-size_flags_vertical = 4
-focus_mode = 0
-min_value = 40.0
-max_value = 120.0
-value = 60.0
-
-[node name="Value" type="Label" parent="Hud/Bar/Row/Tempo"]
-custom_minimum_size = Vector2(56, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
-text = "60 BPM"
-
-[node name="Labels" type="HBoxContainer" parent="Hud/Bar/Row"]
-layout_mode = 2
-theme_override_constants/separation = 5
-
-[node name="Caption" type="Label" parent="Hud/Bar/Row/Labels"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.576471, 0.627451, 0.572549, 1)
-theme_override_font_sizes/font_size = 12
-text = "Labels"
-
-[node name="Toggle" type="Button" parent="Hud/Bar/Row/Labels"]
-custom_minimum_size = Vector2(36, 0)
-layout_mode = 2
-focus_mode = 0
-toggle_mode = true
-button_pressed = true
-text = "on"
-
-[node name="Tick" type="HBoxContainer" parent="Hud/Bar/Row"]
-layout_mode = 2
-theme_override_constants/separation = 5
-
-[node name="Caption" type="Label" parent="Hud/Bar/Row/Tick"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.576471, 0.627451, 0.572549, 1)
-theme_override_font_sizes/font_size = 12
-text = "Beat tick"
-
-[node name="Toggle" type="Button" parent="Hud/Bar/Row/Tick"]
-custom_minimum_size = Vector2(36, 0)
-layout_mode = 2
-focus_mode = 0
-toggle_mode = true
-button_pressed = true
-text = "on"
-
-[node name="Restart" type="Button" parent="Hud/Bar/Row"]
-layout_mode = 2
-focus_mode = 0
-text = "Restart"
-
-[node name="Spacer" type="Control" parent="Hud/Bar/Row"]
-layout_mode = 2
-size_flags_horizontal = 3
 mouse_filter = 2
+script = ExtResource("18_progress_line")
 
-[node name="Source" type="Label" parent="Hud/Bar/Row"]
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_source")
-text = "keyboard"
+[node name="Pill" type="PanelContainer" parent="Hud" unique_id=1248221080]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -12.0
+offset_top = 14.0
+offset_right = -12.0
+offset_bottom = 14.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
 
-[node name="Bananas" type="HBoxContainer" parent="Hud/Bar/Row"]
+[node name="Row" type="HBoxContainer" parent="Hud/Pill" unique_id=1506190525]
 layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Bananas" type="HBoxContainer" parent="Hud/Pill/Row" unique_id=2066074808]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 3
 
-[node name="Icon" type="TextureRect" parent="Hud/Bar/Row/Bananas"]
+[node name="Icon" type="TextureRect" parent="Hud/Pill/Row/Bananas" unique_id=717250820]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 size_flags_vertical = 4
@@ -460,19 +376,30 @@ texture = ExtResource("12_banana")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Count" type="Label" parent="Hud/Bar/Row/Bananas"]
+[node name="Count" type="Label" parent="Hud/Pill/Row/Bananas" unique_id=696065495]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.901961, 0.92549, 0.890196, 1)
+theme_override_fonts/font = SubResource("SystemFont_bold")
+theme_override_font_sizes/font_size = 16
 text = "3"
 
-[node name="Progress" type="Label" parent="Hud/Bar/Row"]
+[node name="Falls" type="Label" parent="Hud/Pill/Row" unique_id=932715094]
 layout_mode = 2
-text = "branch 0/0"
-
-[node name="Falls" type="Label" parent="Hud/Bar/Row"]
-layout_mode = 2
+theme_override_colors/font_color = Color(0.901961, 0.92549, 0.890196, 1)
+theme_override_fonts/font = SubResource("SystemFont_bold")
+theme_override_font_sizes/font_size = 16
 text = "falls 0"
 
-[node name="Overlay" type="ColorRect" parent="Hud"]
+[node name="Esc" type="Label" parent="Hud/Pill/Row" unique_id=1866701157]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.662745, 0.709804, 0.647059, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_esc")
+text = "Esc ‖"
+
+[node name="Flyers" type="Node2D" parent="Hud" unique_id=115635743]
+
+[node name="Overlay" type="ColorRect" parent="Hud" unique_id=1411137928]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -480,7 +407,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.0470588, 0.0705882, 0.0470588, 0.82)
 
-[node name="Center" type="CenterContainer" parent="Hud/Overlay"]
+[node name="Center" type="CenterContainer" parent="Hud/Overlay" unique_id=1685359765]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -489,20 +416,20 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Box" type="VBoxContainer" parent="Hud/Overlay/Center"]
+[node name="Box" type="VBoxContainer" parent="Hud/Overlay/Center" unique_id=461714390]
 custom_minimum_size = Vector2(760, 0)
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="Heading" type="Label" parent="Hud/Overlay/Center/Box"]
+[node name="Heading" type="Label" parent="Hud/Overlay/Center/Box" unique_id=928675338]
 layout_mode = 2
 theme_override_fonts/font = SubResource("SystemFont_bold")
 theme_override_font_sizes/font_size = 30
 text = "King Gong"
 horizontal_alignment = 1
 
-[node name="Body" type="RichTextLabel" parent="Hud/Overlay/Center/Box"]
+[node name="Body" type="RichTextLabel" parent="Hud/Overlay/Center/Box" unique_id=1480099089]
 layout_mode = 2
 mouse_filter = 2
 bbcode_enabled = true
@@ -516,18 +443,18 @@ There is no backing track: the song starts when you grab the first branch and ev
 fit_content = true
 scroll_active = false
 
-[node name="Mode" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
+[node name="Mode" type="HBoxContainer" parent="Hud/Overlay/Center/Box" unique_id=1250276762]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Mode"]
+[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Mode" unique_id=440324202]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
 text = "Mode"
 
-[node name="Play" type="Button" parent="Hud/Overlay/Center/Box/Mode"]
+[node name="Play" type="Button" parent="Hud/Overlay/Center/Box/Mode" unique_id=2005135448]
 custom_minimum_size = Vector2(110, 30)
 layout_mode = 2
 focus_mode = 0
@@ -537,7 +464,7 @@ button_pressed = true
 button_group = SubResource("ButtonGroup_mode")
 text = "Play"
 
-[node name="Learn" type="Button" parent="Hud/Overlay/Center/Box/Mode"]
+[node name="Learn" type="Button" parent="Hud/Overlay/Center/Box/Mode" unique_id=1454301598]
 custom_minimum_size = Vector2(110, 30)
 layout_mode = 2
 focus_mode = 0
@@ -546,7 +473,7 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_mode")
 text = "Learn"
 
-[node name="Drill" type="Button" parent="Hud/Overlay/Center/Box/Mode"]
+[node name="Drill" type="Button" parent="Hud/Overlay/Center/Box/Mode" unique_id=1897738255]
 custom_minimum_size = Vector2(130, 30)
 layout_mode = 2
 focus_mode = 0
@@ -555,52 +482,52 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_mode")
 text = "Chord drill"
 
-[node name="Song" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
+[node name="Song" type="HBoxContainer" parent="Hud/Overlay/Center/Box" unique_id=2059110499]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Song"]
+[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Song" unique_id=1701645901]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
 text = "Song"
 
-[node name="Previous" type="Button" parent="Hud/Overlay/Center/Box/Song"]
+[node name="Previous" type="Button" parent="Hud/Overlay/Center/Box/Song" unique_id=1702078826]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 15
 text = "◀"
 
-[node name="Pick" type="OptionButton" parent="Hud/Overlay/Center/Box/Song"]
+[node name="Pick" type="OptionButton" parent="Hud/Overlay/Center/Box/Song" unique_id=595917885]
 custom_minimum_size = Vector2(320, 30)
 layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 15
-clip_text = true
 text_overrun_behavior = 3
+clip_text = true
 fit_to_longest_item = false
 
-[node name="Next" type="Button" parent="Hud/Overlay/Center/Box/Song"]
+[node name="Next" type="Button" parent="Hud/Overlay/Center/Box/Song" unique_id=1974965590]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 15
 text = "▶"
 
-[node name="Clef" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
+[node name="Clef" type="HBoxContainer" parent="Hud/Overlay/Center/Box" unique_id=1036733410]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Clef"]
+[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Clef" unique_id=707996886]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
 text = "Part"
 
-[node name="Treble" type="Button" parent="Hud/Overlay/Center/Box/Clef"]
+[node name="Treble" type="Button" parent="Hud/Overlay/Center/Box/Clef" unique_id=1630249359]
 custom_minimum_size = Vector2(110, 30)
 layout_mode = 2
 focus_mode = 0
@@ -610,7 +537,7 @@ button_pressed = true
 button_group = SubResource("ButtonGroup_clef")
 text = "Treble clef"
 
-[node name="Bass" type="Button" parent="Hud/Overlay/Center/Box/Clef"]
+[node name="Bass" type="Button" parent="Hud/Overlay/Center/Box/Clef" unique_id=2121505819]
 custom_minimum_size = Vector2(110, 30)
 layout_mode = 2
 focus_mode = 0
@@ -619,7 +546,7 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_clef")
 text = "Bass clef"
 
-[node name="Chords" type="Button" parent="Hud/Overlay/Center/Box/Clef"]
+[node name="Chords" type="Button" parent="Hud/Overlay/Center/Box/Clef" unique_id=158614571]
 custom_minimum_size = Vector2(140, 30)
 layout_mode = 2
 focus_mode = 0
@@ -628,7 +555,7 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_clef")
 text = "Treble + chords"
 
-[node name="ChordsOnly" type="Button" parent="Hud/Overlay/Center/Box/Clef"]
+[node name="ChordsOnly" type="Button" parent="Hud/Overlay/Center/Box/Clef" unique_id=1934051012]
 custom_minimum_size = Vector2(120, 30)
 layout_mode = 2
 focus_mode = 0
@@ -637,7 +564,7 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_clef")
 text = "Chords only"
 
-[node name="ChordRule" type="RichTextLabel" parent="Hud/Overlay/Center/Box"]
+[node name="ChordRule" type="RichTextLabel" parent="Hud/Overlay/Center/Box" unique_id=1951887599]
 visible = false
 layout_mode = 2
 mouse_filter = 2
@@ -646,19 +573,19 @@ text = "[center]A coloured log stands wherever the chord changes. [b]Play its ch
 fit_content = true
 scroll_active = false
 
-[node name="Hint" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
+[node name="Hint" type="HBoxContainer" parent="Hud/Overlay/Center/Box" unique_id=1678793345]
 visible = false
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Hint"]
+[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Hint" unique_id=1365522638]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
 text = "Chord hint"
 
-[node name="Name" type="Button" parent="Hud/Overlay/Center/Box/Hint"]
+[node name="Name" type="Button" parent="Hud/Overlay/Center/Box/Hint" unique_id=1885451525]
 custom_minimum_size = Vector2(110, 30)
 layout_mode = 2
 focus_mode = 0
@@ -668,7 +595,7 @@ button_pressed = true
 button_group = SubResource("ButtonGroup_hint")
 text = "Chord name"
 
-[node name="Bass" type="Button" parent="Hud/Overlay/Center/Box/Hint"]
+[node name="Bass" type="Button" parent="Hud/Overlay/Center/Box/Hint" unique_id=653735880]
 custom_minimum_size = Vector2(110, 30)
 layout_mode = 2
 focus_mode = 0
@@ -677,30 +604,30 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_hint")
 text = "Bass clef"
 
-[node name="Picked" type="HBoxContainer" parent="Hud/Overlay/Center/Box"]
+[node name="Picked" type="HBoxContainer" parent="Hud/Overlay/Center/Box" unique_id=1492725975]
 visible = false
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Picked"]
+[node name="Caption" type="Label" parent="Hud/Overlay/Center/Box/Picked" unique_id=826024003]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
 text = "Chords"
 
-[node name="Summary" type="Label" parent="Hud/Overlay/Center/Box/Picked"]
+[node name="Summary" type="Label" parent="Hud/Overlay/Center/Box/Picked" unique_id=1559561556]
 layout_mode = 2
 text = "C D E F G A B · 16 a round"
 
-[node name="Choose" type="Button" parent="Hud/Overlay/Center/Box/Picked"]
+[node name="Choose" type="Button" parent="Hud/Overlay/Center/Box/Picked" unique_id=1522949622]
 custom_minimum_size = Vector2(110, 30)
 layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 15
 text = "Choose"
 
-[node name="Practice" type="Button" parent="Hud/Overlay/Center/Box"]
+[node name="Practice" type="Button" parent="Hud/Overlay/Center/Box" unique_id=265030614]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -709,7 +636,7 @@ theme_override_font_sizes/font_size = 15
 toggle_mode = true
 text = "Practice mode: infinite bananas"
 
-[node name="PianoHint" type="Button" parent="Hud/Overlay/Center/Box"]
+[node name="PianoHint" type="Button" parent="Hud/Overlay/Center/Box" unique_id=1743755778]
 visible = false
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
@@ -720,7 +647,7 @@ toggle_mode = true
 button_pressed = true
 text = "Keyboard hint"
 
-[node name="Keys" type="RichTextLabel" parent="Hud/Overlay/Center/Box"]
+[node name="Keys" type="RichTextLabel" parent="Hud/Overlay/Center/Box" unique_id=542382440]
 layout_mode = 2
 mouse_filter = 2
 bbcode_enabled = true
@@ -728,7 +655,7 @@ text = "[center]No MIDI? Keys [b]A S D F G H J K[/b] = C4 D4 E4 F4 G4 A4 B4 C5.[
 fit_content = true
 scroll_active = false
 
-[node name="Start" type="RichTextLabel" parent="Hud/Overlay/Center/Box"]
+[node name="Start" type="RichTextLabel" parent="Hud/Overlay/Center/Box" unique_id=1327009513]
 layout_mode = 2
 mouse_filter = 2
 bbcode_enabled = true
@@ -736,7 +663,7 @@ text = "[center][b]Play any other note on your MIDI keyboard, click or press Spa
 fit_content = true
 scroll_active = false
 
-[node name="ChordMenu" type="ColorRect" parent="Hud"]
+[node name="ChordMenu" type="ColorRect" parent="Hud" unique_id=1267639521]
 visible = false
 anchors_preset = 15
 anchor_right = 1.0
@@ -746,7 +673,7 @@ grow_vertical = 2
 color = Color(0.0470588, 0.0705882, 0.0470588, 0.9)
 script = ExtResource("15_chord_menu")
 
-[node name="Center" type="CenterContainer" parent="Hud/ChordMenu"]
+[node name="Center" type="CenterContainer" parent="Hud/ChordMenu" unique_id=837904859]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -755,19 +682,19 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Box" type="VBoxContainer" parent="Hud/ChordMenu/Center"]
+[node name="Box" type="VBoxContainer" parent="Hud/ChordMenu/Center" unique_id=1882970387]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="Heading" type="Label" parent="Hud/ChordMenu/Center/Box"]
+[node name="Heading" type="Label" parent="Hud/ChordMenu/Center/Box" unique_id=351228902]
 layout_mode = 2
 theme_override_fonts/font = SubResource("SystemFont_bold")
 theme_override_font_sizes/font_size = 26
 text = "Chords to drill"
 horizontal_alignment = 1
 
-[node name="Body" type="RichTextLabel" parent="Hud/ChordMenu/Center/Box"]
+[node name="Body" type="RichTextLabel" parent="Hud/ChordMenu/Center/Box" unique_id=197019230]
 layout_mode = 2
 mouse_filter = 2
 bbcode_enabled = true
@@ -775,7 +702,154 @@ text = "[center]Click the chords to practise, or a row's or a difficulty's name 
 fit_content = true
 scroll_active = false
 
-[node name="Grid" type="VBoxContainer" parent="Hud/ChordMenu/Center/Box"]
+[node name="Grid" type="VBoxContainer" parent="Hud/ChordMenu/Center/Box" unique_id=1667175439]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
+
+[node name="PauseMenu" type="ColorRect" parent="Hud" unique_id=307788213]
+process_mode = 3
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0470588, 0.0705882, 0.0470588, 0.6)
+script = ExtResource("17_pause_menu")
+
+[node name="Center" type="CenterContainer" parent="Hud/PauseMenu" unique_id=533336506]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Hud/PauseMenu/Center" unique_id=124020490]
+custom_minimum_size = Vector2(340, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Rows" type="VBoxContainer" parent="Hud/PauseMenu/Center/Panel" unique_id=1703194029]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=1228980261]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = SubResource("SystemFont_bold")
+theme_override_font_sizes/font_size = 26
+text = "Paused"
+horizontal_alignment = 1
+
+[node name="Continue" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=588575870]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "Continue"
+
+[node name="Restart" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=470180046]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "Restart song"
+
+[node name="Practice" type="HBoxContainer" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=1729686847]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Caption" type="Label" parent="Hud/PauseMenu/Center/Panel/Rows/Practice" unique_id=1794960907]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
+text = "Practice mode: infinite bananas"
+
+[node name="Toggle" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows/Practice" unique_id=142451064]
+custom_minimum_size = Vector2(48, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+text = "off"
+
+[node name="Tempo" type="HBoxContainer" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=1335014962]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Caption" type="Label" parent="Hud/PauseMenu/Center/Panel/Rows/Tempo" unique_id=687711782]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
+text = "Tempo"
+
+[node name="Down" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows/Tempo" unique_id=1280135026]
+custom_minimum_size = Vector2(34, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "◀"
+
+[node name="Value" type="Label" parent="Hud/PauseMenu/Center/Panel/Rows/Tempo" unique_id=1179256830]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "60 BPM"
+horizontal_alignment = 1
+
+[node name="Up" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows/Tempo" unique_id=1530164061]
+custom_minimum_size = Vector2(34, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "▶"
+
+[node name="Tick" type="HBoxContainer" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=64503065]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Caption" type="Label" parent="Hud/PauseMenu/Center/Panel/Rows/Tick" unique_id=559490084]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
+text = "Beat tick"
+
+[node name="Toggle" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows/Tick" unique_id=2007222837]
+custom_minimum_size = Vector2(48, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+text = "off"
+
+[node name="Labels" type="HBoxContainer" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=243615333]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Caption" type="Label" parent="Hud/PauseMenu/Center/Panel/Rows/Labels" unique_id=1159181885]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.768627, 0.807843, 0.756863, 1)
+text = "Labels"
+
+[node name="Toggle" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows/Labels" unique_id=2022609883]
+custom_minimum_size = Vector2(48, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+text = "off"
+
+[node name="Menu" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=931932808]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "Main menu"

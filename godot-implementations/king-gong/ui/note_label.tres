@@ -1,4 +1,4 @@
-[gd_resource type="LabelSettings" load_steps=2 format=3]
+[gd_resource type="LabelSettings" format=3 uid="uid://fe78gqnhk3b5"]
 
 [sub_resource type="SystemFont" id="SystemFont_bold"]
 font_names = PackedStringArray("Segoe UI", "Arial", "sans-serif")

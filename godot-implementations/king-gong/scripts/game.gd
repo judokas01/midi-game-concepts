@@ -76,6 +76,8 @@ var _stale := {}           # left-hand notes still held from the last chord play
 var _blocked := {}         # the next branch's note, played while its log still stood: {j, ts, jump}; empty when none
 var land_t := 0.0
 var bounce_t0 := 0.0
+var _paused_at := 0.0      # when the pause menu opened
+var _furthest := 0.0       # the share of the level the gorilla has crossed, for the progress line
 
 var now := 0.0             # ms, this frame
 var render: Pose
@@ -121,7 +123,8 @@ func _ready() -> void:
 	hud.practice_toggled.connect(set_practice)
 	hud.piano_toggled.connect(set_piano)
 	hud.menu_pressed.connect(show_menu)
-	var dev_flags := ["--autoplay", "--perf", "--chords", "--bass", "--chords-only", "--learn", "--drill"]
+	hud.continue_pressed.connect(resume)
+	var dev_flags := ["--autoplay", "--perf", "--chords", "--bass", "--chords-only", "--learn", "--drill", "--pause"]
 	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in dev_flags or a.begins_with("--shots=") or a.begins_with("--song=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
 	now = now_ms()
@@ -137,6 +140,7 @@ func _process(_delta: float) -> void:
 		_update(dt)
 	render = _apply_blend(_pose())
 	gorilla.show_pose(render, now)
+	_track_progress()
 	camera.position.x = _camera_x()
 	_show_hung()
 	_show_liana()
@@ -153,6 +157,8 @@ func start() -> void:
 
 
 func restart() -> void:
+	get_tree().paused = false
+	hud.close_pause()
 	var drill := mode == Hud.Mode.DRILL
 	clef = Song.Clef.TREBLE if drill else _style.clef
 	chords = drill or _style.chords
@@ -192,6 +198,22 @@ func restart() -> void:
 	camera.reset_smoothing()
 	_setup_piano()
 	_update_hud()
+	_furthest = 0.0
+	hud.show_progress(0.0)
+
+
+## How much of the level the gorilla has crossed, from the stump (0) to the nest (1). The level
+## is laid out in time, so this is the share of the song played. It follows the gorilla but
+## never goes back: not on a swing back, a fall or a pause.
+func level_progress() -> float:
+	return _furthest
+
+
+func _track_progress() -> void:
+	var from := Staff.stump_spot(notes[0]).x
+	var to := Staff.home_spot(notes[-1]).x
+	_furthest = maxf(_furthest, clampf((render.pos.x - from) / (to - from), 0.0, 1.0))
+	hud.show_progress(_furthest)
 
 
 ## Play, learn or drill; the level is laid out again behind the start screen.
@@ -249,6 +271,58 @@ func set_practice(on: bool) -> void:
 func set_piano(on: bool) -> void:
 	piano = on
 	_setup_piano()
+
+
+## A song is running and no menu is up: Esc may pause it.
+func can_pause() -> bool:
+	return started and state != State.WON and state != State.OVER and not hud.menu_up()
+
+
+## Freezes the song under the pause menu. The hands are forgotten: whatever is let go of while
+## paused is ignored, and nothing still held counts after.
+func pause() -> void:
+	_paused_at = now_ms()
+	metronome.cancel_ticks()
+	_left.clear()
+	_right.clear()
+	_wrong.clear()
+	_stale.clear()
+	_blocked = {}
+	_missed_chord = false
+	get_tree().paused = true
+	hud.open_pause(mode == Hud.Mode.PLAY, practice, bpm, tick_on, labels)
+
+
+## Continue. A fall or a bounce carries on where it was. Hanging can't survive the pause, as the
+## key was let go, so the gorilla floats up at its branch and waits for the note, untimed, as
+## after a magic banana but for free; in the air or in a rest, at the next branch.
+func resume() -> void:
+	var away := now_ms() - _paused_at
+	get_tree().paused = false
+	hud.close_pause()
+	now = now_ms()
+	if not _blend.is_empty():
+		_blend.t0 += away
+	match state:
+		State.HANG:
+			world.branch(cur).restore()
+			_hung = -1
+			_float_back(cur)
+		State.AIR, State.REST:
+			_float_back(cur + 1)
+		State.FALL:
+			if land_t > 0.0:
+				land_t += away
+		State.BOUNCE:
+			bounce_t0 += away
+
+
+## The gorilla floats up to wait at branch `j`.
+func _float_back(j: int) -> void:
+	state = State.WAIT
+	cur = j
+	perch_stump = false
+	_blend = {from = render.pos, rot = render.rot, t0 = now, dur = 400.0, hop = 0.0}
 
 
 ## Back to the start screen, with the level laid out again behind it.
@@ -375,6 +449,8 @@ func note_on(m: int, ts: float) -> void:
 
 
 func note_off(m: int, ts: float) -> void:
+	if get_tree().paused:
+		return
 	_right.erase(m)
 	_wrong.erase(m)
 	if by_itself or _left.has(m):   # the hand it was played in, though the next note may have moved since
@@ -583,12 +659,12 @@ func _bump_log(j: int) -> void:
 		_fall("No %s chord, so the log stayed up. Play it together with %s" % [chord, notes[j].name], j, true)
 
 
-## `resume` is the branch the magic banana brings you back to. `back`: thrown back, off a log.
-func _fall(reason: String, resume: int, back := false) -> void:
+## `retry` is the branch the magic banana brings you back to. `back`: thrown back, off a log.
+func _fall(reason: String, retry: int, back := false) -> void:
 	falls += 1
 	metronome.cancel_ticks()
 	state = State.FALL
-	cur = resume
+	cur = retry
 	_blocked = {}
 	fall_pos = render.pos
 	fall_rot = render.rot
@@ -662,20 +738,20 @@ func _update(dt: float) -> void:
 				perch_stump = false
 
 
+## The pill's counters: bananas, and falls (or wrong notes). Progress follows the gorilla, in
+## _track_progress.
 func _update_hud() -> void:
-	var progress := "branch %d/%d" % [done_up_to, notes.size()]
-	if mode == Hud.Mode.DRILL:
-		var logs := notes.filter(func(n: Song.Note) -> bool: return n.chord != null)
-		progress = "chord %d/%d" % [logs.filter(func(n: Song.Note) -> bool: return not n.log_up).size(), logs.size()]
 	var missed := "falls %d" % falls if mode == Hud.Mode.PLAY else "wrong %d" % misses
-	hud.show_stats(-1 if practice and mode == Hud.Mode.PLAY else bananas, progress, missed)
+	hud.show_stats(-1 if practice and mode == Hud.Mode.PLAY else bananas, missed)
 
 
 # ---------------------------------------------------------------- settings
 
-## Space: starts, or closes the chord menu back to the start screen.
+## Space: starts, continues from the pause menu, or closes the chord menu back to the start screen.
 func _on_start_key() -> void:
-	if hud.chords_open():
+	if get_tree().paused:
+		resume()
+	elif hud.chords_open():
 		hud.close_chords()
 	else:
 		start()
@@ -686,9 +762,15 @@ func _on_restart_key() -> void:
 		restart()
 
 
+## Esc: pauses the song and continues it; closes the chord menu; from the end panel, back to
+## the start screen.
 func _on_menu_key() -> void:
 	if hud.chords_open():
 		hud.close_chords()
+	elif get_tree().paused:
+		resume()
+	elif can_pause():
+		pause()
 	elif started:
 		show_menu()
 
@@ -698,8 +780,7 @@ func _on_labels_toggled(on: bool) -> void:
 	_refresh_labels()
 
 
-func _on_source_changed(source: String) -> void:
-	hud.show_source(source)
+func _on_source_changed(_source: String) -> void:
 	_refresh_labels()
 	_setup_piano()
 

@@ -1,0 +1,75 @@
+extends ColorRect
+## The pause menu, over a song frozen by Esc: continue, restart, practice mode, the tempo, the
+## beat tick, the labels, or back to the start screen. It runs while the game is paused. It
+## shows the game's settings as they are when it opens and only reports changes; the game
+## keeps them.
+
+signal continue_pressed
+signal restart_pressed
+signal menu_pressed
+signal practice_toggled(on: bool)
+signal tempo_changed(bpm: float)
+signal tick_toggled(on: bool)
+signal labels_toggled(on: bool)
+
+const TEMPO_MIN := 40
+const TEMPO_MAX := 120
+const TEMPO_STEP := 5
+
+var _bpm := 60
+
+@onready var _practice: Button = $Center/Panel/Rows/Practice/Toggle
+@onready var _tick: Button = $Center/Panel/Rows/Tick/Toggle
+@onready var _labels: Button = $Center/Panel/Rows/Labels/Toggle
+@onready var _tempo: Label = $Center/Panel/Rows/Tempo/Value
+
+
+func _ready() -> void:
+	$Center/Panel/Rows/Continue.pressed.connect(func() -> void: continue_pressed.emit())
+	$Center/Panel/Rows/Restart.pressed.connect(func() -> void: restart_pressed.emit())
+	$Center/Panel/Rows/Menu.pressed.connect(func() -> void: menu_pressed.emit())
+	$Center/Panel/Rows/Tempo/Down.pressed.connect(step_tempo.bind(-1))
+	$Center/Panel/Rows/Tempo/Up.pressed.connect(step_tempo.bind(1))
+	_toggle(_practice, practice_toggled)
+	_toggle(_tick, tick_toggled)
+	_toggle(_labels, labels_toggled)
+
+
+## Shows the menu with the game's settings. Practice mode is only for playing a song.
+func open(play_mode: bool, practice: bool, bpm: float, tick: bool, labels: bool) -> void:
+	$Center/Panel/Rows/Practice.visible = play_mode
+	for setting: Array in [[_practice, practice], [_tick, tick], [_labels, labels]]:
+		var button: Button = setting[0]
+		button.set_pressed_no_signal(setting[1])
+		button.text = "on" if setting[1] else "off"
+	_bpm = roundi(bpm)
+	_tempo.text = "%d BPM" % _bpm
+	show()
+
+
+func close() -> void:
+	hide()
+
+
+## The tempo `by` steps up (down if negative), within TEMPO_MIN to TEMPO_MAX.
+func step_tempo(by: int) -> void:
+	var bpm := clampi(_bpm + by * TEMPO_STEP, TEMPO_MIN, TEMPO_MAX)
+	if bpm == _bpm:
+		return
+	_bpm = bpm
+	_tempo.text = "%d BPM" % _bpm
+	tempo_changed.emit(float(_bpm))
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	if not visible or not key.pressed or not key.keycode in [KEY_LEFT, KEY_RIGHT]:
+		return
+	step_tempo(-1 if key.keycode == KEY_LEFT else 1)
+	get_viewport().set_input_as_handled()
+
+
+func _toggle(button: Button, changed: Signal) -> void:
+	button.toggled.connect(func(on: bool) -> void:
+		button.text = "on" if on else "off"
+		changed.emit(on))

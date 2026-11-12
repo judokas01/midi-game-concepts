@@ -1,8 +1,9 @@
 extends CanvasLayer
-## Everything drawn over the game: the top bar (settings and score), the start overlay and
-## the chord drill's chord menu, why you fell, the end panel, the legend or the little
-## keyboard, and bananas flying to the counter. The menus can also be worked from the MIDI
-## keyboard: each button on the start overlay and the end panel has a note, written on it.
+## Everything drawn over the game: the counters (the progress line along the top, and the pill
+## with bananas and falls), the start overlay and the chord drill's chord menu, the pause
+## menu, why you fell, the end panel, the little keyboard, and bananas flying to the counter.
+## The start overlay, the end panel and the chord menu can also be worked from the MIDI
+## keyboard: each of their buttons has a note, written on it.
 
 signal start_pressed
 signal restart_pressed
@@ -17,6 +18,7 @@ signal drill_chosen(chords: Array, count: int)
 signal practice_toggled(on: bool)
 signal piano_toggled(on: bool)
 signal menu_pressed
+signal continue_pressed
 
 ## What the start screen offers: play a song, learn one, or drill chords.
 enum Mode { PLAY, LEARN, DRILL }
@@ -26,8 +28,9 @@ const ChordLog := preload("res://scripts/chord_log.gd")
 const Staff := preload("res://scripts/staff.gd")
 const Piano := preload("res://scripts/piano.gd")
 const ChordMenu := preload("res://scripts/chord_menu.gd")
+const PauseMenu := preload("res://scripts/pause_menu.gd")
+const ProgressLine := preload("res://scripts/progress_line.gd")
 const GlowingBanana := preload("res://scenes/glowing_banana.tscn")
-const SOURCE_COLOURS := {"keyboard": Color("3a3f49"), "MIDI": Color("2e8b57")}
 const TUNE_COLOUR := Color("f2c230")   # the next note on the little keyboard; a chord's is its log's
 # The note that picks each button, by its path under the menu; on the start screen any other
 # note starts the game. Buttons never shown together can share a note.
@@ -57,14 +60,10 @@ var _end_listens_at := 0
 var _play_body := ""   # the start screen's text for playing, as in the scene
 var _chord_from := 48  # the C the chord's keys start on
 
-@onready var _bar: Control = $Bar
-@onready var _tempo: HSlider = $Bar/Row/Tempo/Slider
-@onready var _tempo_value: Label = $Bar/Row/Tempo/Value
-@onready var _source: Label = $Bar/Row/Source
-@onready var _bananas: Control = $Bar/Row/Bananas
-@onready var _banana_count: Label = $Bar/Row/Bananas/Count
-@onready var _progress: Label = $Bar/Row/Progress
-@onready var _falls: Label = $Bar/Row/Falls
+@onready var _progress: ProgressLine = $Progress
+@onready var _banana_icon: Control = $Pill/Row/Bananas/Icon
+@onready var _banana_count: Label = $Pill/Row/Bananas/Count
+@onready var _falls: Label = $Pill/Row/Falls
 @onready var _overlay: Control = $Overlay
 @onready var _start_menu: Control = $Overlay/Center/Box
 @onready var _song: OptionButton = $Overlay/Center/Box/Song/Pick
@@ -75,9 +74,8 @@ var _chord_from := 48  # the C the chord's keys start on
 @onready var _hint: Control = $Overlay/Center/Box/Hint
 @onready var _picked: Label = $Overlay/Center/Box/Picked/Summary
 @onready var _chord_menu: ChordMenu = $ChordMenu
+@onready var _pause: PauseMenu = $PauseMenu
 @onready var _banner: Label = $Banner
-@onready var _legend: Label = $Legend
-@onready var _keys: Label = $Keys
 @onready var _piano: Control = $Piano
 @onready var _chord_keys: Piano = $Piano/Panel/Row/Chord/Keys
 @onready var _tune_keys: Piano = $Piano/Panel/Row/Tune/Keys
@@ -86,10 +84,6 @@ var _chord_from := 48  # the C the chord's keys start on
 
 
 func _ready() -> void:
-	_tempo.value_changed.connect(_on_tempo)
-	_toggle($Bar/Row/Labels/Toggle, labels_toggled)
-	_toggle($Bar/Row/Tick/Toggle, tick_toggled)
-	$Bar/Row/Restart.pressed.connect(func() -> void: restart_pressed.emit())
 	for song: Dictionary in Song.library():
 		_song.add_item(song.name)
 	_song.item_selected.connect(func(i: int) -> void: song_chosen.emit(i))
@@ -111,6 +105,15 @@ func _ready() -> void:
 		drill_chosen.emit(chords, count))
 	_show_picked(_chord_menu.picked(), _chord_menu.count)
 	$Overlay/Center/Box/Practice.toggled.connect(func(on: bool) -> void: practice_toggled.emit(on))
+	_pause.continue_pressed.connect(func() -> void: continue_pressed.emit())
+	_pause.restart_pressed.connect(func() -> void: restart_pressed.emit())
+	_pause.menu_pressed.connect(func() -> void: menu_pressed.emit())
+	_pause.tempo_changed.connect(func(bpm: float) -> void: tempo_changed.emit(bpm))
+	_pause.tick_toggled.connect(func(on: bool) -> void: tick_toggled.emit(on))
+	_pause.labels_toggled.connect(func(on: bool) -> void: labels_toggled.emit(on))
+	_pause.practice_toggled.connect(func(on: bool) -> void:
+		$Overlay/Center/Box/Practice.set_pressed_no_signal(on)   # the start screen's says the same
+		practice_toggled.emit(on))
 	$Overlay/Center/Box/PianoHint.toggled.connect(func(on: bool) -> void: piano_toggled.emit(on))
 	_play_body = _body.text
 	_chord_keys.fold = true
@@ -121,32 +124,27 @@ func _ready() -> void:
 			var button: Button = menu[0].get_node(path)
 			button.text += " · " + Song.note_name(menu[1][path])
 	_overlay.gui_input.connect(_on_overlay_input)
-	# own copy, so recolouring it does not touch the scene's shared style
-	_source.add_theme_stylebox_override("normal", _source.get_theme_stylebox("normal").duplicate())
+	_progress.keep_clear = $Pill
 
 
-## `bananas` < 0: they never run out, in practice mode. `progress`, "branch 3/42", and
-## `misses`, "falls 2", as they are shown.
-func show_stats(bananas: int, progress: String, misses: String) -> void:
+## `bananas` < 0: they never run out, in practice mode. `missed`, "falls 2", as it is shown.
+func show_stats(bananas: int, missed: String) -> void:
 	_banana_count.text = str(bananas) if bananas >= 0 else "∞"
-	_progress.text = progress
-	_falls.text = misses
+	_falls.text = missed
+	_progress.queue_redraw()   # the pill may have changed width, and the percentage keeps clear of it
 
 
-func show_source(source: String) -> void:
-	_source.text = source
-	(_source.get_theme_stylebox("normal") as StyleBoxFlat).bg_color = SOURCE_COLOURS[source]
-	_show_floor()
+## The progress line: `share` of the level done, 0 to 1.
+func show_progress(share: float) -> void:
+	_progress.show_progress(share)
 
 
-## What the computer keys play, on the start screen and under the floor: `keys` as
-## NoteInput.key_notes() gives them, [["A S D F G H J K", "C4 D4 E4 F4 G4 A4 B4 C5"], ...].
-## `chords` is what the chord keys play, "Z = C  V = F  B = G", or "" without chords.
+## What the computer keys play, on the start screen: `keys` as NoteInput.key_notes() gives
+## them, [["A S D F G H J K", "C4 D4 E4 F4 G4 A4 B4 C5"], ...]. `chords` is what the chord
+## keys play, "Z = C  V = F  B = G", or "" without chords.
 func show_key_notes(keys: Array, chords: String) -> void:
-	_keys.text = "keys  " + "   ·   ".join(keys.map(func(k: Array) -> String: return "%s  =  %s" % k))
 	var overlay := "No MIDI? Keys %s." % ", ".join(keys.map(func(k: Array) -> String: return "[b]%s[/b] = %s" % k))
 	if chords != "":
-		_keys.text += "   ·   chords  " + chords
 		overlay += " Chords: [b]%s[/b]." % chords
 	_overlay_keys.text = "[center]%s[/center]" % overlay
 
@@ -170,7 +168,7 @@ func show_options(mode: Mode, chords: bool, by_itself: bool) -> void:
 
 ## The little keyboard: the chord's two octaves from the C `chord_from`, and the tune's keys
 ## from `tune_lo` to `tune_hi` with the computer `letters` on them (midi -> key). -1 leaves a
-## part out; without either the legend shows instead.
+## part out; without either it is hidden.
 func set_piano(chord_from: int, tune_lo: int, tune_hi: int, letters := {}) -> void:
 	var chord_part: Control = _chord_keys.get_parent()
 	var tune_part: Control = _tune_keys.get_parent()
@@ -185,7 +183,6 @@ func set_piano(chord_from: int, tune_lo: int, tune_hi: int, letters := {}) -> vo
 		_tune_keys.letters = letters
 	$Piano/Panel/Row/Chord/Caption.text = "chord · left hand" if tune_part.visible else "chord"
 	$Piano/Panel/Row/Tune/Caption.text = "note · right hand" if chord_part.visible else "next note"
-	_show_floor()
 
 
 ## Lights what to play next on the little keyboard: `chord`, in root position, and the tune's
@@ -208,16 +205,6 @@ func light_piano(chord: Song.Chord, note: Song.Note, left: Array, right: Array, 
 	_tune_keys.show_keys({note.midi: [TUNE_COLOUR, note.name]} if note else {}, right, wrong_right)
 
 
-## Under the floor: the little keyboard, or the legend and, on the computer keyboard, its keys.
-func _show_floor() -> void:
-	_legend.visible = not _piano.visible
-	_keys.visible = _source.text == "keyboard" and not _piano.visible
-
-
-func show_tempo(bpm: float) -> void:
-	_legend.text = "short branch = 1 beat · twice as long = 2 beats · liana below = rest, let go and bounce · %d BPM, the beat restarts at every grab" % roundi(bpm)
-
-
 func hide_overlay() -> void:
 	_overlay.hide()
 
@@ -226,9 +213,18 @@ func show_overlay() -> void:
 	_overlay.show()
 
 
-## The start screen, the chord menu or the end panel is up.
+## The start screen, the chord menu, the end panel or the pause menu is up.
 func menu_up() -> bool:
-	return _overlay.visible or _chord_menu.visible or _end.visible
+	return _overlay.visible or _chord_menu.visible or _end.visible or _pause.visible
+
+
+## The pause menu, showing the game's settings as they are.
+func open_pause(play_mode: bool, practice: bool, bpm: float, tick: bool, labels: bool) -> void:
+	_pause.open(play_mode, practice, bpm, tick, labels)
+
+
+func close_pause() -> void:
+	_pause.close()
 
 
 ## The chord drill's chord menu, in place of the start screen until it is closed.
@@ -313,7 +309,7 @@ func fly_banana(from: Vector2) -> void:
 	fruit.rotation = -0.5
 	fruit.scale = Vector2.ONE * 0.6
 	_flyers.add_child(fruit)
-	var to := Vector2(_bananas.get_global_rect().get_center().x, _bar.size.y + 0.4 * Staff.STEP)
+	var to := _banana_icon.get_global_rect().get_center()
 	var flight := fruit.create_tween()
 	flight.tween_method(func(k: float) -> void:
 		fruit.position = from.lerp(to, smoothstep(0.0, 1.0, k)) - Vector2(0.0, sin(PI * k) * 2.0 * Staff.STEP),
@@ -346,18 +342,6 @@ func _on_chosen(button: Button, picked: Callable) -> void:
 	button.toggled.connect(func(on: bool) -> void:
 		if on:
 			picked.call())
-
-
-func _toggle(button: Button, changed: Signal) -> void:
-	button.toggled.connect(func(on: bool) -> void:
-		button.text = "on" if on else "off"
-		changed.emit(on))
-
-
-func _on_tempo(value: float) -> void:
-	_tempo_value.text = "%d BPM" % value
-	show_tempo(value)
-	tempo_changed.emit(value)
 
 
 func _on_overlay_input(event: InputEvent) -> void:
