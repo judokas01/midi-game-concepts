@@ -5,16 +5,20 @@ extends RefCounted
 const ScoreImport := preload("res://scripts/score_import.gd")
 
 enum Clef { TREBLE, BASS }
+## What a branch carries for a note the key signature doesn't give: a macaw on it for a sharp,
+## a bat under it for a flat, a blossom for a natural. Unlike sheet music, a sign holds for its
+## own branch only: a branch without one is always as the key signature says.
+enum Sign { NONE, SHARP, FLAT, NATURAL }
 
 # [note, beats, chord]: 1 is a quarter note, 2 a half, 4 a whole, 0.5 an eighth. "r" is a rest.
 # A trailing "*" hangs a banana on that branch. A chord ("C", "Am", "F#") starts on that note
 # and lasts until the next one; only the treble clef with chords plays them.
 # A song in another key than C names it, key = "D" ("Bb", "Em"...), and its key signature
-# shows after the clef. Its notes are written as they sound, "F#4" in D, and must all be as
-# the key signature makes them: there are no signs on single notes yet (see check()).
-# The songs here are one note at a time between C4 and A4, or C5 in F: the keyboard fallback
-# stops at C5, and an octave down A3 is the bass staff's top line. All are in 4/4 and start on
-# the beat, which is where bar_lines() puts the bar lines without a score's. Two bars a line.
+# shows after the clef. Notes are written as they sound, "F#4" in D; one the key signature
+# doesn't give carries a sign on its branch (see Sign).
+# The songs here are one note at a time between C4 and C5: the keyboard fallback stops at C5,
+# and an octave down A3 is the bass staff's top line. All but Für Elise are in 4/4 and start
+# on the beat, which is where bar_lines() puts the bar lines without "bars". Two bars a line.
 const SONGS := [
 	{name = "Twinkle Twinkle", notes = [
 		["C4", 1, "C"], ["C4", 1], ["G4", 1], ["G4", 1], ["A4", 1, "F"], ["A4", 1], ["G4*", 2, "C"],
@@ -66,7 +70,8 @@ const SONGS := [
 		["F4", 1, "F"], ["F4", 1], ["F4", 1], ["F4", 1], ["F4", 1, "C"], ["E4", 1], ["E4", 1], ["E4", 0.5], ["E4", 0.5],
 		["G4", 1, "G"], ["G4", 1], ["F4", 1], ["D4", 1], ["C4", 4, "C"],
 	]},
-	# The last two are earlier songs in keys with a key signature: one sharp used, one flat.
+	# The last four have a key signature. These two are earlier songs in keys with one: a sharp
+	# used, and a flat.
 	{name = "Mary's Lamb in D", key = "D", notes = [
 		["F#4", 1, "D"], ["E4", 1], ["D4", 1], ["E4", 1], ["F#4", 1], ["F#4", 1], ["F#4*", 2],
 		["E4", 1, "A"], ["E4", 1], ["E4", 2], ["F#4", 1, "D"], ["A4", 1], ["A4*", 2],
@@ -79,6 +84,33 @@ const SONGS := [
 		["A4", 1, "F"], ["A4", 1], ["Bb4", 1], ["C5", 1], ["C5", 1, "C"], ["Bb4", 1], ["A4", 1], ["G4*", 1],
 		["F4", 1, "F"], ["F4", 1], ["G4", 1], ["A4", 1], ["G4", 1.5, "C"], ["F4", 0.5], ["F4", 2, "F"],
 	]},
+	# These two have notes the key signature doesn't give, so signs on their branches.
+	# Grieg's theme, its first four bars twice, a semitone up from B minor: F# for E#, Db for
+	# C. No chords: songbooks give none for it.
+	{name = "Mountain King in C minor", key = "Cm", notes = [
+		["C4", 0.5], ["D4", 0.5], ["Eb4", 0.5], ["F4", 0.5], ["G4", 0.5], ["Eb4", 0.5], ["G4*", 1],
+		["F#4", 0.5], ["D4", 0.5], ["F#4", 1], ["F4", 0.5], ["Db4", 0.5], ["F4", 1],
+		["C4", 0.5], ["D4", 0.5], ["Eb4", 0.5], ["F4", 0.5], ["G4", 0.5], ["Eb4", 0.5], ["G4", 0.5], ["C5", 0.5],
+		["Bb4", 0.5], ["G4", 0.5], ["Eb4", 0.5], ["G4", 0.5], ["Bb4*", 2],
+		["C4", 0.5], ["D4", 0.5], ["Eb4", 0.5], ["F4", 0.5], ["G4", 0.5], ["Eb4", 0.5], ["G4", 1],
+		["F#4", 0.5], ["D4", 0.5], ["F#4", 1], ["F4", 0.5], ["Db4", 0.5], ["F4", 1],
+		["C4", 0.5], ["D4", 0.5], ["Eb4", 0.5], ["F4", 0.5], ["G4", 0.5], ["Eb4", 0.5], ["G4", 0.5], ["C5", 0.5],
+		["Bb4", 0.5], ["G4", 0.5], ["Eb4", 0.5], ["G4", 0.5], ["Bb4*", 2],
+	]},
+	# The opening, in 3/4 with eighths for the score's 3/8 sixteenths, a major third down from
+	# A minor so that it fits the keyboard: B natural for D#, E natural for G#. The lowest note
+	# of each broken chord, Ab3, is left out. One bar a line, after the pickup.
+	{name = "Für Elise in F minor", key = "Fm", bars = [1, 4, 7, 10, 13, 16, 19, 22], notes = [
+		["C5", 0.5], ["B4", 0.5],
+		["C5", 0.5], ["B4", 0.5], ["C5", 0.5], ["G4", 0.5], ["Bb4", 0.5], ["Ab4", 0.5],
+		["F4*", 1, "Fm"], ["r", 1], ["C4", 0.5], ["F4", 0.5],
+		["G4", 1, "C"], ["r", 0.5], ["C4", 0.5], ["E4", 0.5], ["G4", 0.5],
+		["Ab4*", 1, "Fm"], ["r", 0.5], ["C4", 0.5], ["C5", 0.5], ["B4", 0.5],
+		["C5", 0.5], ["B4", 0.5], ["C5", 0.5], ["G4", 0.5], ["Bb4", 0.5], ["Ab4", 0.5],
+		["F4", 1], ["r", 1], ["C4", 0.5], ["F4", 0.5],
+		["G4*", 1, "C"], ["r", 0.5], ["C4", 0.5], ["Ab4", 0.5], ["G4", 0.5],
+		["F4", 2, "Fm"],
+	]},
 ]
 
 # Scores read at start-up, as songs after SONGS (see score_import.gd).
@@ -88,8 +120,8 @@ const BELOW_STAFF := {Clef.TREBLE: "C4", Clef.BASS: "E2"}
 # A song moves by whole octaves to sit on the staff: the lowest move that keeps every note
 # between the ledger line below it and its top line, or failing that from two steps lower.
 # Notes still outside fold in by octaves. Above the top line a branch's label would run
-# into the top bar. SONGS stay put in the treble clef and go an octave down in the bass,
-# Ode to Joy in F two.
+# into the top bar. SONGS stay put in the treble clef and go an octave down in the bass;
+# Ode to Joy in F, Mountain King and Für Elise two.
 const TOP_STEP := 10
 const LOWEST_STEP := -2
 
@@ -132,6 +164,7 @@ class Note:
 	var beat: float        # beat the note starts on
 	var beats: float       # how long it is held
 	var rest_after := 0.0  # beats of rest before the next note
+	var sign := Sign.NONE  # how it differs from the key signature, if it does
 	var banana := false
 	var taken := false
 	var chord: Chord       # the chord that starts on this note, null if the last one carries on
@@ -151,16 +184,10 @@ static func beats_word(beats: float) -> String:
 	return "1 beat" if beats == 1.0 else "%s beats" % String.num(beats)
 
 
-## SONGS, then the scores in SONGS_DIR: the songs on the start screen, in its order. A song
-## that fails check() is left out, with an error in the console.
+## SONGS, then the scores in SONGS_DIR: the songs on the start screen, in its order.
 static func library() -> Array:
 	if _library.is_empty():
-		for song: Dictionary in SONGS + ScoreImport.load_dir(SONGS_DIR):
-			var problems := check(song)
-			if problems.is_empty():
-				_library.append(song)
-			else:
-				push_error("Song \"%s\" left out: %s" % [song.name, "; ".join(problems)])
+		_library = SONGS + ScoreImport.load_dir(SONGS_DIR)
 	return _library
 
 
@@ -188,41 +215,17 @@ static func signature(key_fifths: int) -> Dictionary:
 	return out
 
 
-## The notes of `song`, as in SONGS, that its key signature can't show: each would need a sign
-## of its own, a natural to cancel a sharp or flat of the key, or one the key doesn't have.
-## The staff has no such signs yet. Empty when there are none.
-static func check(song: Dictionary) -> Array[String]:
-	var key: String = song.get("key", "C")
-	var marked := signature(fifths(key))
-	var bars: Array = song.get("bars", [])
-	var problems: Array[String] = []
-	var beat := 0.0
-	for entry: Array in song.notes:
-		var raw: String = entry[0].trim_suffix("*")
-		if raw != "r":
-			var accidental: int = ACCIDENTALS[raw.substr(1, raw.length() - 2)]
-			var keyed: int = marked.get(raw[0], 0)
-			if accidental != keyed:
-				var bar := 1 + (bars.filter(func(b: float) -> bool: return b <= beat).size() if song.has("bars") else floori(beat / 4.0))
-				if accidental == 0:
-					problems.append("%s in bar %d needs a natural sign: the key of %s makes every %s %s" \
-						% [raw, bar, key, raw[0], "sharp" if keyed > 0 else "flat"])
-				else:
-					problems.append("%s in bar %d needs a %s sign the key of %s doesn't have" \
-						% [raw, bar, "sharp" if accidental > 0 else "flat", key])
-		beat += float(entry[1])
-	return problems
-
-
 ## Song `song` of library(). `chords` reads the chords too, for the treble clef with chords.
 static func parse(song: int, clef: Clef, chords := false) -> Array[Note]:
-	return parse_entries(library()[song].notes, clef, chords)
+	return parse_entries(library()[song].notes, clef, chords, key_of(song))
 
 
-## A song's `entries`, as in SONGS, into branches.
-static func parse_entries(entries: Array, clef: Clef, chords := false) -> Array[Note]:
+## A song's `entries`, as in SONGS, into branches, under the key signature of `key_fifths`
+## (see fifths()).
+static func parse_entries(entries: Array, clef: Clef, chords := false, key_fifths := 0) -> Array[Note]:
 	var below := _degree(BELOW_STAFF[clef])
 	var shift := 7 * _octave_shift(entries, below)
+	var keyed := signature(key_fifths)
 	var out: Array[Note] = []
 	var beat := 0.0
 	for entry in entries:
@@ -244,6 +247,9 @@ static func parse_entries(entries: Array, clef: Clef, chords := false) -> Array[
 		var octave := floori((n.step + below) / 7.0)
 		n.name = raw[0] + accidental + str(octave)
 		n.midi = 12 * (octave + 1) + LETTER_SEMI[raw[0]] + ACCIDENTALS[accidental]
+		var alter: int = ACCIDENTALS[accidental]
+		if alter != keyed.get(raw[0], 0):
+			n.sign = Sign.NATURAL if alter == 0 else (Sign.SHARP if alter > 0 else Sign.FLAT)
 		n.beat = beat
 		n.beats = length
 		if chords and entry.size() > 2:

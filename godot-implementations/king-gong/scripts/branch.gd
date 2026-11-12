@@ -3,24 +3,33 @@ extends Node2D
 ## halves meeting at the grip. While the gorilla hangs on it, it breaks away piece by piece
 ## from its left end, and its last piece, at the right end, falls when it is time to let go.
 ## The piece under the gorilla's hand holds until it does; hung on too long, it bends, cracks
-## and snaps.
+## and snaps. A note the key signature doesn't give has its sign at the left end (Song.Sign):
+## a macaw, which flies off when the gorilla takes hold, a bat, which does too, or a blossom.
 
 const Song := preload("res://scripts/song.gd")
 const Staff := preload("res://scripts/staff.gd")
 const PIECE := 0.3 * Staff.STEP    # the branch comes away in pieces about this long
 const STUB := 0.2 * Staff.STEP     # half the piece under the gorilla's hand
+const LABEL_LIFT := 22.0           # the label moves up this far over a macaw or a blossom
+const FLY_OFF := {Song.Sign.SHARP: Vector2(2.0, -2.2), Song.Sign.FLAT: Vector2(-1.6, 1.8)}   # in steps
+const FLY_S := 0.6
 
 var _half := 0.0
 var _broken := false
 var _has_banana := false
 var _pieces: Array[Line2D] = []   # once hung on: the pieces of wood still on the branch, the stub among them
 var _stub: Line2D
-var _drops: Array[Tween] = []     # the pieces falling
+var _drops: Array[Tween] = []     # the pieces falling, and the macaw or bat flying off
+var _kind := Song.Sign.NONE       # the note's sign
+var _sign: Sprite2D               # and what shows it, null for none
+var _sign_home := Vector2.ZERO
+var _flown := false
 
 @onready var _left: Node2D = $Left
 @onready var _right: Node2D = $Right
 @onready var _twig: Sprite2D = $Left/Twig
 @onready var _leaves: Sprite2D = $Right/Leaves
+@onready var _signs := {Song.Sign.SHARP: $Left/Macaw, Song.Sign.FLAT: $Left/Bat, Song.Sign.NATURAL: $Left/Blossom}
 @onready var _piece_layer: Node2D = $Pieces
 @onready var _cracks: Node2D = $Cracks
 @onready var _banana: Node2D = $Banana
@@ -41,7 +50,20 @@ func setup(note: Song.Note) -> void:
 	_banana.position.x = _half - 0.2 * Staff.STEP
 	_has_banana = note.banana
 	_banana.visible = _has_banana
+	_show_sign(note.sign)
 	set_strain(0.0, 0.0)
+
+
+## The gorilla has taken hold: a macaw or bat on the branch flies off.
+func startle() -> void:
+	if _flown or not FLY_OFF.has(_kind):
+		return
+	_flown = true
+	var fly := create_tween().set_parallel()
+	fly.tween_property(_sign, "position", _sign_home + FLY_OFF[_kind] * Staff.STEP, FLY_S) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	fly.tween_property(_sign, "modulate:a", 0.0, FLY_S).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_drops.append(fly)
 
 
 func set_label(text: String) -> void:
@@ -115,11 +137,38 @@ func restore() -> void:
 	_banana.visible = _has_banana
 	_label.visible = _label.text != ""
 	_mend()
+	if _sign:   # the macaw or bat back from wherever it flew
+		_sign.position = _sign_home
+		_sign.modulate.a = 1.0
+		_flown = false
 	set_strain(0.0, 0.0)
 
 
+## Sign `kind` at the left end, where sheet music writes it: the macaw sits there in the
+## twig's place, the bat hangs under it, the blossom grows just right of the twig. The label
+## moves up over the macaw and the blossom.
+func _show_sign(kind: Song.Sign) -> void:
+	_kind = kind
+	_sign = _signs.get(kind)
+	if _sign == null:
+		return
+	var length := 2.0 * _half
+	match kind:
+		Song.Sign.SHARP:
+			_sign_home.x = 3.0
+		Song.Sign.FLAT:
+			_sign_home.x = minf(9.0, 0.4 * length)
+		Song.Sign.NATURAL:
+			_sign_home.x = clampf(19.0, 8.0, 0.5 * length)
+	_sign.position = _sign_home
+	_sign.show()
+	_twig.visible = kind != Song.Sign.SHARP
+	if kind != Song.Sign.FLAT:
+		_label.position.y -= LABEL_LIFT
+
+
 ## The wood becomes pieces that can fall one by one, with the stub under the hand among
-## them. The twig goes with the first piece and the leaves with the last.
+## them. The twig and the blossom go with the first piece and the leaves with the last.
 func _split() -> void:
 	var wood: Line2D = $Left/Wood
 	var stub := minf(STUB, _half)
@@ -147,9 +196,12 @@ func _split() -> void:
 	_twig.reparent(_pieces[0])
 	_twig.show_behind_parent = true
 	_leaves.reparent(_pieces[-1])
+	if _sign and not _flown:
+		_sign.reparent(_pieces[0])
+		_sign.show_behind_parent = _kind != Song.Sign.SHARP
 
 
-## The branch whole again: twig and leaves back on their halves, the pieces gone.
+## The branch whole again: twig, leaves and blossom back on their halves, the pieces gone.
 func _mend() -> void:
 	if _stub == null:
 		return
@@ -158,6 +210,12 @@ func _mend() -> void:
 		sprite.reparent(end[1], false)
 		sprite.position = Vector2.ZERO
 		sprite.rotation = 0.0
+	if _sign and _sign.get_parent() != _left:
+		_sign.reparent(_left, false)
+		_sign.rotation = 0.0
+		_sign.show_behind_parent = false
+		if _kind != Song.Sign.SHARP:   # behind the bark
+			_left.move_child(_sign, 0)
 	_left.move_child(_twig, 0)
 	_twig.show_behind_parent = false
 	for piece in _piece_layer.get_children():

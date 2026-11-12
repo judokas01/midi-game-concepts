@@ -16,3 +16,8 @@ the branch's left and right end.
 `sharp.svg` and `flat.svg` are the key signature's signs, ink-dark with a pale rim so they
 read on the staff-line bushes. Their origin (0, 0) goes on the line or space: the sharp's
 middle, and the flat's stem level with the middle of its bowl.
+
+`macaw.svg`, `bat.svg` and `blossom.svg` are the signs a branch carries for a note the key
+signature doesn't give: sharp, flat and natural. Their origin (0, 0) goes on the branch's
+middle line: the macaw's feet and the blossom's stalk are on its top edge, the bat's feet
+on its bottom edge.

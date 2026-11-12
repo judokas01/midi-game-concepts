@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/branch.gd" id="1_branch"]
 [ext_resource type="Texture2D" path="res://art/branch_bark.svg" id="2_bark"]
@@ -7,12 +7,27 @@
 [ext_resource type="Texture2D" path="res://art/crack.svg" id="5_crack"]
 [ext_resource type="Texture2D" path="res://art/banana.svg" id="6_banana"]
 [ext_resource type="LabelSettings" path="res://ui/note_label.tres" id="7_label"]
+[ext_resource type="Texture2D" path="res://art/macaw.svg" id="8_macaw"]
+[ext_resource type="Texture2D" path="res://art/bat.svg" id="9_bat"]
+[ext_resource type="Texture2D" path="res://art/blossom.svg" id="10_blossom"]
 
 [node name="Branch" type="Node2D"]
 script = ExtResource("1_branch")
 
 [node name="Left" type="Node2D" parent="."]
 position = Vector2(-39.6, 0)
+
+[node name="Bat" type="Sprite2D" parent="Left"]
+visible = false
+texture = ExtResource("9_bat")
+centered = false
+offset = Vector2(-15, 6)
+
+[node name="Blossom" type="Sprite2D" parent="Left"]
+visible = false
+texture = ExtResource("10_blossom")
+centered = false
+offset = Vector2(-12, -33)
 
 [node name="Twig" type="Sprite2D" parent="Left"]
 texture = ExtResource("3_twig")
@@ -26,6 +41,12 @@ width = 16.0
 texture = ExtResource("2_bark")
 texture_mode = 1
 begin_cap_mode = 2
+
+[node name="Macaw" type="Sprite2D" parent="Left"]
+visible = false
+texture = ExtResource("8_macaw")
+centered = false
+offset = Vector2(-20, -34)
 
 [node name="Pieces" type="Node2D" parent="."]
 

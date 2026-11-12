@@ -1,7 +1,7 @@
 extends Node2D
 ## The key signature, after the clef: a sharp or a flat on the line or space of each note the
 ## key raises or lowers, in the order and at the heights sheet music puts them. Every note of
-## that name in the song is played so; no branch carries a sign of its own (see Song.check).
+## that name in the song is played so, unless its branch carries a sign (see Song.Sign).
 
 const Song := preload("res://scripts/song.gd")
 const Staff := preload("res://scripts/staff.gd")

@@ -744,12 +744,15 @@ func _camera_x() -> float:
 
 ## The branch being hung on breaks away from the left as the note runs, its last piece
 ## falling at the moment to let go; it sags, and cracks once the note has run past its length.
-## Where nothing is timed it only sags, and waiting for a chord it never cracks.
+## Where nothing is timed it only sags, and waiting for a chord it never cracks. A macaw or bat
+## on it flies off as the gorilla takes hold.
 func _show_hung() -> void:
 	var hung := cur if state == State.HANG else -1
 	if _hung != hung and _hung >= 0:
 		world.branch(_hung).set_strain(0.0, 0.0)
 		world.branch(_hung).let_go()
+	if _hung != hung and hung >= 0:
+		world.branch(hung).startle()
 	_hung = hung
 	if hung < 0:
 		return

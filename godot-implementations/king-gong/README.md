@@ -18,7 +18,7 @@ launching if you can; if none is found at start-up the game looks again every 2 
 
 | Input | Does what |
 | --- | --- |
-| MIDI notes | Grab the branch on that note; hold for its length; release to let go. The built-in songs use C4–C5, an octave or two lower in the bass clef. A song with a key signature plays every note on its lines and spaces sharp or flat |
+| MIDI notes | Grab the branch on that note; hold for its length; release to let go. The built-in songs use C4–C5, an octave or two lower in the bass clef. A song with a key signature plays every note on its lines and spaces sharp or flat, but on a branch with a sign: a macaw is a sharp, a bat a flat, a blossom a natural |
 | Keyboard `A S D F G H J K`, `W E T Y U` | C4 D4 E4 F4 G4 A4 B4 C5 on the home row, and the black keys between them in the row above, as on a piano: `W E` = C# D#, `T Y U` = F# G# A# (Db Eb, Gb Ab Bb). Moved by octaves to where the song is (lower in the bass clef); fallback when no MIDI device is connected. The floor lists the black keys when the song has any |
 | MIDI notes below the next branch's | Treble + chords: the left hand's chord. Any octave and any order, but only its notes. A note lower than the next branch's note is the left hand's until let go, so a wrong note below the tune makes nobody fall, though it spoils a chord. With Chords only and in the chord drill every note is the chord's |
 | Keyboard `Z X C V B N M` | With chords: one key per chord, by its root: C D E F G A B, and with `Shift` the black key above (`Shift+N` = Bb). The start screen and the floor list the song's, e.g. `Z` = C, `V` = F, `B` = G. In the chord drill every root plays the kind of chord the next log wants (`X` = Dm when it wants Am) |
@@ -123,9 +123,8 @@ to use stay on your machine.
 - **Key and range:** the song moves to C (or A minor) by its first key signature, then by
   octaves to sit on the staff, between the ledger line below it and its top line, or up to
   two steps lower if it must. A melody wider than that (an octave and a sixth) has its top
-  notes folded down an octave. In C it has no [key signature](#differences-from-the-spike),
-  so a score with sharps or flats outside its key, an `Eb4` or `F#4` after the move,
-  needs signs the staff doesn't have: it is left out, with an error naming the note.
+  notes folded down an octave. Sharps and flats outside the key stay, as `Eb4` or `F#4`,
+  and their branches carry [signs](#differences-from-the-spike): a macaw or a bat.
 - **Form:** repeats and first and second endings are played out. D.C., D.S., Fine and
   codas are not; the song runs straight through. An intro before the melody's first note
   is left out. Bar lines follow the score's measures, pickups and 3/4 included.
@@ -134,7 +133,6 @@ to use stay on your machine.
 - **Bananas:** after every 24 notes, the next note of a beat or more carries one.
 
 A file the importer can't read is left out of the list, with a warning in the console.
-So is one with a note outside its key, with an error (see Key and range above).
 
 ## Differences from the spike
 
@@ -154,21 +152,35 @@ So is one with a note outside its key, with an error (see Key and range above).
   first eight bars: the middle part drops to G3, below the range. Ode to Joy and Jingle
   Bells bring dotted notes and eighths. Each song carries the chords songbooks give it,
   as triads: C, F and G, plus D in Jingle Bells (the songbooks' D7) and Dm in Ducklings,
-  where songbooks write G7 under four Fs that a G triad lacks. Last come two of them in
-  other keys, to practise [key signatures](#differences-from-the-spike) on: Mary's Lamb in
-  D (F#, chords D and A) and Ode to Joy in F (Bb, up to C5, chords F and C). A song is a
-  list in `SONGS` in `song.gd`; scores need no code, see [Your own songs](#your-own-songs).
+  where songbooks write G7 under four Fs that a G triad lacks. Last come four with
+  [key signatures](#differences-from-the-spike): two of them in other keys, Mary's Lamb in
+  D (F#, chords D and A) and Ode to Joy in F (Bb, up to C5, chords F and C), then two
+  with signs on their branches, between C4 and C5:
+  - **Mountain King in C minor**, Grieg's theme from In the Hall of the Mountain King,
+	its first four bars twice, all eighths: macaws on F#, a bat on Db. No chords.
+  - **Für Elise in F minor**, Beethoven's opening, in 3/4 with eighths for the score's
+	sixteenths, moved down from A minor to fit the keyboard: blossoms on B and E natural.
+	The low Ab3 that starts each broken chord is left out. Chords Fm and C.
+
+  A song is a list in `SONGS` in `song.gd`; scores need no code, see
+  [Your own songs](#your-own-songs).
 - **Key signatures.** The spike has no sharps or flats. A song in another key than C
   (`key = "D"` in `song.gd`) shows its key signature after the clef, as sheet music
   does: a sharp or flat on the line or space of each note it raises or lowers, and every
-  note there or an octave away is played so. Branches carry no signs of their own, so
-  there are no naturals either. A song with a note its key signature doesn't give, an F
-  in D or an F# in C, is left out of the song list, with an error in the console naming
-  the note and its bar (`check()` in `song.gd`). Wrong-note messages and the computer
-  keys' list spell black keys as flats in a key with flats (Bb in F), else as sharps.
+  note there or an octave away is played so. Wrong-note messages and the computer keys'
+  list spell black keys as flats in a key with flats (Bb in F), else as sharps.
+- **Signs on branches.** A note the key signature doesn't give carries a sign at its
+  branch's left end, drawn as part of the jungle instead of as notation: a **macaw**
+  sitting there in the twig's place for a sharp, a **bat** hanging under it for a flat, a
+  white **blossom** for a natural. Unlike sheet music, a sign holds for its own branch
+  only, not for the rest of the bar: a branch without one is always as the key signature
+  says. The note label moves up over the macaw and the blossom. The macaw and the bat fly
+  off as the gorilla takes hold; the blossom goes down with the first piece of bark, and
+  all three are back for the retry after a magic banana.
 - **Bass clef.** The spike is treble only. Here the start screen also offers the bass
   clef, which plays the song an octave down (C3–A3) so it sits inside the bass staff,
-  Ode to Joy in F two (F2–C3).
+  Ode to Joy in F two (F2–C3), and Mountain King and Für Elise two as well (C2–C3, down to
+  the second ledger line below).
   The level behind the start screen redraws as you choose; the choice holds until you
   quit.
 - **Treble + chords.** Also not in the spike. Each song carries its chords (`song.gd`,
@@ -239,7 +251,7 @@ them around:
 | `scripts/level.gd` | Builds the level from the song: places branches, lianas, trees |
 | `scripts/staff.gd` | Where things sit: staff step, line heights, floor |
 | `scripts/branch.gd`, `liana.gd`, `chord_log.gd`, `gorilla.gd` | What each of those scenes can do |
-| `scripts/song.gd` | The songs and their chords and keys, their parsing into branches, the two clefs, and the check that leaves out a song its key signature can't show |
+| `scripts/song.gd` | The songs and their chords and keys, their parsing into branches with the signs they carry, and the two clefs |
 | `scripts/key_signature.gd` | Puts the song's sharps or flats after the clef |
 | `scripts/drill.gd` | Makes up the chord drill's tune and deals its chords; which the chord menu offers, and how they are spelled |
 | `scripts/chord_menu.gd` | The chord drill's chord menu: builds its grid and works it from the MIDI keyboard |
@@ -266,8 +278,8 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
 
 - `--autoplay` plays the song, prints the result and quits. Expect `WON falls=2 bananas=5`.
 - `--song=<n>` plays another song, counting from 0 in the start screen's order. Songs 1
-  to 7 hang three bananas, not four, so expect one banana fewer than for song 0, in every
-  mode below. Songs 6 and 7 are the ones with a key signature.
+  to 9 hang three bananas, not four, so expect one banana fewer than for song 0, in every
+  mode below. Songs 6 to 9 have a key signature, and 8 and 9 signs on their branches.
 - `--bass` plays the bass clef instead.
 - `--chords` plays Treble + chords instead. With `--autoplay` the bot also plays each
   chord, right under the branch's note (C4 E4 under a G4), once leaves one out and runs
