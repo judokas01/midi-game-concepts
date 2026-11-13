@@ -18,6 +18,7 @@ const Hud := preload("res://scripts/hud.gd")
 const Drill := preload("res://scripts/drill.gd")
 const Metronome := preload("res://scripts/metronome.gd")
 const NoteInput := preload("res://scripts/note_input.gd")
+const MenuCursor := preload("res://scripts/menu_cursor.gd")
 
 enum State { WAIT, HANG, AIR, REST, FALL, BOUNCE, OVER, WON }
 
@@ -78,6 +79,7 @@ var _blocked := {}         # the next branch's note, played while its log still 
 var land_t := 0.0
 var bounce_t0 := 0.0
 var _paused_at := 0.0      # when the pause menu opened
+var _menu_notes := {}      # notes pressed on a menu, still held: letting go of one is no part of the song
 var _furthest := 0.0       # the share of the level the gorilla has crossed, for the progress line
 
 var now := 0.0             # ms, this frame
@@ -111,6 +113,7 @@ func _ready() -> void:
 	note_input.start_requested.connect(_on_start_key)
 	note_input.restart_requested.connect(_on_restart_key)
 	note_input.menu_requested.connect(_on_menu_key)
+	note_input.arrow_pressed.connect(_on_arrow_key)
 	hud.start_pressed.connect(start)
 	hud.restart_pressed.connect(restart)
 	hud.tempo_changed.connect(func(v: float) -> void: bpm = v)
@@ -125,6 +128,7 @@ func _ready() -> void:
 	hud.piano_toggled.connect(set_piano)
 	hud.menu_pressed.connect(show_menu)
 	hud.continue_pressed.connect(resume)
+	hud.back_pressed.connect(_back)
 	var dev_flags := ["--autoplay", "--perf", "--chords", "--bass", "--chords-only", "--learn", "--drill", "--pause", "--menu"]
 	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in dev_flags or a.begins_with("--shots=") or a.begins_with("--song=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
@@ -388,9 +392,11 @@ func wait_spot(r: int) -> Vector2:
 # ---------------------------------------------------------------- rules
 
 func note_on(m: int, ts: float) -> void:
+	_menu_notes.erase(m)   # pressed again: whatever held it from a menu has let go, unseen (a lost key-up)
 	if hud.menu_up():
+		_menu_notes[m] = true
 		if note_input.source == "MIDI":
-			hud.choose(m)   # only the chord grid listens; on the computer keyboard there is the mouse
+			hud.menu_note(m)   # the computer keyboard's notes don't work the menus: its arrows do
 		return
 	if chords and (by_itself or m < _next_note()):
 		_left[m] = true
@@ -451,6 +457,8 @@ func note_on(m: int, ts: float) -> void:
 
 
 func note_off(m: int, ts: float) -> void:
+	if _menu_notes.erase(m):   # the note that pressed Start, Continue or Play again, let go in the song
+		return
 	if get_tree().paused:
 		return
 	_right.erase(m)
@@ -749,31 +757,41 @@ func _update_hud() -> void:
 
 # ---------------------------------------------------------------- settings
 
-## Space: continues from the pause menu, closes the chord grid back to the drill board, or
-## starts from a board of the main menu.
+## Space: on a menu, presses what is selected, as A does. Nothing during a song.
 func _on_start_key() -> void:
-	if get_tree().paused:
-		resume()
-	elif hud.chords_open():
-		hud.close_chords()
-	elif hud.on_board():
-		start()
+	if hud.menu_up():
+		hud.menu_key(MenuCursor.Act.PRESS)
 
 
+## Enter: on a menu, presses what is selected, as A does; during a song, restarts it.
 func _on_restart_key() -> void:
-	if started:
+	if hud.menu_up():
+		hud.menu_key(MenuCursor.Act.PRESS)
+	elif started:
 		restart()
 
 
-## Esc: pauses the song and continues it; closes the chord grid; from the end panel, back to
-## the main menu; on the main menu, from a board back to the main page.
+## Esc: on a menu, back, as B does; during a song, the pause menu.
 func _on_menu_key() -> void:
+	if hud.menu_up():
+		hud.menu_key(MenuCursor.Act.BACK)
+	elif can_pause():
+		pause()
+
+
+## The arrows: on a menu, as C D E F.
+func _on_arrow_key(key: Key) -> void:
+	if hud.menu_up():
+		hud.menu_key(MenuCursor.KEY_ACTS[key])
+
+
+## Back, from B or Esc on a menu: the chord grid closes, the pause menu continues, the end panel
+## goes to the main menu, a board back to the main page.
+func _back() -> void:
 	if hud.chords_open():
 		hud.close_chords()
 	elif get_tree().paused:
 		resume()
-	elif can_pause():
-		pause()
 	elif started:
 		show_menu()
 	else:

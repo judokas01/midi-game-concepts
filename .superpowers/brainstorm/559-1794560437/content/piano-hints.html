@@ -1,0 +1,358 @@
+<style>
+  .design { margin: 22px 0 46px; }
+  .dhead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .dl { font-weight: 800; font-size: 24px; }
+  .dname { font-size: 19px; font-weight: 700; }
+  .dnote { color: var(--text-secondary); font-size: 14px; margin: 6px 0 8px; max-width: 1000px; }
+  .tabs { display: flex; gap: 6px; margin: 8px 0 10px; flex-wrap: wrap; align-items: center; }
+  .tabs button { border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); border-radius: 14px; padding: 3px 12px; font-size: 13px; cursor: pointer; }
+  .tabs button.cur { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .listen { margin-left: 8px; font-size: 12px; color: var(--text-secondary); }
+  .design.active .listen { color: #c8961a; font-weight: 700; }
+  .cards.picks { display: contents; }
+  .pickbtn { margin-left: auto; padding: 7px 18px; font-weight: 700; font-size: 14px; border-radius: 8px; }
+  .wrap { width: 100%; border-radius: 10px; outline: 3px solid transparent; outline-offset: 3px; cursor: pointer; }
+  .design.active .wrap { outline-color: #f2c230; cursor: default; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; font-size: 14px; margin: 10px 0 4px; }
+  .legend span { white-space: nowrap; }
+  .legend b { display: inline-block; min-width: 18px; text-align: center; background: #f2c230; color: #2b2620; border-radius: 4px; padding: 0 4px; margin-right: 3px; }
+  #midi { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+
+  /* ---------- on the game screenshots ---------- */
+  .stage { position: relative; width: 1280px; height: 720px; overflow: hidden; border-radius: 8px; background-size: 1280px 720px;
+    font-family: "Segoe UI", Arial, sans-serif; line-height: 1.2; user-select: none; }
+  .stage * { box-sizing: border-box; }
+  .stage .ob { position: absolute; display: flex; align-items: center; justify-content: center; background: #2b352d; border: 1px solid #3e4b40;
+    border-radius: 4px; color: #ecebe4; font-size: 15px; z-index: 2; }
+  .stage .ob.on { background: #4f8a3c; border-color: #4f8a3c; color: #fff; }
+  .stage .ob.list { justify-content: space-between; padding: 0 8px; }
+  .stage .patch { position: absolute; background: #1e150d; color: #ecebe4; font-size: 15px; display: flex; align-items: center; justify-content: center; z-index: 2; }
+  .stage .patch.left { justify-content: flex-start; color: #d8d4c8; font-size: 14px; }
+  .stage .bar { position: absolute; border-radius: 7px; background: rgba(247, 231, 166, .08); box-shadow: inset 0 0 0 2px rgba(247, 231, 166, .55); z-index: 1; }
+  .stage .ring { position: absolute; border-radius: 6px; box-shadow: 0 0 0 3px #f7e7a6, 0 0 16px 3px rgba(247, 231, 166, .55); z-index: 4; }
+  .stage .copy { position: absolute; border-radius: 9px; background-repeat: no-repeat; background-size: 1280px 720px;
+    filter: brightness(1.17); box-shadow: 0 6px 12px rgba(0, 0, 0, .45); z-index: 3; }
+  .stage .hg { position: absolute; display: flex; gap: 8px; align-items: center; transform: translateY(-50%); z-index: 6;
+    filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .55)); }
+  .stage .hg.left { flex-direction: row-reverse; }
+  .stage .tag { display: flex; align-items: center; gap: 5px; padding: 5px 7px 6px; border-radius: 6px; line-height: 0;
+    background: repeating-linear-gradient(177deg, rgba(0,0,0,0) 0 6px, rgba(0,0,0,.07) 6px 8px), linear-gradient(180deg, #a7774a 0%, #80562f 55%, #62401f 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 160, .35), inset 0 -2px 0 rgba(0, 0, 0, .3); }
+  .stage .tag.sign { clip-path: polygon(18px 0, 100% 0, 100% 100%, 18px 100%, 0 50%); padding: 7px 9px 8px 24px; border-radius: 0 7px 7px 0; }
+  .stage .arr { color: #f7e7a6; font: 700 15px/1 "Segoe UI Symbol", "Segoe UI", sans-serif; text-shadow: 0 1px 0 rgba(0, 0, 0, .6); min-width: 12px; text-align: center; }
+  .stage .inset { position: absolute; padding: 3px 4px; border-radius: 4px; background: rgba(0, 0, 0, .38); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .5); z-index: 5; line-height: 0; }
+  .stage .pno rect.hit { fill: #b9860c; }
+  .stage .toast { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); background: rgba(0, 0, 0, .82); color: #f7e7a6;
+    padding: 8px 18px; border-radius: 20px; font-size: 18px; opacity: 0; transition: opacity .2s; z-index: 9; pointer-events: none; white-space: nowrap; }
+  .stage .toast.show { opacity: 1; }
+  .stage .readout { position: absolute; left: 12px; bottom: 12px; background: rgba(0, 0, 0, .6); color: #f7e7a6; font-weight: 600; font-size: 15px;
+    padding: 4px 12px; border-radius: 12px; z-index: 9; }
+</style>
+
+<h2>Piano control on the menus: where the key hints go</h2>
+<p class="subtitle">Real game screenshots with the hints drawn on. Click a design, then play on your piano in any octave (or type the letters, or use the arrows, Enter and Esc): the selection moves and the hints follow. Values change too, so E and F do something.</p>
+<div class="legend">
+  <span><b>C</b>▲ up</span><span><b>D</b>▼ down</span><span><b>E</b>◀ left / less</span><span><b>F</b>▶ right / more</span><span><b>A</b>✓ press</span><span><b>B</b>✕ back</span>
+</div>
+<div id="midi">Looking for a MIDI keyboard…</div>
+
+<div class="design" data-d="A">
+  <div class="dhead"><span class="dl">A</span><span class="dname">A tag per key, beside the selection</span>
+    <div class="cards picks"><div class="card pickbtn" data-choice="A" onclick="toggleSelect(this)">Choose A</div></div></div>
+  <p class="dnote">As you sketched: a small wooden tag per key, each an arrow and a mini octave with that key pressed. The first key of a pair hangs on the left (C ▲, E ◀), the second on the right (D ▼, F ▶), then A ✓ when there is something to press. On a board the tags hang just outside the frame, level with the selected row. B sits on the Back plank (in the pause menu on Continue).</p>
+  <div class="tabs"></div>
+  <div class="wrap"><div class="stage"></div></div>
+</div>
+
+<div class="design" data-d="B">
+  <div class="dhead"><span class="dl">B</span><span class="dname">Two pianos: move | act</span>
+    <div class="cards picks"><div class="card pickbtn" data-choice="B" onclick="toggleSelect(this)">Choose B</div></div></div>
+  <p class="dnote">One mini octave on each side, the arrows on the keys. The left one is how to move (C ▲, D ▼); the right one is what this item takes: E ◀ F ▶ to change it, A ✓ to press it. Fewer pieces than A, and the left one never changes, so it fades into habit. B sits on the Back plank, as in A.</p>
+  <div class="tabs"></div>
+  <div class="wrap"><div class="stage"></div></div>
+</div>
+
+<div class="design" data-d="C">
+  <div class="dhead"><span class="dl">C</span><span class="dname">One octave sign</span>
+    <div class="cards picks"><div class="card pickbtn" data-choice="C" onclick="toggleSelect(this)">Choose C</div></div></div>
+  <p class="dnote">One wooden sign points at the selection: a single octave with every key that works right now pressed and marked, B ✕ included. The whole layout in one picture, and nothing anywhere else; the sign is bigger than any tag in A or B.</p>
+  <div class="tabs"></div>
+  <div class="wrap"><div class="stage"></div></div>
+</div>
+
+<script>
+(function () {
+  const WHITE = '#f4f1e6', BLACK = '#23201c', EDGE = '#5b564c', GOLD = '#f2c230', INK = '#2b2620';
+  const NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const BLACKS = [1, 2, 4, 5, 6];   // a black key sits on the line before these white keys
+  const SONGS = ['Twinkle Twinkle', "Mary's Lamb", 'Ducklings', 'Lightly Row', 'Ode to Joy', 'Jingle Bells', "Mary's Lamb in D", 'Ode to Joy in F', 'Mountain King in C minor', 'Für Elise in F minor'];
+  const KINDS = [['Major', ''], ['Minor', 'm'], ['7', '7'], ['maj7', 'maj7'], ['m7', 'm7'], ['dim', 'dim'], ['aug', 'aug']];
+  const SYM = { C: '▲', D: '▼', E: '◀', F: '▶', A: '✓', B: '✕' };
+
+  // Where things are on the screenshots (1280x720), measured from them.
+  const SCREENS = {
+    main: { bg: 'main.png', tab: 'Main menu', start: 0, items: [
+      { kind: 'plank', c: [639.5, 335.5], s: [298, 44], rot: -0.82, go: 'song' },
+      { kind: 'plank', c: [639.5, 411.5], s: [298, 44], rot: 1.23, go: 'song' },
+      { kind: 'plank', c: [639.5, 487.5], s: [298, 44], rot: -1.02, go: 'drill' },
+      { kind: 'plank', c: [639.5, 559.5], s: [188, 36], rot: 0.85, toast: 'Exit game' } ] },
+    song: { bg: 'song.png', tab: 'Play song board', start: 3, frame: [291, 198, 989, 520], inner: [303, 208, 978, 507], back: 'main', backAt: [331, 445, 469, 487], items: [
+      { kind: 'list', row: [300, 334], vrect: [498, 300, 818, 334], values: SONGS, val: 0 },
+      { kind: 'radio', row: [346, 380], opts: [[456, 540, 'Treble clef'], [546, 619, 'Bass clef'], [625, 745, 'Treble + chords'], [751, 847, 'Chords only']], val: 0 },
+      { kind: 'toggle', row: [392, 426], r: [456, 392, 508, 426], on: false },
+      { kind: 'footer', row: [444, 490], subs: [{ r: [331, 445, 469, 487], plank: true, back: true }, { r: [780, 444, 950, 490], toast: 'Start: the song begins' }], sub: 1 } ] },
+    drill: { bg: 'drill.png', tab: 'Chord drill board', start: 5, frame: [322, 155, 958, 562], inner: [333, 166, 947, 550], back: 'main', backAt: [361, 488, 499, 530], items: [
+      { kind: 'cells', row: [257, 291], cells: [[485, 540], [546, 602], [608, 648], [654, 703], [709, 749], [755, 797], [803, 844]], on: ['Major'], sub: 0, summary: [485, 302, 790, 328] },
+      { kind: 'button', row: [297, 331], r: [795, 297, 901, 331], toast: 'More options: the chord grid' },
+      { kind: 'radio', row: [343, 377], opts: [[485, 529, '8'], [535, 579, '16'], [585, 629, '32'], [635, 679, '64']], val: 1 },
+      { kind: 'stepper', row: [389, 423], vrect: [523, 389, 615, 423], val: 4, min: 1, max: 8, step: 1, fmt: n => n + (n === 1 ? ' beat' : ' beats') },
+      { kind: 'toggle', row: [435, 469], r: [485, 435, 537, 469], on: true },
+      { kind: 'footer', row: [487, 533], subs: [{ r: [361, 488, 499, 530], plank: true, back: true }, { r: [751, 487, 919, 533], toast: 'Start: the drill begins' }], sub: 1 } ] },
+    pause: { bg: 'pause.png', tab: 'Pause menu', start: 0, frame: [422, 138, 858, 578], inner: [432, 148, 848, 566], back: 'toast', backToast: 'B: the song continues', backAt: [460, 232, 820, 278], items: [
+      { kind: 'button', r: [460, 232, 820, 278], toast: 'Continue: the song goes on' },
+      { kind: 'plank', r: [460, 289, 820, 331], toast: 'Restart song' },
+      { kind: 'toggle', row: [344, 374], r: [772, 344, 820, 374], on: false },
+      { kind: 'stepper', row: [384, 414], vrect: [700, 384, 784, 414], val: 120, min: 40, max: 120, step: 5, fmt: n => n + ' BPM' },
+      { kind: 'toggle', row: [424, 454], r: [772, 424, 820, 454], on: true },
+      { kind: 'toggle', row: [464, 494], r: [772, 464, 820, 494], on: true },
+      { kind: 'plank', r: [460, 505, 820, 547], toast: "Menu: back to the song's board" } ] },
+  };
+
+  function piano(lit, kw, kh, marks) {
+    const bw = Math.round(kw * 0.62), bh = Math.round(kh * 0.58), w = 7 * kw;
+    let s = `<svg class="pno" width="${w + 2}" height="${kh + 2}" viewBox="-1 -1 ${w + 2} ${kh + 2}">`;
+    NOTES.forEach((n, i) => {
+      const on = n in lit;
+      s += `<rect data-k="${n}" class="${on ? 'lit' : ''}" x="${i * kw}" y="0" width="${kw}" height="${kh}" rx="${Math.min(2, kw / 4)}" fill="${on ? GOLD : WHITE}" stroke="${EDGE}" stroke-width="1"/>`;
+    });
+    BLACKS.forEach(b => { s += `<rect x="${b * kw - bw / 2}" y="0" width="${bw}" height="${bh}" rx="1" fill="${BLACK}"/>`; });
+    if (marks) NOTES.forEach((n, i) => {
+      if (lit[n]) s += `<text x="${i * kw + kw / 2}" y="${kh - Math.max(3, kh * 0.09)}" text-anchor="middle" font-size="${Math.round(kw * 0.92)}" font-weight="700" fill="${INK}" font-family="Segoe UI Symbol, Segoe UI, sans-serif">${lit[n]}</text>`;
+    });
+    return s + '</svg>';
+  }
+
+  // What the keys do on the selected item.
+  function acts(scr, it) {
+    const k = it.kind, many = scr.items.length > 1;
+    return { up: many, down: many,
+      lr: ['list', 'radio', 'stepper', 'cells', 'footer'].includes(k),
+      press: ['plank', 'button', 'toggle', 'cells', 'footer'].includes(k),
+      back: !!scr.back };
+  }
+  function rowCenter(it) { return it.row ? (it.row[0] + it.row[1]) / 2 : (it.r[1] + it.r[3]) / 2; }
+  function anchor(scr, it) {
+    if (scr.frame) return { l: scr.frame[0], r: scr.frame[2], cy: rowCenter(it) };
+    return { l: it.c[0] - it.s[0] / 2, r: it.c[0] + it.s[0] / 2, cy: it.c[1] };
+  }
+  function group(side, x, cy, html) {
+    if (!html) return '';
+    const pos = side === 'left' ? `right:${1280 - x}px` : `left:${x}px`;
+    return `<div class="hg ${side}" style="${pos};top:${cy}px">${html}</div>`;
+  }
+  function tilt(i) { return i % 2 ? 1.6 : -1.4; }
+
+  const DESIGNS = {
+    A(scr, it) {
+      const a = anchor(scr, it), t = acts(scr, it), L = [], R = [];
+      if (t.lr) { L.push('E'); R.push('F'); }
+      if (t.up) L.push('C');
+      if (t.down) R.push('D');
+      if (t.press) R.push('A');
+      const tag = (n, i) => `<div class="tag" style="transform:rotate(${tilt(i)}deg)"><span class="arr">${SYM[n]}</span>${piano({ [n]: '' }, 7, 20)}</div>`;
+      return group('left', a.l - 10, a.cy, L.map(tag).join('')) + group('right', a.r + 10, a.cy, R.map(tag).join('')) + backInset(scr);
+    },
+    B(scr, it) {
+      const a = anchor(scr, it), t = acts(scr, it), L = {}, R = {};
+      if (t.up) L.C = SYM.C;
+      if (t.down) L.D = SYM.D;
+      if (t.lr) { R.E = SYM.E; R.F = SYM.F; }
+      if (t.press) R.A = SYM.A;
+      const tag = (lit, i) => Object.keys(lit).length ? `<div class="tag" style="transform:rotate(${tilt(i)}deg)">${piano(lit, 11, 34, true)}</div>` : '';
+      return group('left', a.l - 10, a.cy, tag(L, 0)) + group('right', a.r + 10, a.cy, tag(R, 1)) + backInset(scr);
+    },
+    C(scr, it) {
+      const a = anchor(scr, it), t = acts(scr, it), lit = {};
+      if (t.up) lit.C = SYM.C;
+      if (t.down) lit.D = SYM.D;
+      if (t.lr) { lit.E = SYM.E; lit.F = SYM.F; }
+      if (t.press) lit.A = SYM.A;
+      if (t.back) lit.B = SYM.B;
+      return group('right', a.r + 8, a.cy, `<div class="tag sign">${piano(lit, 14, 44, true)}</div>`);
+    },
+  };
+  // A and B: the B key, for good, on what B does (Back, or Continue in the pause menu).
+  function backInset(scr) {
+    if (!scr.backAt) return '';
+    const r = scr.backAt;
+    return `<div class="inset" style="left:${r[2] - 50}px;top:${(r[1] + r[3]) / 2 - 11}px">${piano({ B: '' }, 5, 15)}</div>`;
+  }
+
+  function summary(on) {
+    const chords = [];
+    KINDS.forEach(([b, q]) => { if (on.includes(b)) NOTES.forEach(n => chords.push(n + q)); });
+    const names = [];
+    for (const c of chords) { if ([...names, c].join(' ').length > 24) break; names.push(c); }
+    return names.join(' ') + (names.length < chords.length ? ` and ${chords.length - names.length} more` : '');
+  }
+
+  function controls(it) {
+    let h = '';
+    const box = (x0, y0, x1, y1, cls, text) => `<div class="${cls}" style="left:${x0}px;top:${y0}px;width:${x1 - x0}px;height:${y1 - y0}px">${text}</div>`;
+    if (it.kind === 'list') h += box(...it.vrect, 'ob list', `<span>${it.values[it.val]}</span><span>⌄</span>`);
+    if (it.kind === 'radio') it.opts.forEach((o, i) => { h += box(o[0], it.row[0], o[1], it.row[1], 'ob' + (i === it.val ? ' on' : ''), o[2]); });
+    if (it.kind === 'toggle') h += box(...it.r, 'ob' + (it.on ? ' on' : ''), it.on ? 'on' : 'off');
+    if (it.kind === 'stepper') h += box(...it.vrect, 'patch', it.fmt(it.val));
+    if (it.kind === 'cells') {
+      it.cells.forEach((c, i) => { const name = KINDS[i][0]; h += box(c[0], it.row[0], c[1], it.row[1], 'ob' + (it.on.includes(name) ? ' on' : ''), name); });
+      h += box(...it.summary, 'patch left', summary(it.on));
+    }
+    return h;
+  }
+
+  function selection(scr, it, bg) {
+    const copy = (x, y, w, hh, rot) => `<div class="copy" style="left:${x}px;top:${y}px;width:${w}px;height:${hh}px;background-image:url(/files/${bg});background-position:${-x}px ${-y}px;transform:rotate(${-rot}deg) scale(1.04)"></div>`;
+    const ring = r => `<div class="ring" style="left:${r[0]}px;top:${r[1]}px;width:${r[2] - r[0]}px;height:${r[3] - r[1]}px"></div>`;
+    const bar = () => `<div class="bar" style="left:${scr.inner[0] + 10}px;top:${it.row[0] - 6}px;width:${scr.inner[2] - scr.inner[0] - 20}px;height:${it.row[1] - it.row[0] + 12}px"></div>`;
+    if (it.c) return copy(it.c[0] - it.s[0] / 2, it.c[1] - it.s[1] / 2 - 1, it.s[0], it.s[1] + 4, it.rot);
+    if (it.kind === 'plank') return copy(it.r[0], it.r[1], it.r[2] - it.r[0], it.r[3] - it.r[1] + 3, 0);
+    if (it.kind === 'button') return ring(it.r);
+    if (it.kind === 'footer') {
+      const s = it.subs[it.sub];
+      return s.plank ? copy(s.r[0], s.r[1], s.r[2] - s.r[0], s.r[3] - s.r[1] + 3, 0) : ring(s.r);
+    }
+    if (it.kind === 'cells') { const c = it.cells[it.sub]; return bar() + ring([c[0], it.row[0], c[1], it.row[1]]); }
+    return bar();
+  }
+
+  const stages = [];
+  let active = null;
+
+  document.querySelectorAll('.design').forEach(block => {
+    const st = { design: block.dataset.d, block, stage: block.querySelector('.stage'), screen: 'main',
+      sel: {}, scr: JSON.parse(JSON.stringify(SCREENS, (k, v) => v)), last: '' };
+    // keep the formatters, which JSON drops
+    Object.keys(SCREENS).forEach(s => SCREENS[s].items.forEach((it, i) => { if (it.fmt) st.scr[s].items[i].fmt = it.fmt; }));
+    Object.keys(SCREENS).forEach(s => { st.sel[s] = SCREENS[s].start; });
+    const tabs = block.querySelector('.tabs');
+    Object.keys(SCREENS).forEach(s => {
+      const b = document.createElement('button');
+      b.textContent = SCREENS[s].tab; b.dataset.s = s;
+      b.onclick = e => { e.stopPropagation(); st.screen = s; st.sel[s] = SCREENS[s].start; activate(st); render(st); };
+      tabs.appendChild(b);
+    });
+    const l = document.createElement('span'); l.className = 'listen'; tabs.appendChild(l);
+    block.addEventListener('mousedown', () => activate(st));
+    stages.push(st);
+    render(st);
+  });
+
+  function activate(st) {
+    active = st;
+    stages.forEach(s => {
+      s.block.classList.toggle('active', s === st);
+      s.block.querySelector('.listen').textContent = s === st ? '● your keys go here' : 'click the picture to play it';
+    });
+  }
+
+  function render(st) {
+    const scr = st.scr[st.screen], it = scr.items[st.sel[st.screen]];
+    st.stage.style.backgroundImage = `url(/files/${scr.bg})`;
+    st.stage.innerHTML = scr.items.map(controls).join('') + selection(scr, it, scr.bg) + DESIGNS[st.design](scr, it) +
+      `<div class="toast"></div><div class="readout">${st.last || 'no key yet'}</div>`;
+    st.block.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('cur', b.dataset.s === st.screen));
+  }
+
+  function toast(st, text) {
+    const t = st.stage.querySelector('.toast');
+    t.textContent = text; t.classList.add('show');
+    clearTimeout(st.toastT); st.toastT = setTimeout(() => t.classList.remove('show'), 1300);
+  }
+
+  function back(st) {
+    const scr = st.scr[st.screen];
+    if (scr.back === 'main') { st.screen = 'main'; return; }
+    if (scr.back === 'toast') st.pending = scr.backToast;
+  }
+
+  function press(st, it) {
+    if (it.go) { st.screen = it.go; st.sel[it.go] = SCREENS[it.go].start; return; }
+    if (it.toast) { st.pending = it.toast; return; }
+    if (it.kind === 'toggle') it.on = !it.on;
+    if (it.kind === 'cells') {
+      const name = KINDS[it.sub][0], i = it.on.indexOf(name);
+      if (i < 0) it.on.push(name);
+      else if (it.on.length > 1) it.on.splice(i, 1);
+      else st.pending = 'One kind stays picked';
+    }
+    if (it.kind === 'footer') {
+      const s = it.subs[it.sub];
+      if (s.back) back(st); else st.pending = s.toast;
+    }
+  }
+
+  function change(it, by) {
+    if (it.kind === 'list') it.val = (it.val + by + it.values.length) % it.values.length;
+    if (it.kind === 'radio') it.val = Math.max(0, Math.min(it.opts.length - 1, it.val + by));
+    if (it.kind === 'stepper') it.val = Math.max(it.min, Math.min(it.max, it.val + by * it.step));
+    if (it.kind === 'cells') it.sub = Math.max(0, Math.min(it.cells.length - 1, it.sub + by));
+    if (it.kind === 'footer') it.sub = Math.max(0, Math.min(it.subs.length - 1, it.sub + by));
+    if (it.kind === 'toggle') it.on = !it.on;
+  }
+
+  function key(st, k, from) {
+    const scr = st.scr[st.screen], n = scr.items.length, i = st.sel[st.screen], it = scr.items[i];
+    st.pending = '';
+    if (k === 'C') st.sel[st.screen] = (i - 1 + n) % n;
+    if (k === 'D') st.sel[st.screen] = (i + 1) % n;
+    if (k === 'E') change(it, -1);
+    if (k === 'F') change(it, 1);
+    if (k === 'A') press(st, it);
+    if (k === 'B') back(st);
+    st.last = `${from}: ${k} ${SYM[k]}`;
+    render(st);
+    if (st.pending) toast(st, st.pending);
+    st.stage.querySelectorAll(`.pno rect.lit[data-k="${k}"]`).forEach(r => {
+      r.classList.add('hit'); setTimeout(() => r.classList.remove('hit'), 180);
+    });
+  }
+
+  const KEYS = { c: 'C', d: 'D', e: 'E', f: 'F', a: 'A', b: 'B', ArrowUp: 'C', ArrowDown: 'D', ArrowLeft: 'E', ArrowRight: 'F', Enter: 'A', Escape: 'B', Backspace: 'B' };
+  document.addEventListener('keydown', e => {
+    if (!active || e.ctrlKey || e.metaKey || e.altKey || /input|textarea/i.test(e.target.tagName)) return;
+    const k = KEYS[e.key] || KEYS[e.key.toLowerCase()];
+    if (!k) return;
+    e.preventDefault();
+    key(active, k, 'keyboard');
+  });
+
+  const PCS = { 0: 'C', 2: 'D', 4: 'E', 5: 'F', 9: 'A', 11: 'B' };   // any octave; the black keys and G do nothing
+  const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const midiLine = document.getElementById('midi');
+  function onMidi(e) {
+    const [status, note, vel] = e.data;
+    if ((status & 0xf0) !== 0x90 || vel === 0 || !active) return;
+    const k = PCS[note % 12];
+    if (k) key(active, k, 'piano ' + NAMES[note % 12] + (Math.floor(note / 12) - 1));
+    else { active.last = `piano ${NAMES[note % 12]}${Math.floor(note / 12) - 1}: nothing`; render(active); }
+  }
+  if (navigator.requestMIDIAccess) {
+    navigator.requestMIDIAccess().then(m => {
+      const hook = p => { p.onmidimessage = onMidi; };
+      const show = () => {
+        const names = [...m.inputs.values()].map(p => p.name);
+        midiLine.textContent = names.length ? 'MIDI keyboard: ' + names.join(', ') : 'No MIDI keyboard found; plug one in, or use the letter keys.';
+      };
+      m.inputs.forEach(hook); show();
+      m.onstatechange = e => { if (e.port.type === 'input' && e.port.state === 'connected') hook(e.port); show(); };
+    }).catch(() => { midiLine.textContent = 'No MIDI access in this browser; use the letter keys (Chrome or Edge hear the piano).'; });
+  } else midiLine.textContent = 'This browser has no Web MIDI; use the letter keys (Chrome or Edge hear the piano).';
+
+  function fit() { stages.forEach(s => { s.stage.style.zoom = Math.min(1, s.stage.parentElement.clientWidth / 1280); }); }
+  window.addEventListener('resize', fit); fit();
+  activate(stages[0]);
+  // #song:CC opens that screen on every design and plays those keys, to show a state by link
+  const [hs, hk] = location.hash.slice(1).split(':');
+  if (SCREENS[hs]) stages.forEach(s => { s.screen = hs; render(s); [...(hk || '')].forEach(k => key(s, k, 'link')); });
+})();
+</script>

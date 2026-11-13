@@ -1,39 +1,31 @@
 extends ColorRect
 ## The chord drill's chord grid (More options on the drill board): which chords a round deals,
 ## on a grid of the kinds of chord, by difficulty, against the twelve roots. Worked with the
-## mouse, or from the MIDI keyboard, the one menu that listens to it: a note from C4 to B4
-## picks the button on its key in the marked row, a note below C4 marks the row above, one
-## above B4 the row below.
+## mouse, or through the menu cursor (menu_cursor.gd): a row for each kind of chord, its cells
+## the difficulty's button, the kind's where the difficulty has several, and its chords.
 
 signal closed(chords: Array)
 
 const Drill := preload("res://scripts/drill.gd")
-const Song := preload("res://scripts/song.gd")
-const LOW := 60                    # C4: the key over the grid's first column, C
+const MenuCursor := preload("res://scripts/menu_cursor.gd")
 const GROUP_W := 104               # the difficulties' column
 const KIND_W := 52                 # the kinds of chord's
 const CHORD_W := 64
 const WHITE_ROOTS := [0, 2, 4, 5, 7, 9, 11]   # C D E F G A B, by their place in Drill.ROOTS
-const MARK := Color("f2c230")      # the marked row's frame: the colour of the next note on the little keyboard
 
 var _chords := {}                  # chord name -> its button, in the grid's order
-var _rows: Array = []              # top to bottom, what the twelve keys pick in each row: a button or null
-var _frames: Array[StyleBoxFlat] = []   # each row's frame, lit on the marked one
-var _mark := 0
+var _lines: Array = []             # each kind's row, top to bottom: [its buttons left to right, its frame, the cell of its C]
+var _done: Button
 
 @onready var _grid: VBoxContainer = $Center/Board/Box/Grid
 
 
 func _ready() -> void:
-	_add_keys()
 	for group: Array in Drill.GROUPS:
 		_add_group(group[0], group[1])
-	var done := _button("Done · %s" % Song.note_name(LOW), 0)
-	done.pressed.connect(close)
-	var keyed := []
-	keyed.resize(12)
-	keyed.fill(done)   # any key, on the Done row
-	_add_row(_gap(GROUP_W), [_gap(KIND_W), done], keyed)
+	_done = _button("Done", 0)
+	_done.pressed.connect(close)
+	_grid.add_child(_line(_gap(GROUP_W), [_row([_gap(KIND_W), _done])]))
 
 
 ## The chords picked, by name, in the grid's order.
@@ -66,8 +58,14 @@ func kinds() -> Array:
 
 
 func open() -> void:
-	_mark_row(0)
 	show()
+
+
+## The rows for the menu cursor: each kind's, on the chord on C at first, then Done.
+func cursor_rows() -> Array:
+	var rows: Array = _lines.map(func(line: Array) -> MenuCursor.Row: return MenuCursor.cells(line[0], line[2], [line[1]]))
+	rows.append(MenuCursor.press(_done))
+	return rows
 
 
 func close() -> void:
@@ -75,68 +73,32 @@ func close() -> void:
 	closed.emit(picked())
 
 
-## A MIDI note: below C4 marks the row above, above B4 the row below, round from one end to
-## the other, and from C4 to B4 picks the button on that key in the marked row, as a click would.
-func play(m: int) -> void:
-	if m < LOW or m >= LOW + 12:
-		_mark_row(posmod(_mark + (-1 if m < LOW else 1), _rows.size()))
-		return
-	var button: Button = _rows[_mark][m - LOW]
-	if button == null:
-		return
-	if not button.toggle_mode:
-		button.pressed.emit()
-	elif button.button_group:
-		button.button_pressed = true
-	else:
-		button.button_pressed = not button.button_pressed
-
-
-## Over the columns, the key that picks in each.
-func _add_keys() -> void:
-	var cells: Array = [_gap(KIND_W)]
-	for i in 12:
-		var key := Label.new()
-		key.text = Song.note_name(LOW + i)
-		key.custom_minimum_size.x = CHORD_W
-		key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		key.add_theme_font_size_override("font_size", 12)
-		key.add_theme_color_override("font_color", Color(1, 1, 1, 0.45))
-		cells.append(key)
-	_grid.add_child(_line(_gap(GROUP_W), [_row(cells, false)]))
-
-
 ## A difficulty: a row for each of its `qualities`, the twelve roots across.
 func _add_group(difficulty: String, qualities: Array) -> void:
 	var in_group: Array[Button] = []
 	var rows := []
+	var lines := []
 	for quality: String in qualities:
-		var keyed := []
 		var in_row: Array[Button] = []
 		var cells := []
 		for root: String in Drill.ROOTS[quality]:
 			var chord: Button = _chord(root + quality) if root != "" else null
-			keyed.append(chord)
 			if chord:
 				in_row.append(chord)
 			cells.append(chord if chord else _gap(CHORD_W))
-		cells.push_front(_all(quality, KIND_W, in_row) if qualities.size() > 1 else _gap(KIND_W))
-		rows.append(_row(cells))
-		_rows.append(keyed)
+		var own: Array[Button] = []   # the kind's button, where the difficulty has several kinds
+		if qualities.size() > 1:
+			own.append(_all(quality, KIND_W, in_row))
+		cells.push_front(own[0] if own else _gap(KIND_W))
+		var row := _row(cells)
+		rows.append(row)
+		lines.append([own + in_row, row, own.size() + 1])   # the chord on C comes first in the row
 		in_group.append_array(in_row)
-	_grid.add_child(_line(_all(difficulty, GROUP_W, in_group), rows))
-
-
-func _add_row(left: Control, cells: Array, keyed: Array) -> void:
-	_grid.add_child(_line(left, [_row(cells)]))
-	_rows.append(keyed)
-
-
-func _mark_row(i: int) -> void:
-	_mark = i
-	for k in _frames.size():
-		_frames[k].border_color = Color(MARK, 1.0 if k == i else 0.0)
-		_frames[k].bg_color = Color(MARK, 0.08 if k == i else 0.0)
+	var all := _all(difficulty, GROUP_W, in_group)
+	for line: Array in lines:
+		line[0].push_front(all)
+	_lines.append_array(lines)
+	_grid.add_child(_line(all, rows))
 
 
 ## A chord to pick. One at least stays picked.
@@ -195,16 +157,10 @@ func _line(left: Control, rows: Array) -> HBoxContainer:
 	return line
 
 
-## `cells` side by side in a frame; with `markable`, the frame is lit while the row is marked.
-func _row(cells: Array, markable := true) -> PanelContainer:
-	var frame := StyleBoxFlat.new()
-	frame.bg_color = Color(MARK, 0.0)
-	frame.border_color = Color(MARK, 0.0)
-	frame.set_border_width_all(1)
-	frame.set_corner_radius_all(4)
+## `cells` side by side, a little apart from the next row: the menu cursor frames it.
+func _row(cells: Array) -> PanelContainer:
+	var frame := StyleBoxEmpty.new()
 	frame.set_content_margin_all(3)
-	if markable:
-		_frames.append(frame)
 	var side_by_side := HBoxContainer.new()
 	side_by_side.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	side_by_side.add_theme_constant_override("separation", 4)

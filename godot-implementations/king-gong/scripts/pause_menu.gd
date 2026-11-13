@@ -2,7 +2,7 @@ extends ColorRect
 ## The pause menu, over a song frozen by Esc: continue, restart, practice mode, the tempo, the
 ## beat tick, the labels, or back to the main menu. It runs while the game is paused. It
 ## shows the game's settings as they are when it opens and only reports changes; the game
-## keeps them.
+## keeps them. Worked with the mouse, or through the menu cursor (menu_cursor.gd).
 
 signal continue_pressed
 signal restart_pressed
@@ -12,6 +12,7 @@ signal tempo_changed(bpm: float)
 signal tick_toggled(on: bool)
 signal labels_toggled(on: bool)
 
+const MenuCursor := preload("res://scripts/menu_cursor.gd")
 const TEMPO_MIN := 40
 const TEMPO_MAX := 120
 const TEMPO_STEP := 5
@@ -61,12 +62,22 @@ func step_tempo(by: int) -> void:
 	tempo_changed.emit(float(_bpm))
 
 
-func _unhandled_key_input(event: InputEvent) -> void:
-	var key := event as InputEventKey
-	if not visible or not key.pressed or not key.keycode in [KEY_LEFT, KEY_RIGHT]:
-		return
-	step_tempo(-1 if key.keycode == KEY_LEFT else 1)
-	get_viewport().set_input_as_handled()
+## The rows for the menu cursor, top to bottom. Practice mode's is skipped while hidden.
+func cursor_rows() -> Array:
+	var rows: Node = $Center/Panel/Rows
+	return [
+		MenuCursor.press(rows.get_node("Continue")),
+		MenuCursor.press(rows.get_node("Restart")),
+		MenuCursor.press(_practice, [rows.get_node("Practice")]),
+		MenuCursor.value(step_tempo, _can_step_tempo, [rows.get_node("Tempo")]),
+		MenuCursor.press(_tick, [rows.get_node("Tick")]),
+		MenuCursor.press(_labels, [rows.get_node("Labels")]),
+		MenuCursor.press(rows.get_node("Menu")),
+	]
+
+
+func _can_step_tempo(by: int) -> bool:
+	return clampi(_bpm + by * TEMPO_STEP, TEMPO_MIN, TEMPO_MAX) != _bpm
 
 
 func _toggle(button: Button, changed: Signal) -> void:

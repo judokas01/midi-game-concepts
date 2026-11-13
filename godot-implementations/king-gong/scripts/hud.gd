@@ -1,8 +1,8 @@
 extends CanvasLayer
 ## Everything drawn over the game: the counters (the progress line along the top, and the pill
 ## with bananas and falls), the main menu and the chord drill's chord grid, the pause menu, why
-## you fell, the end panel, the little keyboard, and bananas flying to the counter. Of the
-## menus only the chord grid listens to the MIDI keyboard.
+## you fell, the end panel, the little keyboard, and bananas flying to the counter. Whichever
+## menu is up is worked through the menu cursor, from the piano's white keys or the arrows.
 
 signal start_pressed
 signal restart_pressed
@@ -18,6 +18,7 @@ signal practice_toggled(on: bool)
 signal piano_toggled(on: bool)
 signal menu_pressed
 signal continue_pressed
+signal back_pressed   # B or Esc on a menu: what Esc does there
 
 ## What the main menu's boards play: a song, learning one, or the chord drill.
 enum Mode { PLAY, LEARN, DRILL }
@@ -30,13 +31,19 @@ const ChordMenu := preload("res://scripts/chord_menu.gd")
 const MainMenu := preload("res://scripts/main_menu.gd")
 const PauseMenu := preload("res://scripts/pause_menu.gd")
 const ProgressLine := preload("res://scripts/progress_line.gd")
+const MenuCursor := preload("res://scripts/menu_cursor.gd")
 const GlowingBanana := preload("res://scenes/glowing_banana.tscn")
 const TUNE_COLOUR := Color("f2c230")   # the next note on the little keyboard; a chord's is its log's
+const END_WAIT_S := 1.0   # the end panel comes up while the hands may still be playing: notes wait this long
 const MODES := {MainMenu.Page.PLAY: Mode.PLAY, MainMenu.Page.LEARN: Mode.LEARN, MainMenu.Page.DRILL: Mode.DRILL}
 
 var _banner_fade: Tween
 var _chord_from := 48         # the C the chord's keys start on
 var _piano_wanted := false    # the little keyboard has something to show, once no menu covers it
+var _end_at := 0       # ms, when the end panel came up
+var _cursor_on := ""          # the menu the cursor works: "pause", "chords", "end", "main" and the page, or ""
+
+var cursor: MenuCursor        # the selection on whichever menu is up, over everything
 
 @onready var _progress: ProgressLine = $Progress
 @onready var _pill: Control = $Pill
@@ -89,6 +96,14 @@ func _ready() -> void:
 	_menu.visibility_changed.connect(_show_layers)
 	_chord_menu.visibility_changed.connect(_show_layers)
 	_show_layers()
+	cursor = MenuCursor.new()
+	cursor.name = "Cursor"
+	add_child(cursor)
+	cursor.back_requested.connect(func() -> void: back_pressed.emit())
+	for menu: Control in [_menu, _chord_menu, _pause, _end]:
+		menu.visibility_changed.connect(_refresh_cursor)
+	_menu.page_shown.connect(_refresh_cursor)
+	_refresh_cursor()
 
 
 ## `bananas` < 0: they never run out, in practice mode. `missed`, "falls 2", as it is shown.
@@ -157,11 +172,6 @@ func show_main_menu() -> void:
 	_menu.show()
 
 
-## A board of the main menu is up: Space starts from it.
-func on_board() -> bool:
-	return _menu.on_board()
-
-
 ## Esc on the main menu: from a board back to the main page.
 func menu_back() -> void:
 	if _menu.visible:
@@ -196,13 +206,19 @@ func close_chords() -> void:
 	_chord_menu.close()
 
 
-## The chord grid's button on MIDI note `m`, picked as a click would. False when the chord grid
-## isn't up: no other menu listens to notes.
-func choose(m: int) -> bool:
-	if not _chord_menu.visible:
-		return false
-	_chord_menu.play(m)
-	return true
+## MIDI note `m` on the menu that is up: by its name, in any octave, C up, D down, E and F
+## left and right, A press, B back. Other notes do nothing, and so does every note in the end
+## panel's first END_WAIT_S.
+func menu_note(m: int) -> void:
+	if _cursor_on == "end" and Time.get_ticks_msec() - _end_at < END_WAIT_S * 1000.0:
+		return
+	if MenuCursor.NOTE_ACTS.has(m % 12):
+		cursor.act(MenuCursor.NOTE_ACTS[m % 12])
+
+
+## The arrows, Enter, Space and Esc on the menu that is up, as the white keys they stand for.
+func menu_key(a: MenuCursor.Act) -> void:
+	cursor.act(a)
 
 
 ## Why you fell: shown for 2.8 s, fading over the last fifth.
@@ -222,6 +238,7 @@ func show_end(title: String, line: String) -> void:
 	clear_messages()
 	$EndPanel/Lines/Title.text = title
 	$EndPanel/Lines/Line.text = line
+	_end_at = Time.get_ticks_msec()
 	_end.show()
 
 
@@ -255,6 +272,35 @@ func _show_picked() -> void:
 ## The drill as the chord grid and the drill board have it.
 func _choose_drill() -> void:
 	drill_chosen.emit(_chord_menu.picked(), _menu.count, _menu.beats)
+
+
+## Hands the cursor the rows of the menu that is up, from where that menu starts, each time a
+## menu opens or the main menu turns a page.
+func _refresh_cursor() -> void:
+	var on := ""
+	if _pause.visible:
+		on = "pause"
+	elif _chord_menu.visible:
+		on = "chords"
+	elif _end.visible:
+		on = "end"
+	elif _menu.visible:
+		on = "main %d" % _menu.page
+	if on == _cursor_on:
+		return
+	_cursor_on = on
+	match on:
+		"":
+			cursor.clear()
+		"pause":
+			cursor.use(_pause.cursor_rows(), 0, _pause.get_node("Center/Panel"), true)
+		"chords":
+			cursor.use(_chord_menu.cursor_rows(), 0, _chord_menu.get_node("Center/Board"), true)
+		"end":
+			var buttons := $EndPanel/Lines/Buttons
+			cursor.use([MenuCursor.cells([buttons.get_node("Again"), buttons.get_node("Menu")], 0)], 0, _end, true, END_WAIT_S)
+		_:
+			cursor.use(_menu.cursor_rows(), _menu.cursor_start(), _menu.cursor_anchor(), _menu.page != MainMenu.Page.MAIN)
 
 
 ## The counters and the little keyboard hide while the main menu or the chord grid is up.

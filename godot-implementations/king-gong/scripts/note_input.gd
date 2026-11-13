@@ -12,6 +12,7 @@ signal source_changed(source: String)
 signal start_requested
 signal restart_requested
 signal menu_requested
+signal arrow_pressed(key: Key)   # the arrows work the menus
 
 const Song := preload("res://scripts/song.gd")
 # the white keys on the home row, the black ones in the row above, as on a piano
@@ -106,6 +107,8 @@ func _input(event: InputEvent) -> void:
 		restart_requested.emit()
 	elif key.keycode == KEY_ESCAPE:
 		menu_requested.emit()
+	elif key.keycode in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
+		arrow_pressed.emit(key.keycode)
 	elif idx >= 0:
 		_set_source("keyboard")
 		note_on.emit(KEY_MIDI[idx] + 12 * octave_shift, t)

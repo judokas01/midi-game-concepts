@@ -2,12 +2,13 @@ extends Control
 ## The main menu: wooden planks hanging from the canopy (Play song, Learn song, Chord drill,
 ## Exit game, and Tutorial and Campaign still to come), and the boards they open, where a song
 ## or the drill's chords are chosen before Start. Play song and Learn song share one board. It
-## shows the choices and reports them; the game keeps them. Worked with the mouse; game.gd
-## gives it Space (Start, on a board) and Esc (back).
+## shows the choices and reports them; the game keeps them. Worked with the mouse, or through
+## the menu cursor (menu_cursor.gd), which hud.gd hands the rows of the page shown.
 
 enum Page { MAIN, PLAY, LEARN, DRILL }
 
 signal page_opened(page: Page)   # a board, which plays in its own mode
+signal page_shown                # any page, the main one too
 signal start_pressed
 signal song_chosen(song: int)
 signal style_chosen(clef: Song.Clef, chords: bool, by_itself: bool)
@@ -21,6 +22,7 @@ signal kind_toggled(quality: String, on: bool)
 const Song := preload("res://scripts/song.gd")
 const ChordLog := preload("res://scripts/chord_log.gd")
 const Drill := preload("res://scripts/drill.gd")
+const MenuCursor := preload("res://scripts/menu_cursor.gd")
 const TITLES := {Page.PLAY: "Play song", Page.LEARN: "Learn song"}
 const KINDS := {"Major": "", "Minor": "m", "Dom7": "7", "Maj7": "maj7", "Min7": "m7", "Dim": "dim", "Aug": "aug"}   # button: quality
 const PICKED_LETTERS := 24   # the chords picked are named up to this many letters, so the line keeps its width
@@ -28,6 +30,7 @@ const PICKED_LETTERS := 24   # the chords picked are named up to this many lette
 var page := Page.MAIN
 var count: int = Drill.COUNT   # chords in a drill round
 var beats: int = Drill.BEATS   # beats from one drill chord to the next
+var _last_board := Page.PLAY    # the main page opens with its plank selected
 
 @onready var _main: Control = $Main
 @onready var _songs: Control = $Songs
@@ -94,6 +97,8 @@ func _ready_drill() -> void:
 ## behind it is laid out for that.
 func open(p: Page) -> void:
 	page = p
+	if p != Page.MAIN:
+		_last_board = p
 	_main.visible = p == Page.MAIN
 	_songs.visible = p == Page.PLAY or p == Page.LEARN
 	_drill.visible = p == Page.DRILL
@@ -104,6 +109,7 @@ func open(p: Page) -> void:
 	show()
 	if p != Page.MAIN:
 		page_opened.emit(p)
+	page_shown.emit()
 
 
 ## From a board back to the main page. False on the main page, where there is no back.
@@ -114,8 +120,61 @@ func back() -> bool:
 	return true
 
 
-func on_board() -> bool:
-	return visible and page != Page.MAIN
+## The rows of the page shown, top to bottom, for the menu cursor. Tutorial and Campaign,
+## still to come, are left out.
+func cursor_rows() -> Array:
+	match page:
+		Page.MAIN:
+			return ["Play", "Learn", "Drill", "Exit"].map(func(plank: String) -> MenuCursor.Row:
+				return MenuCursor.press(_main.get_node("Column/" + plank)))
+		Page.DRILL:
+			var kinds: Array = _kinds.get_children().filter(func(c: Node) -> bool: return c is Button)
+			var rounds: Array = _drill_rows.get_node("Round").get_children().filter(func(c: Node) -> bool: return c is Button)
+			return [
+				MenuCursor.cells(kinds, 0, [_kinds]),   # not its caption, which sits lower, by the line of chords too
+				MenuCursor.press(_drill_rows.get_node("Chords/Picked/More")),
+				MenuCursor.choice(rounds, _parts(_drill_rows, "Round")),
+				MenuCursor.value(_step_beats, _can_step_beats, _parts(_drill_rows, "Every")),
+				MenuCursor.press(_drill_rows.get_node("Hint/Toggle"), _parts(_drill_rows, "Hint")),
+				_foot(_drill),
+			]
+	var parts := ["Treble", "Bass", "Chords", "ChordsOnly"].map(func(b: String) -> Button: return _song_rows.get_node("Part/" + b))
+	return [
+		MenuCursor.value(_next_song, _can_step_song, _parts(_song_rows, "Song")),
+		MenuCursor.choice(parts, _parts(_song_rows, "Part")),
+		MenuCursor.choice([_song_rows.get_node("Sign/Name"), _song_rows.get_node("Sign/Bass")], _parts(_song_rows, "Sign")),
+		MenuCursor.press(_practice, _parts(_song_rows, "Practice")),
+		MenuCursor.press(_song_rows.get_node("Hint/Toggle"), _parts(_song_rows, "Hint")),
+		_foot(_songs),
+	]
+
+
+## Where the cursor starts: on the main page the plank of the board last opened, on a board
+## Start.
+func cursor_start() -> int:
+	if page == Page.MAIN:
+		return [Page.PLAY, Page.LEARN, Page.DRILL].find(_last_board)
+	return -1
+
+
+## The board the sign sits outside; none on the main page, where it sits beside the plank.
+func cursor_anchor() -> Control:
+	match page:
+		Page.MAIN:
+			return null
+		Page.DRILL:
+			return _drill.get_node("Board")
+	return _songs.get_node("Board")
+
+
+## A board row's parts: its control and the caption beside it, so its frame takes in both.
+func _parts(rows: GridContainer, row: String) -> Array:
+	return [rows.get_node(row), rows.get_node(row + "Caption")]
+
+
+## Back | Start, on Start.
+func _foot(board: Control) -> MenuCursor.Row:
+	return MenuCursor.cells([board.get_node("Board/Rows/Foot/Back"), board.get_node("Board/Rows/Foot/Start")], 1)
 
 
 ## The Chord sign row is for a part with chords only.
@@ -155,6 +214,14 @@ func _step_beats(by: int) -> void:
 	beats = to
 	_show_beats()
 	drill_changed.emit(count, beats)
+
+
+func _can_step_beats(by: int) -> bool:
+	return clampi(beats + by, Drill.BEATS_MIN, Drill.BEATS_MAX) != beats
+
+
+func _can_step_song(_by: int) -> bool:
+	return _song.item_count > 1   # round from the end to the start
 
 
 func _show_beats() -> void:

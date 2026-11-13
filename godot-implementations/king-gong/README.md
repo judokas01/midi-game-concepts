@@ -27,11 +27,10 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | Part: Treble clef / Bass clef / Treble + chords / Chords only | On the song boards: how to play the song. [Chords only](#chords-only): the gorilla plays the tune, you the chords |
 | Chord sign | On the song boards, with chords: the sign on each log shows the chord's name, or its notes in the bass clef. The chord drill always shows the name |
 | Chords, In a round, Chord every | On the Chord drill board: which chords it deals (More options opens the [chord grid](#the-chord-grid)), how many a round has (8, 16, 32, 64) and how many beats apart they come (1 to 8) |
-| MIDI notes on the menus | Only the chord grid listens: C4 to B4 pick in the marked row and a note below or above moves the mark. Elsewhere use the mouse |
-| `Space` | Start, on a board. Also closes the chord grid, and continues from the pause menu |
-| `Enter` / Restart button | Restart the song, or in the chord drill a new round |
-| `Esc` | During a song: the [pause menu](#the-pause-menu). From the end panel: back to the board the song was started from. On a board: back to the main menu. In the chord grid: back to the drill board |
-| `←` / `→` | In the pause menu: the tempo down or up, 5 BPM a step |
+| MIDI notes on the menus | Six white keys, in any octave: **C** ▲ up, **D** ▼ down, **E** ◀ and **F** ▶ change the selected row (the song, part or value before or after, along a row of buttons, or an on/off flipped), **A** ✓ presses, **B** ✕ goes back. A wooden sign beside the selection shows one octave with the keys that do something there lit. The other keys do nothing, and the end panel waits a second before it listens, in case your hands are still playing |
+| `↑` `↓` `←` `→`, `Enter` or `Space`, `Esc` | On the menus: the same as C D E F, A and B, at once on the end panel too. The mouse selects what it points at and clicks as ever |
+| `Enter` / Restart button | During a song: restart it, or in the chord drill deal a new round |
+| `Esc` | During a song: the [pause menu](#the-pause-menu). On a menu it goes back, as B: from the pause menu into the song, from the end panel to the board the song was started from, from a board to the main menu, from the chord grid to the drill board |
 | Practice mode | On the Play song board, and in the pause menu: the magic bananas never run out |
 | Keyboard hint | On the Learn song and Chord drill boards: the [little keyboard](#the-little-keyboard) at the bottom. On by default |
 | Tempo, Labels, Beat tick | In the pause menu. Tempo 40–120 BPM (default 60); Labels and Beat tick are the spike's toggles |
@@ -46,9 +45,9 @@ the magic bananas (`∞` in practice mode), the falls (`wrong` in Learn mode and
 ## The pause menu
 
 `Esc` during a song freezes it under the pause menu: **Continue**, **Restart song**,
-**Practice mode** (in Play mode), **Tempo** (`◀ 60 BPM ▶`, 40 to 120 in steps of 5, or `←`
-and `→`), **Beat tick**, **Labels** and **Menu**, back to the board the song was started
-from. `Esc` or `Space` continues too.
+**Practice mode** (in Play mode), **Tempo** (`◀ 60 BPM ▶`, 40 to 120 in steps of 5; E and F
+on its row), **Beat tick**, **Labels** and **Menu**, back to the board the song was started
+from. It opens on Continue, so A, `Enter` or `Space` continues at once; B or `Esc` does too.
 
 You let go of the key to reach for `Esc`, so a branch can't be held through a pause. On
 Continue the gorilla floats up at the branch it hung on, or the next one if it was in the
@@ -102,11 +101,11 @@ since its fifth is F double sharp; it sounds the same as Gaug and Ebaug anyway. 
 to pick it, or a row's or a difficulty's name to pick all of it, or none if all of it is
 already picked. One chord at least stays picked. **Done** goes back to the drill board.
 
-On the MIDI keyboard one row is marked with a yellow frame, Major when the menu opens. The
-keys C4 to B4 pick in it, each the button under the key written over its column: C#4 is Db
-in the Major row, C#m in the Minor one. In Done's row any of them goes back. A note below C4 marks the row above, a note above B4 the
-row below, round from one end to the other. `Space` and `Esc` go back too. What you picked
-lasts until the game is closed.
+From the piano it works as every menu does. It opens on C in the Major row. C and D move
+between rows and keep the column, or take the nearest chord where the row has none there; E
+and F walk along the row, round from one end to the other, over its difficulty's and its
+kind's names too; A picks what is under the cursor. B, `Esc` or **Done** goes back. What
+you picked lasts until the game is closed.
 
 ### The little keyboard
 
@@ -230,8 +229,9 @@ A file the importer can't read is left out of the list, with a warning in the co
   no instructions (a tutorial will teach the rules): a main menu of wooden planks hanging on
   lianas opens a board for each way to play, `Esc` opens a [pause menu](#the-pause-menu)
   holding the settings the spike keeps in its top bar, and the end panel offers Play again
-  and Menu, all on the same wood. Only the chord grid is picked from by playing notes; the
-  other menus take the mouse until piano control comes back.
+  and Menu, all on the same wood. Every menu is worked from the piano's white keys (or the
+  arrows, `Enter` and `Esc`), with a sign showing which keys do what. Pausing a song still
+  takes `Esc`.
 - **Input timing.** Godot input events carry no timestamp, so a note is stamped when the
   event is dispatched, once per frame: about 16 ms of resolution at 60 fps against a
   ±350 ms window at 60 BPM. The spike uses Web MIDI's own timestamps.
@@ -276,8 +276,10 @@ them around:
 | `scripts/key_signature.gd` | Puts the song's sharps or flats after the clef |
 | `scripts/drill.gd` | Makes up the chord drill's tune and deals its chords; which the chord grid offers, and how they are spelled |
 | `scripts/main_menu.gd` | The main menu: its planks, and the song and drill boards they open |
-| `scripts/plank.gd`, `ropes.gd` | A wooden plank that hangs askew and straightens under the mouse; the two lianas a plank or board hangs by |
-| `scripts/chord_menu.gd` | The chord drill's chord grid: builds it and works it from the MIDI keyboard |
+| `scripts/plank.gd`, `ropes.gd` | A wooden plank that hangs askew and straightens while selected; the two lianas a plank or board hangs by |
+| `scripts/menu_cursor.gd` | The selection on every menu: moves it, does what the six keys do on each kind of row, draws the frames, places the sign |
+| `scripts/menu_sign.gd` | Draws the sign beside the selection: one octave, the keys that do something lit |
+| `scripts/chord_menu.gd` | The chord drill's chord grid: builds it, and hands the menu cursor its rows |
 | `scripts/pause_menu.gd` | The pause menu: its buttons and toggles, the tempo's steps |
 | `scripts/progress_line.gd` | Draws the progress line along the top, gliding after the gorilla |
 | `scripts/piano.gd` | Draws the little keyboard |
@@ -285,7 +287,7 @@ them around:
 | `scripts/metronome.gd` | The beat tick |
 | `scripts/note_input.gd` | MIDI and keyboard input |
 | `scripts/hud.gd` | The counters, the menus' wiring, messages, what the little keyboard lights |
-| `scripts/dev_autoplay.gd` | Dev check only, see below |
+| `scripts/dev_autoplay.gd`, `dev_cursor_check.gd` | Dev checks only, see below |
 
 Branches, lianas and logs only appear when the game runs, because `level.gd` lays them out
 from the song. To change how they look, open `scenes/branch.tscn`, `scenes/liana.tscn` or
@@ -320,20 +322,38 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   `drill: 16 chords, 4 beats apart`.
 - `--beats=<n>`, with `--drill`, a chord every n beats instead of 4; the result is the same.
 - `--pause` pauses with `Esc` three times, once each: mid-fall, hanging on branch 10 and in
-  the first rest. It lets go of its note while paused, steps the tempo up with `→` and
-  continues with `Space` a second later. Each `paused state=... cur=...` line is followed by
-  `resumed`: the fall as `FALL` on the same branch, the hang as `WAIT` on its branch, the
-  rest as `WAIT` on the next, the tempo 5 BPM higher each time. A pause costs nothing, so
+  the first rest. It lets go of its note while paused, and a second later works the pause
+  menu: the first time by notes (D down to Tempo, F a step up, B to continue), the second
+  by keys (`↓` to Tempo, `→`, `Esc`), the third with `Enter`. Each `paused state=... cur=...`
+  line is followed by `resumed`: the fall as `FALL` on the same branch, the hang as `WAIT`
+  on its branch, the rest as `WAIT` on the next. The first two print `pause: tempo 65`, then
+  `70` (at 120 BPM, F and `→` do nothing: `pause: tempo 120`). A pause costs nothing, so
   expect the same result as without it: `WON falls=2 bananas=5`, or with `--learn` one
   pause and `WON falls=0 bananas=4 misses=1`.
-- `--menu` works the main menu before playing instead of starting at once: `Esc` and
-  `Space` on the main page (nothing happens), the board for the mode (Play song, or Learn
-  song or Chord drill with `--learn` or `--drill`; on the drill board it also turns Minor on
-  and Major off, tries to turn Minor off, and opens More options and closes it), `Esc` back,
-  the board again, `Space`. At the end it presses the end panel's Menu. It checks each step
-  and prints `menu: started from PLAY` and `menu: back on PLAY` (or `LEARN`, `DRILL`); on
-  the drill, `menu: kinds ok` once the round deals only the minor chords picked.
+- `--menu` works the menus by MIDI notes in mixed octaves before playing, instead of
+  starting at once, checking the selection and the sign's lit keys at each step: on the main
+  page the mouse, `Esc` and B (nothing happens); D down to the board for the mode (Play
+  song, or Learn song or Chord drill with `--learn` or `--drill`) and A; there it steps the
+  song on with F and back with E, and walks down past the Chord sign row (with `--chords`),
+  or on the drill board turns Minor on and Major off, tries to turn Minor off, opens More
+  options, picks and unpicks C in the chord grid and goes back with B; B to the main page,
+  A on the same plank, and `↑`, `↓`, `Space` to start. At the end it picks Menu on the end
+  panel with F and A. It prints `menu: started from PLAY` and `menu: back on PLAY` (or
+  `LEARN`, `DRILL`); on the drill, `menu: kinds ok` once the round deals only the minor
+  chords picked.
+- Every `--autoplay` run also plays an A on the end panel in its first second, which does
+  nothing, and once the panel's sign shows prints `end: guard ok`.
 - `--bpm=<n>` plays at n BPM instead of 60, for a quicker check. Every result above is the
   same at 120.
 - `--perf` prints fps and draw calls once a second.
 - `--shots=<dir>` saves a screenshot every second.
+
+The menu cursor's rules (rows wrapping, values stopping at their ends, hidden rows skipped,
+the nearest cell below, what the sign lights) have a check of their own, on throwaway
+buttons:
+
+```powershell
+& "C:/game-dev/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot-implementations/king-gong --script res://scripts/dev_cursor_check.gd
+```
+
+It prints `cursor: ok`.
