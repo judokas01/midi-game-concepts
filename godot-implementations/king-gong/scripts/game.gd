@@ -808,8 +808,9 @@ func _on_source_changed(_source: String) -> void:
 	_setup_piano()
 
 
+## The drill names no notes: the gorilla plays them itself, and it's about the chords.
 func _refresh_labels() -> void:
-	world.show_labels(notes, labels, hint, note_input, not by_itself)
+	world.show_labels(notes, labels, hint, note_input, not by_itself, mode != Hud.Mode.DRILL)
 
 
 ## The chord keys of the keyboard fallback, one per root: the song's chords, or in the drill

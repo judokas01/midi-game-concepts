@@ -82,14 +82,14 @@ func chord_log(i: int) -> ChordLog:
 	return _logs_by_note.get(i)
 
 
-## Note names on the branches and the `hint` on each log, with the computer key when playing
-## on the keyboard (on the branches only with `tune_keys`, when you play the tune). Without
-## labels the logs keep their hint.
-func show_labels(notes: Array[Song.Note], on: bool, hint: ChordLog.Hint, keys: NoteInput, tune_keys := true) -> void:
+## Note names on the branches (not without `note_names`) and the `hint` on each log, with the
+## computer key when playing on the keyboard (on the branches only with `tune_keys`, when you
+## play the tune). Without labels the logs keep their hint.
+func show_labels(notes: Array[Song.Note], on: bool, hint: ChordLog.Hint, keys: NoteInput, tune_keys := true, note_names := true) -> void:
 	for i in notes.size():
 		var key := keys.key_for(notes[i].midi) if tune_keys else ""
 		var text := notes[i].name + (" · " + key if key != "" else "")
-		branch(i).set_label(text if on else "")
+		branch(i).set_label(text if on and note_names else "")
 		if notes[i].chord:
 			chord_log(i).show_hint(hint, keys.chord_key_for(notes[i].chord) if on else "")
 

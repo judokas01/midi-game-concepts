@@ -90,7 +90,8 @@ made-up tune of 8, 16, 32 or 64 chords (**In a round**), a new one every 4 beats
 **Chord every**), dealt like cards from the ones picked: each comes up as often as the
 others, in a shuffled order, never twice running unless it is the only one. The
 gorilla climbs it by itself and waits at every log until you play its chord, anywhere on the
-keyboard. The tune is the chord's own notes between C4 and C5. A banana hangs at every
+keyboard. The tune is the chord's own notes between C4 and C5, unnamed: the drill is about
+the chords, so its branches carry no note names, Labels on or off. A banana hangs at every
 fourth chord. Restart or Play again deals a new round. **Chord sign** puts each chord's
 name on its log, or its notes in the bass clef. A seventh's four notes reach a ledger line
 off the staff, E2 below (E7, Eb7, Em7…) or C4 above (D7, Db7…), so its sign is a taller
@@ -322,8 +323,8 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   (there, the wrong one is a chord).
 - `--drill` plays the chord drill, with every chord the chord grid offers picked, 16 a
   round, once striking a wrong chord: expect `WON falls=0 bananas=4 misses=1`. It first
-  checks that the chords sit the chosen number of beats apart and says so:
-  `drill: 16 chords, 4 beats apart`.
+  checks that the chords sit the chosen number of beats apart and that no branch carries a
+  note name, and says so: `drill: 16 chords, 4 beats apart`, then `drill: no note names`.
 - `--beats=<n>`, with `--drill`, a chord every n beats instead of 4; the result is the same.
 - `--pause` pauses with `Esc` three times, once each: mid-fall, hanging on branch 10 and in
   the first rest. It lets go of its note while paused, and a second later works the pause

@@ -484,6 +484,13 @@ func _check_drill_spacing() -> void:
 			push_error("drill chords %.2f beats apart, not %d" % [at[k] - at[k - 1], game.drill_beats])
 			return
 	print("drill: %d chords, %d beats apart" % [at.size(), game.drill_beats])
+	# the drill is about the chords: the gorilla plays the notes itself, unnamed, labels on or off
+	for i in game.notes.size():
+		var name: String = game.world.branch(i).get_node("NoteLabel").text
+		if name != "":
+			push_error("the drill's note %d is labelled %s" % [i, name])
+			return
+	print("drill: no note names")
 
 
 ## The progress line's share of the level only ever grows, falls, swings back and pauses included.
