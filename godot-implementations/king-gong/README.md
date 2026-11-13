@@ -25,7 +25,7 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | Main menu | Wooden planks: **Play song**, **Learn song** ([learn mode](#learn-mode)), **Chord drill** ([drill chords](#chord-drill)), **Exit game**; Tutorial and Campaign are coming. Each of the first three opens a board with its options and **Start** |
 | Song `◀` list `▶` | On the Play song and Learn song boards: which song, the built-in ones and then [your own](#your-own-songs) |
 | Part: Treble clef / Bass clef / Treble + chords / Chords only | On the song boards: how to play the song. [Chords only](#chords-only): the gorilla plays the tune, you the chords |
-| Chord sign | On the song boards, with chords: the sign on each log shows the chord's name, or its notes in the bass clef. The chord drill always shows the name |
+| Chord sign | On the song boards (with chords), the Chord drill board and the pause menu (with chords): the sign on each log shows the chord's name, or its notes in the bass clef. One setting: changed in one place, it changes in all |
 | Chords, In a round, Chord every | On the Chord drill board: which chords it deals (More options opens the [chord grid](#the-chord-grid)), how many a round has (8, 16, 32, 64) and how many beats apart they come (1 to 8) |
 | MIDI notes on the menus | Six white keys, in any octave: **C** ▲ up, **D** ▼ down, **E** ◀ and **F** ▶ change the selected row (the song, part or value before or after, along a row of buttons, or an on/off flipped), **A** ✓ presses, **B** ✕ goes back. A wooden sign beside the selection shows one octave with the keys that do something there lit. The other keys do nothing, and the end panel waits a second before it listens, in case your hands are still playing |
 | `↑` `↓` `←` `→`, `Enter` or `Space`, `Esc` | On the menus: the same as C D E F, A and B, at once on the end panel too. The mouse selects what it points at and clicks as ever |
@@ -46,8 +46,9 @@ the magic bananas (`∞` in practice mode), the falls (`wrong` in Learn mode and
 
 `Esc` during a song freezes it under the pause menu: **Continue**, **Restart song**,
 **Practice mode** (in Play mode), **Tempo** (`◀ 60 BPM ▶`, 40 to 120 in steps of 5; E and F
-on its row), **Beat tick**, **Labels** and **Menu**, back to the board the song was started
-from. It opens on Continue, so A, `Enter` or `Space` continues at once; B or `Esc` does too.
+on its row), **Beat tick**, **Labels**, **Chord sign** (with chords: each log's name or its
+notes in the bass clef, changed on the logs at once) and **Menu**, back to the board the
+song was started from. It opens on Continue, so A, `Enter` or `Space` continues at once; B or `Esc` does too.
 
 You let go of the key to reach for `Esc`, so a branch can't be held through a pause. On
 Continue the gorilla floats up at the branch it hung on, or the next one if it was in the
@@ -90,7 +91,10 @@ made-up tune of 8, 16, 32 or 64 chords (**In a round**), a new one every 4 beats
 others, in a shuffled order, never twice running unless it is the only one. The
 gorilla climbs it by itself and waits at every log until you play its chord, anywhere on the
 keyboard. The tune is the chord's own notes between C4 and C5. A banana hangs at every
-fourth chord. Restart or Play again deals a new round.
+fourth chord. Restart or Play again deals a new round. **Chord sign** puts each chord's
+name on its log, or its notes in the bass clef. A seventh's four notes reach a ledger line
+off the staff, E2 below (E7, Eb7, Em7…) or C4 above (D7, Db7…), so its sign is a taller
+board than a triad's.
 
 ### The chord grid
 
@@ -287,7 +291,7 @@ them around:
 | `scripts/metronome.gd` | The beat tick |
 | `scripts/note_input.gd` | MIDI and keyboard input |
 | `scripts/hud.gd` | The counters, the menus' wiring, messages, what the little keyboard lights |
-| `scripts/dev_autoplay.gd`, `dev_cursor_check.gd` | Dev checks only, see below |
+| `scripts/dev_autoplay.gd`, `dev_cursor_check.gd`, `dev_sign_check.gd` | Dev checks only, see below |
 
 Branches, lianas and logs only appear when the game runs, because `level.gd` lays them out
 from the song. To change how they look, open `scenes/branch.tscn`, `scenes/liana.tscn` or
@@ -327,20 +331,25 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   by keys (`↓` to Tempo, `→`, `Esc`), the third with `Enter`. Each `paused state=... cur=...`
   line is followed by `resumed`: the fall as `FALL` on the same branch, the hang as `WAIT`
   on its branch, the rest as `WAIT` on the next. The first two print `pause: tempo 65`, then
-  `70` (at 120 BPM, F and `→` do nothing: `pause: tempo 120`). A pause costs nothing, so
-  expect the same result as without it: `WON falls=2 bananas=5`, or with `--learn` one
-  pause and `WON falls=0 bananas=4 misses=1`.
+  `70` (at 120 BPM, F and `→` do nothing: `pause: tempo 120`). With `--chords` the first
+  time it also walks down to Chord sign, picks Bass clef with F and checks every log shows
+  it at once and the boards say the same: `pause: bass clef ok`. A pause costs nothing, so
+  expect the same result as without it: `WON falls=2 bananas=5`, with `--learn` one pause
+  and `WON falls=0 bananas=4 misses=1`, with `--chords` `WON falls=3 bananas=4`. If a pause
+  menu doesn't continue, the run ends with `autoplay: the pause menu did not continue`.
 - `--menu` works the menus by MIDI notes in mixed octaves before playing, instead of
   starting at once, checking the selection and the sign's lit keys at each step: on the main
   page the mouse, `Esc` and B (nothing happens); D down to the board for the mode (Play
   song, or Learn song or Chord drill with `--learn` or `--drill`) and A; there it steps the
   song on with F and back with E, and walks down past the Chord sign row (with `--chords`),
   or on the drill board turns Minor on and Major off, tries to turn Minor off, opens More
-  options, picks and unpicks C in the chord grid and goes back with B; B to the main page,
+  options, picks and unpicks C in the chord grid, goes back with B and picks Bass clef on
+  Chord sign; B to the main page,
   A on the same plank, and `↑`, `↓`, `Space` to start. At the end it picks Menu on the end
   panel with F and A. It prints `menu: started from PLAY` and `menu: back on PLAY` (or
   `LEARN`, `DRILL`); on the drill, `menu: kinds ok` once the round deals only the minor
-  chords picked.
+  chords picked, and `menu: bass clef ok` once every log shows the bass clef. If the walk
+  never starts the song, the run ends with `autoplay: the menus never started the song`.
 - Every `--autoplay` run also plays an A on the end panel in its first second, which does
   nothing, and once the panel's sign shows prints `end: guard ok`.
 - `--bpm=<n>` plays at n BPM instead of 60, for a quicker check. Every result above is the
@@ -357,3 +366,13 @@ buttons:
 ```
 
 It prints `cursor: ok`.
+
+The signs on the logs have one too: every chord the drill offers, sevenths included, in the
+bass clef, each note on the staff or one ledger line off it and inside its board, with its
+sharp or flat, and the name and every triad on the board they always had:
+
+```powershell
+& "C:/game-dev/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot-implementations/king-gong --script res://scripts/dev_sign_check.gd
+```
+
+It prints `sign: ok`.

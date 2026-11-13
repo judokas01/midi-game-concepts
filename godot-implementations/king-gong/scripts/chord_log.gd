@@ -1,7 +1,8 @@
 extends Node2D
 ## A chord change: a log across the gorilla's path just before the branch where the new chord
 ## starts, coloured by the chord, with a sign on top that names it or writes it in the bass
-## clef. The chord, played on time, breaks it: the top is kicked off and falls away, the stump
+## clef, on a taller board for a seventh, whose four notes reach a ledger line off the staff.
+## The chord, played on time, breaks it: the top is kicked off and falls away, the stump
 ## stays. Run into, it shakes and stays up.
 
 enum Hint { NAME, BASS_CLEF }
@@ -14,8 +15,11 @@ const COLOURS := {"C": Color("d8453a"), "D": Color("ec8a2c"), "E": Color("e0bd2a
 const SIGN_Y := Staff.SKY_TOP + 2.6 * Staff.STEP   # every sign hangs here, in the staff's top space
 const BREAKS_BELOW := 1.9                          # steps below its branch: where the gorilla's foot lands
 const SIGN_STEP := 5.5                             # half a line spacing of the sign's bass staff, in pixels
+const BOARD := preload("res://art/chord_sign.svg")
+const TALL_BOARD := preload("res://art/chord_sign_tall.svg")   # for a seventh in the bass clef
 
 var _shake: Tween
+var _tall := false   # four notes: in the bass clef, the taller board
 
 @onready var _stump: Line2D = $Stump
 @onready var _splinters: Sprite2D = $Splinters
@@ -23,9 +27,11 @@ var _shake: Tween
 @onready var _top: Node2D = $Top
 @onready var _bark: Line2D = $Top/Bark
 @onready var _sign: Node2D = $Top/Sign
+@onready var _board: Sprite2D = $Top/Sign/Board
 @onready var _name: Label = $Top/Sign/Name
 @onready var _staff: Node2D = $Top/Sign/Staff
 @onready var _key: Label = $Top/Sign/Key
+@onready var _key_y := _key.position.y   # under the board
 
 
 ## Stands just before `note`'s branch, from the floor up to the sign.
@@ -47,12 +53,21 @@ func setup(note: Song.Note) -> void:
 	var wide := _name.label_settings.font.get_string_size(chord.name, HORIZONTAL_ALIGNMENT_LEFT, -1, _name.label_settings.font_size).x
 	_name.pivot_offset = _name.size / 2.0
 	_name.scale = Vector2.ONE * minf(1.0, (_name.size.x - 4.0) / wide)   # "Cmaj7" shrinks to fit the board
-	for k in 3:
-		var y := (4 - chord.steps[k]) * SIGN_STEP   # the staff's middle line, D3, is step 4
-		(_staff.get_node("Head%d" % (k + 1)) as Sprite2D).position.y = y
+	_tall = chord.steps.size() > 3
+	for k in 4:
+		var head: Sprite2D = _staff.get_node("Head%d" % (k + 1))
 		var mark: Label = _staff.get_node("Accidental%d" % (k + 1))
+		head.visible = k < chord.steps.size()
+		mark.visible = head.visible
+		if not head.visible:
+			continue
+		var y := (4 - chord.steps[k]) * SIGN_STEP   # the staff's middle line, D3, is step 4
+		head.position.y = y
 		mark.text = ["♭", "", "♯"][chord.accidentals[k] + 1]
 		mark.position.y = y - mark.size.y / 2.0
+	# past the spaces just off the staff (F2 below, B3 above): only a seventh, on E2 or up to C4
+	_staff.get_node("LedgerBelow").visible = chord.steps.min() <= -2
+	_staff.get_node("LedgerAbove").visible = chord.steps.max() >= 10
 
 
 ## By its root, darker for a minor chord.
@@ -64,6 +79,9 @@ static func colour_of(chord: Song.Chord) -> Color:
 func show_hint(hint: Hint, key: String) -> void:
 	_name.visible = hint == Hint.NAME
 	_staff.visible = hint == Hint.BASS_CLEF
+	var tall := _tall and hint == Hint.BASS_CLEF
+	_board.texture = TALL_BOARD if tall else BOARD
+	_key.position.y = _key_y + (TALL_BOARD.get_height() - BOARD.get_height()) / 2.0 if tall else _key_y
 	_key.text = "key " + key if key != "" else ""
 
 

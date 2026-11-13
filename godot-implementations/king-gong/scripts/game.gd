@@ -296,7 +296,7 @@ func pause() -> void:
 	_blocked = {}
 	_missed_chord = false
 	get_tree().paused = true
-	hud.open_pause(mode == Hud.Mode.PLAY, practice, bpm, tick_on, labels)
+	hud.open_pause(mode == Hud.Mode.PLAY, practice, bpm, tick_on, labels, chords, hint)
 
 
 ## Continue. A fall or a bounce carries on where it was. Hanging can't survive the pause, as the
@@ -809,7 +809,7 @@ func _on_source_changed(_source: String) -> void:
 
 
 func _refresh_labels() -> void:
-	world.show_labels(notes, labels, ChordLog.Hint.NAME if mode == Hud.Mode.DRILL else hint, note_input, not by_itself)
+	world.show_labels(notes, labels, hint, note_input, not by_itself)
 
 
 ## The chord keys of the keyboard fallback, one per root: the song's chords, or in the drill

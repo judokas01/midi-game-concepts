@@ -95,6 +95,10 @@ corner_radius_bottom_left = 5
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_hint"]
 
+[sub_resource type="ButtonGroup" id="ButtonGroup_drill_hint"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_pause_hint"]
+
 [node name="Game" type="Node2D" unique_id=2093278088]
 script = ExtResource("1_game")
 
@@ -1030,6 +1034,36 @@ focus_mode = 0
 theme_override_font_sizes/font_size = 15
 text = "▶"
 
+[node name="SignCaption" type="Label" parent="Hud/MainMenu/Drill/Board/Rows/Grid"]
+layout_mode = 2
+theme_type_variation = &"BoardCaption"
+text = "Chord sign"
+horizontal_alignment = 2
+
+[node name="Sign" type="HBoxContainer" parent="Hud/MainMenu/Drill/Board/Rows/Grid"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Button" parent="Hud/MainMenu/Drill/Board/Rows/Grid/Sign"]
+custom_minimum_size = Vector2(90, 34)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_drill_hint")
+text = "Name"
+
+[node name="Bass" type="Button" parent="Hud/MainMenu/Drill/Board/Rows/Grid/Sign"]
+custom_minimum_size = Vector2(90, 34)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_group = SubResource("ButtonGroup_drill_hint")
+text = "Bass clef"
+
 [node name="HintCaption" type="Label" parent="Hud/MainMenu/Drill/Board/Rows/Grid"]
 layout_mode = 2
 theme_type_variation = &"BoardCaption"
@@ -1266,6 +1300,36 @@ focus_mode = 0
 theme_override_font_sizes/font_size = 15
 toggle_mode = true
 text = "off"
+
+[node name="Sign" type="HBoxContainer" parent="Hud/PauseMenu/Center/Panel/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Caption" type="Label" parent="Hud/PauseMenu/Center/Panel/Rows/Sign"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Chord sign"
+theme_type_variation = &"BoardCaption"
+
+[node name="Name" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows/Sign"]
+custom_minimum_size = Vector2(76, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_pause_hint")
+text = "Name"
+
+[node name="Bass" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows/Sign"]
+custom_minimum_size = Vector2(76, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+toggle_mode = true
+button_group = SubResource("ButtonGroup_pause_hint")
+text = "Bass clef"
 
 [node name="Menu" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=931932808]
 custom_minimum_size = Vector2(0, 46)

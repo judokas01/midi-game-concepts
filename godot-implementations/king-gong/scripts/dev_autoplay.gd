@@ -20,7 +20,8 @@ extends Node
 ##                        note while paused, as a player reaching for Esc would; a second later
 ##                        it steps the tempo up by notes (D to Tempo, F) and continues with B,
 ##                        then by keys (down arrows, right arrow, Esc), and last continues with
-##                        Enter
+##                        Enter. With chords, the first time it also picks Bass clef on Chord
+##                        sign and checks the logs show it
 ##   -- --menu            with --autoplay, works the menus by MIDI notes in mixed octaves (C up,
 ##                        D down, E and F left and right, A press, B back) instead of starting
 ##                        at once, checking the selection and the sign's lit keys at each step:
@@ -28,7 +29,8 @@ extends Node
 ##                        (Play song, or Learn song or Chord drill with --learn or --drill), where
 ##                        it steps the song on and back and walks down past the Chord sign row,
 ##                        or on the drill board turns Minor on and Major off, tries Minor off,
-##                        opens More options, toggles C in the chord grid and goes back with B;
+##                        opens More options, toggles C in the chord grid, goes back with B and
+##                        picks Bass clef on Chord sign;
 ##                        B to the main page, A on the same plank, and the arrows and Space to
 ##                        start. At the end it presses the end panel's Menu and checks the same
 ##                        board is back
@@ -40,6 +42,7 @@ const Game := preload("res://scripts/game.gd")
 const Song := preload("res://scripts/song.gd")
 const Hud := preload("res://scripts/hud.gd")
 const Drill := preload("res://scripts/drill.gd")
+const ChordLog := preload("res://scripts/chord_log.gd")
 const MainMenu := preload("res://scripts/main_menu.gd")
 const ChordMenu := preload("res://scripts/chord_menu.gd")
 const FLUB_AT := 5         # the bot plays a wrong note when reaching for this branch, once
@@ -134,7 +137,7 @@ func _ready() -> void:
 		game.set_drill.call_deferred(Drill.all_chords(), Drill.COUNT, _beats)
 		game.set_mode.call_deferred(Hud.Mode.DRILL)
 		_menu_page = MainMenu.Page.DRILL
-		_menu_steps = ["main", "pick", "drill", "width", "width_check", "more", "grid", "grid_back", "again", "start", "started"]
+		_menu_steps = ["main", "pick", "drill", "width", "width_check", "more", "grid", "grid_back", "sign", "again", "start", "started"]
 	if _autoplay and not _menu:
 		game.start.call_deferred()
 
@@ -302,7 +305,9 @@ func _work_menu(now: float) -> bool:
 	var songs := "Songs/Board/Rows/"
 	var drill := "Drill/Board/Rows/"
 	var grid: ChordMenu = game.hud.get_node("ChordMenu")
-	match _menu_steps[_menu_step]:
+	var step := _menu_steps[_menu_step]
+	_menu_step += 1   # before the step: one that breaks halfway is not tried again and again
+	match step:
 		"main":
 			_expect(menu.visible and menu.page == MainMenu.Page.MAIN and not game.started and not _pill().visible,
 				"the game opens on the main page, the counters hidden")
@@ -384,6 +389,14 @@ func _work_menu(now: float) -> bool:
 		"grid_back":
 			_expect(not game.hud.chords_open() and menu.visible and menu.page == MainMenu.Page.DRILL, "B closes the chord grid back to the drill board")
 			_expect(cursor.selected() == menu.get_node(drill + "Foot/Start"), "the drill board is back on Start")
+		"sign":
+			_note("C", 3)
+			_note("C", 5)
+			_expect(_row_name() == "Sign" and _lit() == "CDFB", "C twice from Start goes up to the chord sign, on Name, F lit: %s %s" % [_row_name(), _lit()])
+			_note("F", 2)
+			_expect(game.hint == ChordLog.Hint.BASS_CLEF, "F picks the bass clef")
+			_expect(menu.get_node(songs + "Grid/Sign/Bass").button_pressed and not menu.get_node(songs + "Grid/Sign/Name").button_pressed,
+				"the song boards show the bass clef picked too")
 			_note("B", 1)
 		"again":
 			_expect(menu.visible and menu.page == MainMenu.Page.MAIN, "B goes back from a board to the main page")
@@ -396,12 +409,19 @@ func _work_menu(now: float) -> bool:
 			_key(KEY_SPACE)
 		"started":
 			_expect(game.started and not menu.visible and _pill().visible, "up, down and Space start from Start, and the counters show")
+			if not game.started:
+				print("autoplay: the menus never started the song")
+				get_tree().quit()
+				return true
 			print("menu: started from %s" % MainMenu.Page.keys()[_menu_page])
 			if _menu_page == MainMenu.Page.DRILL:
 				var dealt := game.notes.filter(func(n: Song.Note) -> bool: return n.chord != null).map(func(n: Song.Note) -> String: return n.chord.name)
 				_expect(dealt.all(func(c: String) -> bool: return c in MINORS), "the round deals only the chords picked: %s" % [dealt])
 				print("menu: kinds ok")
-	_menu_step += 1
+				var named := range(game.notes.size()).filter(func(i: int) -> bool:
+					return game.notes[i].chord != null and not game.world.chord_log(i).get_node("Top/Sign/Staff").visible)
+				_expect(named.is_empty(), "every log's sign shows the bass clef, not the %d named" % named.size())
+				print("menu: bass clef ok")
 	return true
 
 
@@ -535,6 +555,9 @@ func _start_pause(now: float) -> bool:
 func _work_pause(now: float) -> void:
 	var paused := get_tree().paused
 	if _resume_sent:
+		if paused and now - _paused_at > PAUSE_FOR_MS + PAUSE_DEADLINE_MS:
+			print("autoplay: the pause menu did not continue")
+			get_tree().quit()
 		if not paused:
 			print("resumed state=%s cur=%d bpm=%d" % [Game.State.keys()[game.state], game.cur, roundi(game.bpm)])
 			_pausing_since = 0.0
@@ -560,7 +583,10 @@ func _work_pause(now: float) -> void:
 		_expect(_cursor().selected() == rows.get_node("Continue") and _lit() == "CDAB", "the pause menu opens on Continue: %s" % _lit())
 		var downs := 3 if game.mode == Hud.Mode.PLAY else 2   # Practice mode's row is Play's only
 		var up_to := minf(game.bpm + 5.0, 120.0)
-		match _pauses:
+		var nth := _pauses
+		_pauses += 1          # before the walk: one that breaks halfway is not tried again and again
+		_resume_sent = true
+		match nth:
 			0:
 				for k in downs:
 					_note("D", 2 + 2 * k)
@@ -569,6 +595,20 @@ func _work_pause(now: float) -> void:
 				_note("F", 3)
 				_expect(is_equal_approx(game.bpm, up_to), "F on Tempo steps it to %d, not %d" % [up_to, game.bpm])
 				print("pause: tempo %d" % roundi(game.bpm))
+				_expect(rows.get_node("Sign").visible == game.chords, "the chord sign row shows with chords only")
+				if game.chords:
+					for k in 3:
+						_note("D", 3 + k)   # Tick, Labels, Chord sign
+					_expect(_cursor().selected() == rows.get_node("Sign") and _lit() == "CDFB", "D walks down to Chord sign, on Name: %s" % _lit())
+					_note("F", 4)
+					_expect(game.hint == ChordLog.Hint.BASS_CLEF, "F on Chord sign picks the bass clef")
+					var named := range(game.notes.size()).filter(func(i: int) -> bool:
+						return game.notes[i].chord != null and not game.world.chord_log(i).get_node("Top/Sign/Staff").visible)
+					_expect(named.is_empty(), "every log's sign shows the bass clef at once, not the %d named" % named.size())
+					var boards := ["Songs/Board/Rows/Grid/Sign/Bass", "Drill/Board/Rows/Grid/Sign/Bass"]
+					_expect(boards.all(func(b: String) -> bool: return (_main_menu().get_node(b) as Button).button_pressed),
+						"the song and drill boards show the bass clef picked too")
+					print("pause: bass clef ok")
 				_note("B", 5)
 			1:
 				for k in downs:
@@ -581,8 +621,6 @@ func _work_pause(now: float) -> void:
 					_held_over = game.notes[game.cur + 1].midi   # the note it plays next, once in the song
 					game.note_on(_held_over, now)   # still down from the menu: playing it again lets the old one go
 				_key(KEY_ENTER)
-		_pauses += 1
-		_resume_sent = true
 
 
 ## Presses and lets go of computer key `code`, as if typed.

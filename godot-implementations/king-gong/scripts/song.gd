@@ -288,7 +288,10 @@ static func parse_chord(name: String) -> Chord:
 	var quality := name.substr(root.length())
 	c.minor = quality in ["m", "m7", "dim"]
 	var letter: int = LETTER_STEP[root[0]]
-	var octave := 2 if letter >= LETTER_STEP["F"] else 3   # roots F2 to E3 keep the chord inside the bass staff
+	# roots F2 to E3 keep a triad inside the bass staff; E2 to D3 keep a seventh, a third
+	# taller, within a ledger line of it, below for E2, above for D3's seventh, C4
+	var lowest := "E" if QUALITIES[quality].size() > 3 else "F"
+	var octave := 2 if letter >= LETTER_STEP[lowest] else 3
 	var root_midi: int = 12 * (octave + 1) + LETTER_SEMI[root[0]] + ACCIDENTALS[root.substr(1)]
 	for k: int in QUALITIES[quality].size():
 		var degree := 7 * octave + letter + 2 * k   # every other white key: a third up each time

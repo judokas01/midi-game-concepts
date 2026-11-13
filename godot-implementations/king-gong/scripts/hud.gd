@@ -86,6 +86,9 @@ func _ready() -> void:
 	_pause.tempo_changed.connect(func(bpm: float) -> void: tempo_changed.emit(bpm))
 	_pause.tick_toggled.connect(func(on: bool) -> void: tick_toggled.emit(on))
 	_pause.labels_toggled.connect(func(on: bool) -> void: labels_toggled.emit(on))
+	_pause.hint_chosen.connect(func(hint: ChordLog.Hint) -> void:
+		_menu.show_hint(hint)   # the boards say the same
+		hint_chosen.emit(hint))
 	_pause.practice_toggled.connect(func(on: bool) -> void:
 		_menu.set_practice(on)   # the Play song board's says the same
 		practice_toggled.emit(on))
@@ -184,8 +187,8 @@ func menu_up() -> bool:
 
 
 ## The pause menu, showing the game's settings as they are.
-func open_pause(play_mode: bool, practice: bool, bpm: float, tick: bool, labels: bool) -> void:
-	_pause.open(play_mode, practice, bpm, tick, labels)
+func open_pause(play_mode: bool, practice: bool, bpm: float, tick: bool, labels: bool, chords: bool, hint: ChordLog.Hint) -> void:
+	_pause.open(play_mode, practice, bpm, tick, labels, chords, hint)
 
 
 func close_pause() -> void:

@@ -40,6 +40,8 @@ var _last_board := Page.PLAY    # the main page opens with its plank selected
 @onready var _song: OptionButton = _song_rows.get_node("Song/Pick")
 @onready var _practice: Button = _song_rows.get_node("Practice/Toggle")
 @onready var _hints: Array[Button] = [_song_rows.get_node("Hint/Toggle"), _drill_rows.get_node("Hint/Toggle")]
+@onready var _signs: Array = [_song_rows, _drill_rows].map(func(rows: GridContainer) -> Array:
+	return [rows.get_node("Sign/Name"), rows.get_node("Sign/Bass")])   # Chord sign, on each board
 @onready var _beats: Label = _drill_rows.get_node("Every/Value")
 @onready var _picked: Label = _drill_rows.get_node("Chords/Picked/Summary")
 @onready var _kinds: Control = _drill_rows.get_node("Chords/Kinds")
@@ -60,6 +62,9 @@ func _ready() -> void:
 			for other in _hints:
 				_set_toggle(other, on)   # the same on both boards
 			piano_toggled.emit(on))
+	for sign: Array in _signs:
+		_on_chosen(sign[0], _choose_hint.bind(ChordLog.Hint.NAME))
+		_on_chosen(sign[1], _choose_hint.bind(ChordLog.Hint.BASS_CLEF))
 	open(Page.MAIN)
 
 
@@ -73,8 +78,6 @@ func _ready_songs() -> void:
 	_on_chosen(_song_rows.get_node("Part/Bass"), func() -> void: style_chosen.emit(Song.Clef.BASS, false, false))
 	_on_chosen(_song_rows.get_node("Part/Chords"), func() -> void: style_chosen.emit(Song.Clef.TREBLE, true, false))
 	_on_chosen(_song_rows.get_node("Part/ChordsOnly"), func() -> void: style_chosen.emit(Song.Clef.TREBLE, true, true))
-	_on_chosen(_song_rows.get_node("Sign/Name"), func() -> void: hint_chosen.emit(ChordLog.Hint.NAME))
-	_on_chosen(_song_rows.get_node("Sign/Bass"), func() -> void: hint_chosen.emit(ChordLog.Hint.BASS_CLEF))
 	_toggle(_practice, func(on: bool) -> void: practice_toggled.emit(on))
 
 
@@ -135,6 +138,7 @@ func cursor_rows() -> Array:
 				MenuCursor.press(_drill_rows.get_node("Chords/Picked/More")),
 				MenuCursor.choice(rounds, _parts(_drill_rows, "Round")),
 				MenuCursor.value(_step_beats, _can_step_beats, _parts(_drill_rows, "Every")),
+				MenuCursor.choice(_signs[1], _parts(_drill_rows, "Sign")),
 				MenuCursor.press(_drill_rows.get_node("Hint/Toggle"), _parts(_drill_rows, "Hint")),
 				_foot(_drill),
 			]
@@ -142,7 +146,7 @@ func cursor_rows() -> Array:
 	return [
 		MenuCursor.value(_next_song, _can_step_song, _parts(_song_rows, "Song")),
 		MenuCursor.choice(parts, _parts(_song_rows, "Part")),
-		MenuCursor.choice([_song_rows.get_node("Sign/Name"), _song_rows.get_node("Sign/Bass")], _parts(_song_rows, "Sign")),
+		MenuCursor.choice(_signs[0], _parts(_song_rows, "Sign")),
 		MenuCursor.press(_practice, _parts(_song_rows, "Practice")),
 		MenuCursor.press(_song_rows.get_node("Hint/Toggle"), _parts(_song_rows, "Hint")),
 		_foot(_songs),
@@ -184,6 +188,13 @@ func show_style(chords: bool) -> void:
 
 func set_practice(on: bool) -> void:
 	_set_toggle(_practice, on)
+
+
+## The chord sign picked on both boards: each log's name, or its notes in the bass clef.
+func show_hint(hint: ChordLog.Hint) -> void:
+	for sign: Array in _signs:
+		(sign[0] as Button).set_pressed_no_signal(hint == ChordLog.Hint.NAME)
+		(sign[1] as Button).set_pressed_no_signal(hint == ChordLog.Hint.BASS_CLEF)
 
 
 ## The drill's `chords`, by name, under the kind buttons: "C D E F G A B", as many names as fit
@@ -232,6 +243,11 @@ func _show_beats() -> void:
 func _next_song(by: int) -> void:
 	_song.select(posmod(_song.selected + by, _song.item_count))
 	song_chosen.emit(_song.selected)
+
+
+func _choose_hint(hint: ChordLog.Hint) -> void:
+	show_hint(hint)   # the same on both boards
+	hint_chosen.emit(hint)
 
 
 ## `picked` runs when `button`, one of a group, becomes the chosen one.
