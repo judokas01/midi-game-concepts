@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="44" viewBox="0 0 120 44">
+  <defs>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a5763f"/>
+      <stop offset="0.5" stop-color="#80562f"/>
+      <stop offset="1" stop-color="#5e3c1f"/>
+    </linearGradient>
+  </defs>
+  <!-- a thin shadow under the plank -->
+  <rect x="2" y="5" width="116" height="39" rx="8" fill="#000" opacity="0.3"/>
+  <rect x="1" y="2" width="118" height="39" rx="8" fill="#3f2713"/>
+  <rect x="1" y="1" width="118" height="38" rx="8" fill="url(#wood)"/>
+  <!-- grain -->
+  <path d="M 10 11 H 110 M 6 17 H 76 M 88 16.5 H 114 M 12 23 H 104 M 4 29 H 52 M 64 29.5 H 116"
+        stroke="#4e3119" stroke-width="1.1" stroke-linecap="round" opacity="0.45"/>
+  <path d="M 20 14 H 98 M 30 26 H 90" stroke="#c0904f" stroke-width="0.9" stroke-linecap="round" opacity="0.35"/>
+  <!-- a light top edge and a dark bottom edge -->
+  <path d="M 8 2.6 H 112" stroke="#f0cf94" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+  <path d="M 8 37.4 H 112" stroke="#3a2210" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
+  <!-- nail heads at the ends -->
+  <circle cx="7.5" cy="20" r="1.8" fill="#3a2a1a"/>
+  <circle cx="7" cy="19.4" r="0.7" fill="#a89070"/>
+  <circle cx="112.5" cy="20" r="1.8" fill="#3a2a1a"/>
+  <circle cx="112" cy="19.4" r="0.7" fill="#a89070"/>
+</svg>

@@ -21,3 +21,7 @@ middle, and the flat's stem level with the middle of its bowl.
 signature doesn't give: sharp, flat and natural. Their origin (0, 0) goes on the branch's
 middle line: the macaw's feet and the blossom's stalk are on its top edge, the bat's feet
 on its bottom edge.
+
+`plank.svg` and `board.svg` are the menus' wood: a plank for the hanging buttons and signs,
+and a board with a dark panel inside for the menus' options. Both are stretched as 9-slice
+(the theme's `Plank`, `Sign` and `Board`), so their ends and corners keep their size.

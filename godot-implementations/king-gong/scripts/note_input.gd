@@ -37,23 +37,6 @@ func key_for(midi: int) -> String:
 	return KEY_LABELS[i] if i >= 0 and source == "keyboard" else ""
 
 
-## What the keys play, as [keys, notes]: ["A S D F G H J K", "C4 D4 E4 F4 G4 A4 B4 C5"], and
-## with `black` the black keys after it, ["W E T Y U", "C#4 D#4 F#4 G#4 A#4"], with `flats`
-## "Db4 Eb4 Gb4 Ab4 Bb4".
-func key_notes(black: bool, flats: bool) -> Array:
-	var out := []
-	for blacks: bool in ([false, true] if black else [false]):
-		var letters: Array[String] = []
-		var names: Array[String] = []
-		for i in KEYS.size():
-			var m := KEY_MIDI[i] + 12 * octave_shift
-			if Song.is_black(m) == blacks:
-				letters.append(KEY_LABELS[i])
-				names.append(Song.note_name(m, flats))
-		out.append([" ".join(letters), " ".join(names)])
-	return out
-
-
 ## One key for each chord of the song: the key of its root. Two chords on the same root, C and
 ## Cm, would share a key; the first one gets it.
 func set_chords(chords: Array) -> void:
@@ -69,15 +52,6 @@ func chord_key_for(chord: Song.Chord) -> String:
 	var root := chord.midi[0] % 12
 	var own: Song.Chord = _chord_keys.get(CHORD_KEYS[root])
 	return CHORD_LABELS[root] if source == "keyboard" and own != null and own.name == chord.name else ""
-
-
-## What the chord keys play, "Z = C  V = F  Shift+N = Bb"; empty without chords.
-func chord_key_notes() -> String:
-	var pairs: Array[String] = []
-	for root in CHORD_KEYS.size():
-		if _chord_keys.has(CHORD_KEYS[root]):
-			pairs.append("%s = %s" % [CHORD_LABELS[root], _chord_keys[CHORD_KEYS[root]].name])
-	return "  ".join(pairs)
 
 
 func _ready() -> void:

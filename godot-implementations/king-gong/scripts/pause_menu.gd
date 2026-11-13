@@ -1,6 +1,6 @@
 extends ColorRect
 ## The pause menu, over a song frozen by Esc: continue, restart, practice mode, the tempo, the
-## beat tick, the labels, or back to the start screen. It runs while the game is paused. It
+## beat tick, the labels, or back to the main menu. It runs while the game is paused. It
 ## shows the game's settings as they are when it opens and only reports changes; the game
 ## keeps them.
 

@@ -1,9 +1,8 @@
 extends CanvasLayer
 ## Everything drawn over the game: the counters (the progress line along the top, and the pill
-## with bananas and falls), the start overlay and the chord drill's chord menu, the pause
-## menu, why you fell, the end panel, the little keyboard, and bananas flying to the counter.
-## The start overlay, the end panel and the chord menu can also be worked from the MIDI
-## keyboard: each of their buttons has a note, written on it.
+## with bananas and falls), the main menu and the chord drill's chord grid, the pause menu, why
+## you fell, the end panel, the little keyboard, and bananas flying to the counter. Of the
+## menus only the chord grid listens to the MIDI keyboard.
 
 signal start_pressed
 signal restart_pressed
@@ -14,13 +13,13 @@ signal mode_chosen(mode: Mode)
 signal song_chosen(song: int)
 signal style_chosen(clef: Song.Clef, chords: bool, by_itself: bool)
 signal hint_chosen(hint: ChordLog.Hint)
-signal drill_chosen(chords: Array, count: int)
+signal drill_chosen(chords: Array, count: int, beats: int)
 signal practice_toggled(on: bool)
 signal piano_toggled(on: bool)
 signal menu_pressed
 signal continue_pressed
 
-## What the start screen offers: play a song, learn one, or drill chords.
+## What the main menu's boards play: a song, learning one, or the chord drill.
 enum Mode { PLAY, LEARN, DRILL }
 
 const Song := preload("res://scripts/song.gd")
@@ -28,51 +27,23 @@ const ChordLog := preload("res://scripts/chord_log.gd")
 const Staff := preload("res://scripts/staff.gd")
 const Piano := preload("res://scripts/piano.gd")
 const ChordMenu := preload("res://scripts/chord_menu.gd")
+const MainMenu := preload("res://scripts/main_menu.gd")
 const PauseMenu := preload("res://scripts/pause_menu.gd")
 const ProgressLine := preload("res://scripts/progress_line.gd")
 const GlowingBanana := preload("res://scenes/glowing_banana.tscn")
 const TUNE_COLOUR := Color("f2c230")   # the next note on the little keyboard; a chord's is its log's
-# The note that picks each button, by its path under the menu; on the start screen any other
-# note starts the game. Buttons never shown together can share a note.
-const START_KEYS := {"Song/Previous": 48, "Song/Next": 50, "Mode/Play": 52, "Mode/Learn": 53, "Mode/Drill": 55,
-	"Clef/Treble": 60, "Clef/Bass": 62, "Clef/Chords": 64, "Clef/ChordsOnly": 65,
-	"Picked/Choose": 60,
-	"Hint/Name": 67, "Hint/Bass": 69, "Practice": 71, "PianoHint": 71}
-const LEARN_BODY := """[center][b]Learn a song before you play it.[/b] The five long bushes are the staff lines and every branch sits on a note. The gorilla waits on its branch until you play the next one's note, as long as it takes: nothing is timed and you can't fall.
-
-The little keyboard at the bottom lights the key to play. Turn it off to practise reading the notes alone.[/center]"""
-const DRILL_BODY := """[center][b]Learn the chords.[/b] The gorilla climbs a made-up tune by itself and stops at every log. Play the chord on the log's sign to knock it down: its notes in any octave and any order.
-
-The little keyboard at the bottom lights the chord's keys. Choose which chords to practise and how many a round deals.[/center]"""
-const CHORD_RULES := {
-	Mode.PLAY: "[center]A coloured log stands wherever the chord changes. [b]Play its chord in the left hand[/b], lower than the branch's note, together with that note, and the gorilla kicks the log down. Leave it standing and you bounce off.[/center]",
-	Mode.LEARN: "[center]A coloured log stands wherever the chord changes. [b]Play its chord in the left hand[/b], lower than the branch's note, and that note in the right: the gorilla waits for both.[/center]",
-}
-const CHORDS_ONLY_RULES := {
-	Mode.PLAY: "[center]The gorilla plays the tune by itself. A coloured log stands wherever the chord changes: [b]play its chord[/b], anywhere on the keyboard, as the gorilla reaches it, and it kicks the log down. Too early or too late and it bounces off.[/center]",
-	Mode.LEARN: "[center]The gorilla plays the tune by itself and [b]waits at every log until you play its chord[/b], anywhere on the keyboard.[/center]",
-}
-const END_KEYS := {"Again": 60, "Menu": 62}
-const END_DEAF_MS := 800   # the end panel ignores notes this long, so a note still being played can't pick
+const MODES := {MainMenu.Page.PLAY: Mode.PLAY, MainMenu.Page.LEARN: Mode.LEARN, MainMenu.Page.DRILL: Mode.DRILL}
 
 var _banner_fade: Tween
-var _end_listens_at := 0
-var _play_body := ""   # the start screen's text for playing, as in the scene
-var _chord_from := 48  # the C the chord's keys start on
+var _chord_from := 48         # the C the chord's keys start on
+var _piano_wanted := false    # the little keyboard has something to show, once no menu covers it
 
 @onready var _progress: ProgressLine = $Progress
+@onready var _pill: Control = $Pill
 @onready var _banana_icon: Control = $Pill/Row/Bananas/Icon
 @onready var _banana_count: Label = $Pill/Row/Bananas/Count
 @onready var _falls: Label = $Pill/Row/Falls
-@onready var _overlay: Control = $Overlay
-@onready var _start_menu: Control = $Overlay/Center/Box
-@onready var _song: OptionButton = $Overlay/Center/Box/Song/Pick
-@onready var _end_menu: Control = $EndPanel/Lines/Buttons
-@onready var _overlay_keys: RichTextLabel = $Overlay/Center/Box/Keys
-@onready var _body: RichTextLabel = $Overlay/Center/Box/Body
-@onready var _chord_rule: RichTextLabel = $Overlay/Center/Box/ChordRule
-@onready var _hint: Control = $Overlay/Center/Box/Hint
-@onready var _picked: Label = $Overlay/Center/Box/Picked/Summary
+@onready var _menu: MainMenu = $MainMenu
 @onready var _chord_menu: ChordMenu = $ChordMenu
 @onready var _pause: PauseMenu = $PauseMenu
 @onready var _banner: Label = $Banner
@@ -84,27 +55,24 @@ var _chord_from := 48  # the C the chord's keys start on
 
 
 func _ready() -> void:
-	for song: Dictionary in Song.library():
-		_song.add_item(song.name)
-	_song.item_selected.connect(func(i: int) -> void: song_chosen.emit(i))
-	$Overlay/Center/Box/Song/Previous.pressed.connect(_next_song.bind(-1))
-	$Overlay/Center/Box/Song/Next.pressed.connect(_next_song.bind(1))
-	_on_chosen($Overlay/Center/Box/Mode/Play, func() -> void: mode_chosen.emit(Mode.PLAY))
-	_on_chosen($Overlay/Center/Box/Mode/Learn, func() -> void: mode_chosen.emit(Mode.LEARN))
-	_on_chosen($Overlay/Center/Box/Mode/Drill, func() -> void: mode_chosen.emit(Mode.DRILL))
-	_on_chosen($Overlay/Center/Box/Clef/Treble, func() -> void: style_chosen.emit(Song.Clef.TREBLE, false, false))
-	_on_chosen($Overlay/Center/Box/Clef/Bass, func() -> void: style_chosen.emit(Song.Clef.BASS, false, false))
-	_on_chosen($Overlay/Center/Box/Clef/Chords, func() -> void: style_chosen.emit(Song.Clef.TREBLE, true, false))
-	_on_chosen($Overlay/Center/Box/Clef/ChordsOnly, func() -> void: style_chosen.emit(Song.Clef.TREBLE, true, true))
-	_on_chosen($Overlay/Center/Box/Hint/Name, func() -> void: hint_chosen.emit(ChordLog.Hint.NAME))
-	_on_chosen($Overlay/Center/Box/Hint/Bass, func() -> void: hint_chosen.emit(ChordLog.Hint.BASS_CLEF))
-	$Overlay/Center/Box/Picked/Choose.pressed.connect(open_chords)
-	_chord_menu.closed.connect(func(chords: Array, count: int) -> void:
-		_show_picked(chords, count)
-		_overlay.show()
-		drill_chosen.emit(chords, count))
-	_show_picked(_chord_menu.picked(), _chord_menu.count)
-	$Overlay/Center/Box/Practice.toggled.connect(func(on: bool) -> void: practice_toggled.emit(on))
+	_menu.page_opened.connect(func(page: MainMenu.Page) -> void: mode_chosen.emit(MODES[page]))
+	_menu.start_pressed.connect(func() -> void: start_pressed.emit())
+	_menu.song_chosen.connect(func(i: int) -> void: song_chosen.emit(i))
+	_menu.style_chosen.connect(func(clef: Song.Clef, chords: bool, by_itself: bool) -> void: style_chosen.emit(clef, chords, by_itself))
+	_menu.hint_chosen.connect(func(hint: ChordLog.Hint) -> void: hint_chosen.emit(hint))
+	_menu.practice_toggled.connect(func(on: bool) -> void: practice_toggled.emit(on))
+	_menu.piano_toggled.connect(func(on: bool) -> void: piano_toggled.emit(on))
+	_menu.drill_changed.connect(func(_count: int, _beats: int) -> void: _choose_drill())
+	_menu.chords_requested.connect(open_chords)
+	_menu.kind_toggled.connect(func(quality: String, on: bool) -> void:
+		_chord_menu.set_kind(quality, on)
+		_show_picked()
+		_choose_drill())
+	_chord_menu.closed.connect(func(_chords: Array) -> void:
+		_menu.show()
+		_show_picked()
+		_choose_drill())
+	_show_picked()
 	_pause.continue_pressed.connect(func() -> void: continue_pressed.emit())
 	_pause.restart_pressed.connect(func() -> void: restart_pressed.emit())
 	_pause.menu_pressed.connect(func() -> void: menu_pressed.emit())
@@ -112,19 +80,15 @@ func _ready() -> void:
 	_pause.tick_toggled.connect(func(on: bool) -> void: tick_toggled.emit(on))
 	_pause.labels_toggled.connect(func(on: bool) -> void: labels_toggled.emit(on))
 	_pause.practice_toggled.connect(func(on: bool) -> void:
-		$Overlay/Center/Box/Practice.set_pressed_no_signal(on)   # the start screen's says the same
+		_menu.set_practice(on)   # the Play song board's says the same
 		practice_toggled.emit(on))
-	$Overlay/Center/Box/PianoHint.toggled.connect(func(on: bool) -> void: piano_toggled.emit(on))
-	_play_body = _body.text
 	_chord_keys.fold = true
 	$EndPanel/Lines/Buttons/Again.pressed.connect(func() -> void: restart_pressed.emit())
 	$EndPanel/Lines/Buttons/Menu.pressed.connect(func() -> void: menu_pressed.emit())
-	for menu: Array in [[_start_menu, START_KEYS], [_end_menu, END_KEYS]]:
-		for path: String in menu[1]:
-			var button: Button = menu[0].get_node(path)
-			button.text += " · " + Song.note_name(menu[1][path])
-	_overlay.gui_input.connect(_on_overlay_input)
-	_progress.keep_clear = $Pill
+	_progress.keep_clear = _pill
+	_menu.visibility_changed.connect(_show_layers)
+	_chord_menu.visibility_changed.connect(_show_layers)
+	_show_layers()
 
 
 ## `bananas` < 0: they never run out, in practice mode. `missed`, "falls 2", as it is shown.
@@ -139,31 +103,9 @@ func show_progress(share: float) -> void:
 	_progress.show_progress(share)
 
 
-## What the computer keys play, on the start screen: `keys` as NoteInput.key_notes() gives
-## them, [["A S D F G H J K", "C4 D4 E4 F4 G4 A4 B4 C5"], ...]. `chords` is what the chord
-## keys play, "Z = C  V = F  B = G", or "" without chords.
-func show_key_notes(keys: Array, chords: String) -> void:
-	var overlay := "No MIDI? Keys %s." % ", ".join(keys.map(func(k: Array) -> String: return "[b]%s[/b] = %s" % k))
-	if chords != "":
-		overlay += " Chords: [b]%s[/b]." % chords
-	_overlay_keys.text = "[center]%s[/center]" % overlay
-
-
-## The start screen for `mode`: songs and how to play them, or the chord drill's kinds of
-## chord. It explains the logs and offers the chord hints only with `chords`; `by_itself`, the
-## gorilla plays the tune.
-func show_options(mode: Mode, chords: bool, by_itself: bool) -> void:
-	var drill := mode == Mode.DRILL
-	_body.text = {Mode.PLAY: _play_body, Mode.LEARN: LEARN_BODY, Mode.DRILL: DRILL_BODY}[mode]
-	$Overlay/Center/Box/Song.visible = not drill
-	$Overlay/Center/Box/Clef.visible = not drill
-	_chord_rule.visible = chords and not drill
-	if _chord_rule.visible:
-		_chord_rule.text = (CHORDS_ONLY_RULES if by_itself else CHORD_RULES)[mode]
-	_hint.visible = chords and not drill
-	_picked.get_parent().visible = drill
-	$Overlay/Center/Box/Practice.visible = mode == Mode.PLAY
-	$Overlay/Center/Box/PianoHint.visible = mode != Mode.PLAY
+## The Chord sign choice on the song boards is for a part with `chords` only.
+func show_style(chords: bool) -> void:
+	_menu.show_style(chords)
 
 
 ## The little keyboard: the chord's two octaves from the C `chord_from`, and the tune's keys
@@ -174,7 +116,8 @@ func set_piano(chord_from: int, tune_lo: int, tune_hi: int, letters := {}) -> vo
 	var tune_part: Control = _tune_keys.get_parent()
 	chord_part.visible = chord_from >= 0
 	tune_part.visible = tune_lo >= 0
-	_piano.visible = chord_part.visible or tune_part.visible
+	_piano_wanted = chord_part.visible or tune_part.visible
+	_show_layers()
 	if chord_part.visible:
 		_chord_from = chord_from
 		_chord_keys.set_range(chord_from, chord_from + 23)
@@ -205,17 +148,29 @@ func light_piano(chord: Song.Chord, note: Song.Note, left: Array, right: Array, 
 	_tune_keys.show_keys({note.midi: [TUNE_COLOUR, note.name]} if note else {}, right, wrong_right)
 
 
-func hide_overlay() -> void:
-	_overlay.hide()
+func hide_main_menu() -> void:
+	_menu.hide()
 
 
-func show_overlay() -> void:
-	_overlay.show()
+## The main menu, on the page it was left on.
+func show_main_menu() -> void:
+	_menu.show()
 
 
-## The start screen, the chord menu, the end panel or the pause menu is up.
+## A board of the main menu is up: Space starts from it.
+func on_board() -> bool:
+	return _menu.on_board()
+
+
+## Esc on the main menu: from a board back to the main page.
+func menu_back() -> void:
+	if _menu.visible:
+		_menu.back()
+
+
+## The main menu, the chord grid, the end panel or the pause menu is up.
 func menu_up() -> bool:
-	return _overlay.visible or _chord_menu.visible or _end.visible or _pause.visible
+	return _menu.visible or _chord_menu.visible or _end.visible or _pause.visible
 
 
 ## The pause menu, showing the game's settings as they are.
@@ -227,9 +182,9 @@ func close_pause() -> void:
 	_pause.close()
 
 
-## The chord drill's chord menu, in place of the start screen until it is closed.
+## The chord grid (More options on the drill board), in place of the main menu until it is closed.
 func open_chords() -> void:
-	_overlay.hide()
+	_menu.hide()
 	_chord_menu.open()
 
 
@@ -241,36 +196,12 @@ func close_chords() -> void:
 	_chord_menu.close()
 
 
-## Picks the button on MIDI note `m` in the menu that is up, as a click would. True if `m` is
-## one of that menu's notes, even when its button is hidden; every note is the chord menu's.
+## The chord grid's button on MIDI note `m`, picked as a click would. False when the chord grid
+## isn't up: no other menu listens to notes.
 func choose(m: int) -> bool:
-	if _chord_menu.visible:
-		_chord_menu.play(m)
-		return true
-	var menu := _start_menu
-	var keys := START_KEYS
-	if not _overlay.visible:
-		if not _end.visible or Time.get_ticks_msec() < _end_listens_at:
-			return false
-		menu = _end_menu
-		keys = END_KEYS
-	var path: Variant = null
-	for shown: String in keys:
-		if keys[shown] == m:
-			path = shown
-			if menu.get_node(shown).is_visible_in_tree():
-				break
-	if path == null:
+	if not _chord_menu.visible:
 		return false
-	var button: Button = menu.get_node(path)
-	if not button.is_visible_in_tree():
-		return true
-	if not button.toggle_mode:
-		button.pressed.emit()
-	elif button.button_group:
-		button.button_pressed = true
-	else:
-		button.button_pressed = not button.button_pressed
+	_chord_menu.play(m)
 	return true
 
 
@@ -292,7 +223,6 @@ func show_end(title: String, line: String) -> void:
 	$EndPanel/Lines/Title.text = title
 	$EndPanel/Lines/Line.text = line
 	_end.show()
-	_end_listens_at = Time.get_ticks_msec() + END_DEAF_MS
 
 
 func clear_messages() -> void:
@@ -317,34 +247,19 @@ func fly_banana(from: Vector2) -> void:
 	flight.tween_callback(fruit.queue_free)
 
 
-## The drill's `chords` and `count` on the start screen, "C F G Am · 16 a round": as many
-## names as fit in 40 letters.
-func _show_picked(chords: Array, count: int) -> void:
-	var names := []
-	for chord: String in chords:
-		if " ".join(names + [chord]).length() > 40:
-			break
-		names.append(chord)
-	var text := " ".join(names)
-	if names.size() < chords.size():
-		text += " and %d more" % (chords.size() - names.size())
-	_picked.text = "%s · %d a round" % [text, count]
+## The chord grid's picks on the drill board: named, and the kinds lit.
+func _show_picked() -> void:
+	_menu.show_picked(_chord_menu.picked(), _chord_menu.kinds())
 
 
-## The song `by` places down the list (up if negative), round from the end to the start.
-func _next_song(by: int) -> void:
-	_song.select(posmod(_song.selected + by, _song.item_count))
-	song_chosen.emit(_song.selected)
+## The drill as the chord grid and the drill board have it.
+func _choose_drill() -> void:
+	drill_chosen.emit(_chord_menu.picked(), _menu.count, _menu.beats)
 
 
-## `picked` runs when `button`, one of a group, becomes the chosen one: clicked or played.
-func _on_chosen(button: Button, picked: Callable) -> void:
-	button.toggled.connect(func(on: bool) -> void:
-		if on:
-			picked.call())
-
-
-func _on_overlay_input(event: InputEvent) -> void:
-	var click := event as InputEventMouseButton
-	if click and click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
-		start_pressed.emit()
+## The counters and the little keyboard hide while the main menu or the chord grid is up.
+func _show_layers() -> void:
+	var covered := _menu.visible or _chord_menu.visible
+	_progress.visible = not covered
+	_pill.visible = not covered
+	_piano.visible = _piano_wanted and not covered

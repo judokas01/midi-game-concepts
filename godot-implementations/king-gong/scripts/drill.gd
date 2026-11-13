@@ -1,11 +1,11 @@
 extends RefCounted
-## The chord drill: a made-up tune with a new chord every two beats, dealt from the chords
-## picked in the chord menu. The gorilla climbs the tune by itself and waits at each chord's
-## log until it is played.
+## The chord drill: a made-up tune with a new chord every few beats, dealt from the chords
+## picked on the drill board and in its chord grid. The gorilla climbs the tune by itself and
+## waits at each chord's log until it is played.
 
 const Song := preload("res://scripts/song.gd")
 
-## The chord menu's difficulties, each with its kinds of chord.
+## The chord grid's difficulties, each with its kinds of chord.
 const GROUPS := [["Major", [""]], ["Minor", ["m"]], ["Sevenths", ["7", "maj7", "m7"]], ["Dim & aug", ["dim", "aug"]]]
 ## The twelve roots, C to B, as each kind of chord on them is usually written: with a flat or
 ## a sharp, whichever never needs a double one. "" where both would: Baug, with F double sharp.
@@ -21,8 +21,12 @@ const ROOTS := {
 const START_CHORDS := ["C", "D", "E", "F", "G", "A", "B"]   # picked until the menu says otherwise
 const COUNTS := [8, 16, 32, 64]   # how many chords a round can have
 const COUNT := 16                 # until the menu says otherwise
+const BEATS := 4                  # a new chord this many beats after the last, until the menu says otherwise
+const BEATS_MIN := 1
+const BEATS_MAX := 8
 const BANANA_EVERY := 4     # chords
-const RHYTHMS := [[1.0, 1.0], [2.0], [1.0, 0.5, 0.5], [0.5, 0.5, 1.0]]   # the tune under each chord, in beats
+const RHYTHMS := [[1.0, 1.0], [2.0], [1.0, 0.5, 0.5], [0.5, 0.5, 1.0]]   # the tune under a chord, two beats at a time
+const ONE_BEAT := [[1.0], [0.5, 0.5]]                                     # and its last beat, when the chord has an odd number
 const LOWEST := 60          # the tune is the chord's own notes, from C4
 const HIGHEST := 72         # to C5, below the signs on the logs
 
@@ -45,8 +49,8 @@ static func quality_of(name: String) -> String:
 
 ## Entries as in Song.SONGS: `count` chords dealt from `chords`, by name, like cards: each
 ## comes up as often as the others, in a shuffled order, never twice running unless it is
-## the only one.
-static func entries(chords: Array, count: int) -> Array:
+## the only one. Each chord's tune lasts `beats` beats.
+static func entries(chords: Array, count: int, beats: int = BEATS) -> Array:
 	var out := []
 	var deck := []
 	var last := ""
@@ -59,13 +63,25 @@ static func entries(chords: Array, count: int) -> Array:
 		var name: String = deck.pop_back()
 		last = name
 		var tones := _tones(Song.parse_chord(name))
-		var rhythm: Array = RHYTHMS.pick_random()
+		var rhythm := _rhythm(beats)
 		for i in rhythm.size():
 			var note: String = tones.pick_random()
 			if i > 0:
 				out.append([note, rhythm[i]])
 			else:
 				out.append([note + ("*" if k % BANANA_EVERY == BANANA_EVERY - 1 else ""), rhythm[i], name])
+	return out
+
+
+## Note lengths that add up to `beats`: two beats at a time, then one if it is odd.
+static func _rhythm(beats: int) -> Array:
+	var out := []
+	var left := beats
+	while left >= 2:
+		out.append_array(RHYTHMS.pick_random())
+		left -= 2
+	if left == 1:
+		out.append_array(ONE_BEAT.pick_random())
 	return out
 
 

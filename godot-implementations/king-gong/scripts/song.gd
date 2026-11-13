@@ -184,7 +184,7 @@ static func beats_word(beats: float) -> String:
 	return "1 beat" if beats == 1.0 else "%s beats" % String.num(beats)
 
 
-## SONGS, then the scores in SONGS_DIR: the songs on the start screen, in its order.
+## SONGS, then the scores in SONGS_DIR: the songs on the song boards, in their order.
 static func library() -> Array:
 	if _library.is_empty():
 		_library = SONGS + ScoreImport.load_dir(SONGS_DIR)

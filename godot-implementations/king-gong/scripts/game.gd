@@ -34,13 +34,14 @@ const HOP := 1.5           # height of a bounce along the liana during a long re
 var bpm := 60.0
 var labels := true
 var tick_on := true
-var mode := Hud.Mode.PLAY      # this and the next seven are chosen on the start screen
+var mode := Hud.Mode.PLAY      # this and the next eight are chosen on the main menu's boards
 var song := 0                  # which of Song.library()
 var hint := ChordLog.Hint.NAME   # what the sign on each log shows
 var practice := false          # the magic bananas never run out
 var piano := true              # learn mode and the drill: the little keyboard lights what to play
 var drill_chords: Array = Drill.START_CHORDS   # the chords the drill deals, by name
 var drill_count := Drill.COUNT                 # and how many a round has
+var drill_beats := Drill.BEATS                 # and how many beats apart they are
 var _style := {clef = Song.Clef.TREBLE, chords = false, by_itself = false}   # how the songs are played
 
 # how this level is played: the songs' style, or the drill's
@@ -124,7 +125,7 @@ func _ready() -> void:
 	hud.piano_toggled.connect(set_piano)
 	hud.menu_pressed.connect(show_menu)
 	hud.continue_pressed.connect(resume)
-	var dev_flags := ["--autoplay", "--perf", "--chords", "--bass", "--chords-only", "--learn", "--drill", "--pause"]
+	var dev_flags := ["--autoplay", "--perf", "--chords", "--bass", "--chords-only", "--learn", "--drill", "--pause", "--menu"]
 	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in dev_flags or a.begins_with("--shots=") or a.begins_with("--song=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
 	now = now_ms()
@@ -152,7 +153,7 @@ func start() -> void:
 	if started:
 		return
 	started = true
-	hud.hide_overlay()
+	hud.hide_main_menu()
 	restart()
 
 
@@ -169,7 +170,7 @@ func restart() -> void:
 	$Clef/KeySignature.show_key(fifths, clef)
 	var bars: Array
 	if drill:   # new chords every time
-		notes = Song.parse_entries(Drill.entries(drill_chords, drill_count), clef, true)
+		notes = Song.parse_entries(Drill.entries(drill_chords, drill_count, drill_beats), clef, true)
 		bars = notes.filter(func(n: Song.Note) -> bool: return n.chord != null and n.beat > 0.0).map(func(n: Song.Note) -> float: return n.beat)
 	else:
 		notes = Song.parse(song, clef, chords)
@@ -216,14 +217,14 @@ func _track_progress() -> void:
 	hud.show_progress(_furthest)
 
 
-## Play, learn or drill; the level is laid out again behind the start screen.
+## Play, learn or drill, as the board opened on the main menu; the level is laid out again behind it.
 func set_mode(m: Hud.Mode) -> void:
 	mode = m
 	restart()
-	hud.show_options(mode, _style.chords, _style.by_itself)
+	hud.show_style(_style.chords)
 
 
-## Lays song `i` out behind the start screen.
+## Lays song `i` out behind the main menu.
 func set_song(i: int) -> void:
 	song = i
 	restart()
@@ -231,11 +232,11 @@ func set_song(i: int) -> void:
 
 ## How the songs are played. The bass clef plays the song lower, the keyboard fallback too.
 ## `with_chords` adds the chords to the treble clef; `itself`, the gorilla plays the tune and
-## you only the chords. The level is laid out again behind the start screen.
+## you only the chords. The level is laid out again behind the main menu.
 func set_style(c: Song.Clef, with_chords: bool, itself := false) -> void:
 	_style = {clef = c, chords = with_chords, by_itself = itself}
 	restart()
-	hud.show_options(mode, with_chords, itself)
+	hud.show_style(with_chords)
 
 
 ## The octave of the computer keys, from C: the one that plays the most of the song.
@@ -255,10 +256,11 @@ func set_hint(h: ChordLog.Hint) -> void:
 	_refresh_labels()
 
 
-## The drill deals `count` chords a round from `chords`, by name.
-func set_drill(chords: Array, count: int) -> void:
+## The drill deals `count` chords a round from `chords`, by name, `beats` beats apart.
+func set_drill(chords: Array, count: int, beats: int = Drill.BEATS) -> void:
 	drill_chords = chords
 	drill_count = count
+	drill_beats = beats
 	if mode == Hud.Mode.DRILL:
 		restart()
 
@@ -325,11 +327,12 @@ func _float_back(j: int) -> void:
 	_blend = {from = render.pos, rot = render.rot, t0 = now, dur = 400.0, hop = 0.0}
 
 
-## Back to the start screen, with the level laid out again behind it.
+## Back to the main menu, on the board the song was started from, with the level laid out again
+## behind it.
 func show_menu() -> void:
 	started = false
 	restart()
-	hud.show_overlay()
+	hud.show_main_menu()
 
 
 func beat_ms() -> float:
@@ -386,9 +389,8 @@ func wait_spot(r: int) -> Vector2:
 
 func note_on(m: int, ts: float) -> void:
 	if hud.menu_up():
-		# menus are worked from the MIDI keyboard; on the computer keyboard there is the mouse
-		if note_input.source == "MIDI" and not hud.choose(m) and not started:
-			start()   # any note that picks nothing; it grabs nothing either
+		if note_input.source == "MIDI":
+			hud.choose(m)   # only the chord grid listens; on the computer keyboard there is the mouse
 		return
 	if chords and (by_itself or m < _next_note()):
 		_left[m] = true
@@ -747,13 +749,14 @@ func _update_hud() -> void:
 
 # ---------------------------------------------------------------- settings
 
-## Space: starts, continues from the pause menu, or closes the chord menu back to the start screen.
+## Space: continues from the pause menu, closes the chord grid back to the drill board, or
+## starts from a board of the main menu.
 func _on_start_key() -> void:
 	if get_tree().paused:
 		resume()
 	elif hud.chords_open():
 		hud.close_chords()
-	else:
+	elif hud.on_board():
 		start()
 
 
@@ -762,8 +765,8 @@ func _on_restart_key() -> void:
 		restart()
 
 
-## Esc: pauses the song and continues it; closes the chord menu; from the end panel, back to
-## the start screen.
+## Esc: pauses the song and continues it; closes the chord grid; from the end panel, back to
+## the main menu; on the main menu, from a board back to the main page.
 func _on_menu_key() -> void:
 	if hud.chords_open():
 		hud.close_chords()
@@ -773,6 +776,8 @@ func _on_menu_key() -> void:
 		pause()
 	elif started:
 		show_menu()
+	else:
+		hud.menu_back()
 
 
 func _on_labels_toggled(on: bool) -> void:
@@ -793,7 +798,6 @@ func _refresh_labels() -> void:
 ## every root in the kind of chord the next log wants, so a wrong key plays a wrong chord.
 func _set_chord_keys() -> void:
 	var keyed := notes.map(func(n: Song.Note) -> Song.Chord: return n.chord).filter(func(c: Song.Chord) -> bool: return c != null)
-	var listed := ""
 	if mode == Hud.Mode.DRILL:
 		var ahead := notes.filter(func(n: Song.Note) -> bool: return n.log_up)
 		if not ahead.is_empty():
@@ -802,11 +806,7 @@ func _set_chord_keys() -> void:
 			for root: String in Drill.ROOTS[quality]:
 				if root != "":
 					keyed.append(Song.parse_chord(root + quality))
-		listed = "Z X C V B N M = C D E F G A B, with Shift a semitone up"   # all twelve would not fit
 	note_input.set_chords(keyed)
-	# the black keys only when the tune you play has any
-	var black := not by_itself and notes.any(func(n: Song.Note) -> bool: return Song.is_black(n.midi))
-	hud.show_key_notes(note_input.key_notes(black, fifths < 0), listed if listed != "" else note_input.chord_key_notes())
 	_refresh_labels()
 
 

@@ -1,0 +1,309 @@
+<style>
+  .design { margin: 26px 0 56px; max-width: 1060px; }
+  .dhead { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .dl { font-weight: 800; font-size: 24px; }
+  .dname { font-size: 20px; font-weight: 700; }
+  .dnote { color: var(--text-secondary); font-size: 14px; margin: 6px 0 8px; }
+  .tabs { display: flex; gap: 6px; margin: 8px 0 10px; flex-wrap: wrap; }
+  .tabs button { border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); border-radius: 14px; padding: 3px 12px; font-size: 13px; cursor: pointer; }
+  .tabs button.cur { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cards.picks { display: contents; }
+  .pickbtn { margin-left: auto; padding: 7px 18px; font-weight: 700; font-size: 14px; border-radius: 8px; }
+  .wrap { width: 100%; }
+
+  /* ---------- the game's look (ui/theme.tres) ---------- */
+  .stage { position: relative; width: 1280px; height: 720px; overflow: hidden; border-radius: 8px;
+    font-family: "Segoe UI", Arial, sans-serif; color: #ecebe4; line-height: 1.25; user-select: none;
+    background: #334a2e url(/files/level.png) no-repeat; background-size: 1380px auto; background-position: -50px -56px; }
+  .stage * { box-sizing: border-box; }
+  .screen { position: absolute; inset: 0; display: none; }
+  .screen.show { display: block; }
+  .ov { position: absolute; inset: 0; background: rgba(12, 18, 12, .82); }
+  .ov.light { background: rgba(12, 18, 12, .45); }
+  .stage .b { font-family: inherit; font-size: 15px; color: #ecebe4; background: #2b352d; border: 1px solid #3e4b40;
+    border-radius: 4px; padding: 4px 12px; min-height: 32px; cursor: pointer; display: inline-flex; align-items: center;
+    justify-content: center; gap: 8px; line-height: 1.2; }
+  .stage .b:hover { background: #374339; }
+  .stage .b.on { background: #4f8a3c; border-color: #4f8a3c; color: #fff; }
+  .stage .soon { opacity: .42; cursor: default !important; }
+  .stage .b.soon:hover { background: #2b352d; }
+  .stage .b.start { background: #f2c230; border-color: #f2c230; color: #1f2a1c; font-weight: 700; }
+  .stage .b.start:hover { background: #f7d35a; }
+  .grid { display: grid; grid-template-columns: max-content 1fr; gap: 14px 20px; align-items: center; }
+  .row { display: contents; }
+  .row.hidden, .row-st.hidden { display: none; }
+  .cap { color: #c4cec1; font-size: 15px; text-align: right; }
+  .ctl { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .brk { flex-basis: 100%; height: 0; }
+  .aside { color: #a9b5a5; font-size: 13px; margin-left: 6px; }
+  .pick { min-width: 300px; justify-content: space-between !important; }
+  .val { min-width: 84px; text-align: center; font-size: 15px; }
+  .summary { color: #c4cec1; font-size: 14px; margin-right: 6px; }
+  .toast { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); background: rgba(0, 0, 0, .82);
+    color: #f7e7a6; padding: 8px 18px; border-radius: 20px; font-size: 16px; opacity: 0; transition: opacity .2s;
+    pointer-events: none; z-index: 50; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+
+  /* ---------- A: centred column ---------- */
+  .A .col { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 10px; width: 340px; }
+  .A .title { font-size: 54px; font-weight: 800; color: #f7e7a6; text-align: center; margin-bottom: 22px; display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .A .title img { height: 46px; }
+  .A .item { font-size: 19px; min-height: 48px; border-radius: 6px; }
+  .A .tag { font-size: 11px; border: 1px solid currentColor; border-radius: 10px; padding: 1px 8px; }
+  .A .exit { margin-top: 16px; }
+  .A .panel { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(16, 22, 16, .88); border-radius: 12px; padding: 28px 38px; min-width: 700px; }
+  .A .subtitle { font-size: 30px; font-weight: 700; text-align: center; margin-bottom: 24px; }
+  .A .foot { display: flex; justify-content: space-between; margin-top: 30px; }
+  .A .foot .b { min-height: 42px; font-size: 17px; padding: 0 24px; }
+
+  /* ---------- B: side rail, level visible ---------- */
+  .B .rail { position: absolute; left: 0; top: 0; bottom: 0; width: 480px; padding: 58px 76px 46px 56px; display: flex; flex-direction: column;
+    background: linear-gradient(90deg, rgba(10, 15, 10, .95) 0%, rgba(10, 15, 10, .93) 80%, rgba(10, 15, 10, 0) 100%); }
+  .B .title { font-size: 48px; font-weight: 800; color: #f7e7a6; margin-bottom: 44px; }
+  .B .item { font-size: 25px; padding: 10px 0 10px 18px; border-left: 4px solid transparent; cursor: pointer; }
+  .B .item:hover:not(.soon) { border-left-color: #f2c230; color: #f7e7a6; background: linear-gradient(90deg, rgba(242, 194, 48, .15), transparent); }
+  .B .chip { font-size: 12px; border: 1px solid currentColor; border-radius: 10px; padding: 1px 8px; margin-left: 10px; vertical-align: middle; }
+  .B .exit { margin-top: auto; font-size: 19px; color: #a9b5a5; }
+  .B .back { font-size: 16px; color: #a9b5a5; cursor: pointer; margin-bottom: 8px; }
+  .B .back:hover { color: #f7e7a6; }
+  .B .subtitle { font-size: 38px; font-weight: 800; color: #f7e7a6; margin-bottom: 4px; }
+  .B .row-st .cap { font-size: 12px; letter-spacing: .09em; text-transform: uppercase; color: #a9b5a5; margin: 18px 0 7px; text-align: left; }
+  .B .grp[data-grp=part] { display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; }
+  .B .pick { min-width: 0; flex: 1; }
+  .B .bstart { margin-top: auto; width: 100%; min-height: 54px; font-size: 21px; border-radius: 6px; }
+  .B .preview { position: absolute; right: 28px; bottom: 26px; background: rgba(16, 22, 16, .75); border-radius: 20px; padding: 7px 16px; font-size: 15px; color: #f7e7a6; }
+
+  /* ---------- C: tiles ---------- */
+  .C .wrap2 { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; }
+  .C .title { font-size: 54px; font-weight: 800; color: #f7e7a6; }
+  .C .tiles, .C .small { display: flex; gap: 22px; }
+  .C .tile { width: 250px; height: 230px; background: rgba(43, 53, 45, .92); border: 2px solid #3e4b40; border-radius: 16px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px; font-size: 23px; font-weight: 700; cursor: pointer; transition: transform .12s, border-color .12s; }
+  .C .tile:hover { border-color: #f2c230; transform: translateY(-4px); }
+  .C .ic { height: 100px; width: auto; }
+  .C img.ic { height: 112px; width: 47px; }
+  .C .tile.sm { width: 386px; height: 64px; flex-direction: row; font-size: 18px; gap: 12px; }
+  .C .tile.sm:hover { transform: none; border-color: #3e4b40; }
+  .C .tile.sm svg { height: 30px; width: 30px; }
+  .C .tile.sm em { font-style: normal; font-size: 11px; font-weight: 400; color: #c4cec1; border: 1px solid #c4cec1; border-radius: 10px; padding: 1px 8px; }
+  .C .exitc { position: absolute; right: 28px; top: 24px; }
+  .C .panel { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 790px; background: rgba(16, 22, 16, .93); border: 2px solid #3e4b40; border-radius: 16px; overflow: hidden; }
+  .C .head { display: flex; align-items: center; gap: 14px; padding: 12px 22px; background: rgba(43, 53, 45, .95); border-bottom: 1px solid #3e4b40; font-size: 26px; font-weight: 700; }
+  .C .head svg.ic { height: 44px; width: auto; }
+  .C .head img.ic { height: 46px; width: 19px; }
+  .C .cback { width: 38px; min-height: 38px; font-size: 20px; padding: 0; }
+  .C .body { padding: 26px 34px 8px; }
+  .C .foot { display: flex; justify-content: flex-end; padding: 18px 34px 26px; }
+  .C .cstart { min-height: 48px; font-size: 19px; padding: 0 38px; border-radius: 8px; }
+
+  /* ---------- D: jungle signs ---------- */
+  .D .wood { background: repeating-linear-gradient(177deg, rgba(0, 0, 0, 0) 0 7px, rgba(0, 0, 0, .08) 7px 9px), linear-gradient(180deg, #9b6d3e 0%, #7d5330 50%, #5f3d21 100%);
+    box-shadow: inset 0 2px 0 rgba(255, 220, 160, .25), inset 0 -3px 0 rgba(0, 0, 0, .3), 0 5px 10px rgba(0, 0, 0, .45);
+    border-radius: 9px; color: #f7e7a6; text-shadow: 0 2px 0 rgba(0, 0, 0, .55); font-weight: 700; }
+  .D .hang { position: absolute; left: 50%; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; width: 440px; }
+  .D .sign { position: relative; margin-top: 56px; font-size: 50px; padding: 8px 44px; }
+  .D .rope { position: absolute; bottom: 100%; width: 4px; background: linear-gradient(90deg, #8a6a3a, #c9a46a, #8a6a3a); box-shadow: 0 0 2px rgba(0, 0, 0, .5); }
+  .D .plank { position: relative; width: 300px; min-height: 50px; margin-top: 30px; font-size: 21px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transform: rotate(var(--r, 0deg)); transition: transform .15s, filter .15s; }
+  .D .plank:hover:not(.soon) { transform: rotate(0deg) scale(1.04); filter: brightness(1.12); }
+  .D .plank.soon { filter: grayscale(.85) brightness(.62); opacity: 1; }
+  .D .ptag { position: absolute; right: -16px; top: -9px; background: #f7e7a6; color: #3a2a14; font-size: 11px; padding: 2px 8px; border-radius: 3px; transform: rotate(8deg); text-shadow: none; }
+  .D .plank.exitp { width: 190px; min-height: 40px; font-size: 17px; margin-top: 30px; }
+  .D .board { position: absolute; left: 50%; top: 53%; transform: translate(-50%, -50%); width: 820px; padding: 58px 46px 34px; }
+  .D .board::before { content: ""; position: absolute; inset: 12px; border-radius: 6px; background: rgba(22, 16, 10, .86); }
+  .D .board > * { position: relative; }
+  .D .board > .rope { position: absolute; }
+  .D .bsign { position: absolute !important; left: 50%; top: -26px; transform: translateX(-50%) rotate(-1deg); font-size: 28px; padding: 8px 36px; white-space: nowrap; z-index: 2; }
+  .D .board .cap { color: #f0dcb0; }
+  .D .dfoot { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; }
+  .D .dback { min-height: 42px; width: 140px; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .D .dstart { min-height: 48px; font-size: 19px; padding: 0 30px; border-radius: 8px; }
+  .D .dstart img { height: 22px; }
+</style>
+
+<h2>Main menu: four designs</h2>
+<p class="subtitle">Each one works like the real thing: open Play song, Learn song or Chord drill, flip the options, use Back. The chips above each picture jump between its screens. Click <b>Choose</b> on the one you like, or tell me what to mix.</p>
+
+<div class="cards picks">
+
+<section class="design" data-d="A">
+  <div class="dhead"><span class="dl">A</span><span class="dname">Centred column</span>
+    <div class="card pickbtn" data-choice="A" onclick="toggleSelect(this)">Choose A</div></div>
+  <p class="dnote">Like the pause menu: one column of buttons over the dimmed level; each mode opens a panel. The plainest, and the level behind is hard to see.</p>
+  <div class="tabs"></div><div class="wrap"><div class="stage A"></div></div>
+</section>
+
+<section class="design" data-d="B">
+  <div class="dhead"><span class="dl">B</span><span class="dname">Side rail</span>
+    <div class="card pickbtn" data-choice="B" onclick="toggleSelect(this)">Choose B</div></div>
+  <p class="dnote">The menu lives on the left; the level stays in view on the right and redraws as you pick a song or a part, so you see what you are about to climb.</p>
+  <div class="tabs"></div><div class="wrap"><div class="stage B"></div></div>
+</section>
+
+<section class="design" data-d="C">
+  <div class="dhead"><span class="dl">C</span><span class="dname">Tiles</span>
+    <div class="card pickbtn" data-choice="C" onclick="toggleSelect(this)">Choose C</div></div>
+  <p class="dnote">Three big tiles for the modes, the coming-soon ones smaller below, Exit in the corner. The most "game" of the plain ones; the tiles need icons (the gorilla is the game's own).</p>
+  <div class="tabs"></div><div class="wrap"><div class="stage C"></div></div>
+</section>
+
+<section class="design" data-d="D">
+  <div class="dhead"><span class="dl">D</span><span class="dname">Jungle signs</span>
+    <div class="card pickbtn" data-choice="D" onclick="toggleSelect(this)">Choose D</div></div>
+  <p class="dnote">Wooden planks hanging from the canopy on lianas; each mode opens a hanging board. The most character, and the most work: wood art for every button.</p>
+  <div class="tabs"></div><div class="wrap"><div class="stage D"></div></div>
+</section>
+
+</div>
+
+<script>
+(function () {
+  const SONGS = ["Twinkle Twinkle", "Mary's Lamb", "Ducklings", "Lightly Row", "Ode to Joy", "Jingle Bells",
+    "Mary's Lamb in D", "Ode to Joy in F", "Mountain King in C minor", "Für Elise in F minor"];
+  const PARTS = ["Treble clef", "Bass clef", "Treble + chords", "Chords only"];
+  const KINDS = [["Major", ""], ["Minor", "m"], ["7", "7"], ["maj7", "maj7"], ["m7", "m7"], ["dim", "dim"], ["aug", "aug"]];
+  const WHITE = ["C", "D", "E", "F", "G", "A", "B"];
+  const TITLE = { play: "Play song", learn: "Learn song", drill: "Chord drill" };
+  const STAFF = '<g stroke="#c4cec1" stroke-width="2" opacity=".55"><line x1="4" y1="22" x2="92" y2="22"/><line x1="4" y1="34" x2="92" y2="34"/><line x1="4" y1="46" x2="92" y2="46"/><line x1="4" y1="58" x2="92" y2="58"/><line x1="4" y1="70" x2="92" y2="70"/></g>';
+  const ICON = {
+    play: '<img class="ic" src="/files/gorilla.svg">',
+    learn: '<svg class="ic" viewBox="0 0 96 90">' + STAFF + '<ellipse cx="44" cy="52" rx="9" ry="7" transform="rotate(-20 44 52)" fill="#f2c230"/><line x1="52" y1="50" x2="52" y2="12" stroke="#f2c230" stroke-width="3"/></svg>',
+    drill: '<svg class="ic" viewBox="0 0 96 90">' + STAFF + '<g fill="#f2c230"><ellipse cx="46" cy="64" rx="9" ry="7" transform="rotate(-20 46 64)"/><ellipse cx="46" cy="52" rx="9" ry="7" transform="rotate(-20 46 52)"/><ellipse cx="46" cy="40" rx="9" ry="7" transform="rotate(-20 46 40)"/></g><line x1="54" y1="62" x2="54" y2="8" stroke="#f2c230" stroke-width="3"/></svg>',
+    tut: '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#c4cec1" stroke-width="3"/><text x="20" y="27" text-anchor="middle" font-size="20" font-weight="700" fill="#c4cec1">?</text></svg>',
+    camp: '<svg viewBox="0 0 40 40"><line x1="11" y1="5" x2="11" y2="36" stroke="#c4cec1" stroke-width="3"/><path d="M11 6 L33 12 L11 20 Z" fill="#c4cec1"/></svg>',
+  };
+
+  function grp(name, labels, on, extra) {
+    return '<div class="grp ctlgrp" data-grp="' + name + '" style="display:contents">' + labels.map((t, i) =>
+      '<button class="b' + (i === on ? ' on' : '') + '"' + (extra ? extra(i) : '') + '>' + t + '</button>').join('') + '</div>';
+  }
+  const ROW = {
+    song: () => ({ cap: "Song", html: '<button class="b" data-act="song" data-by="-1">◀</button><button class="b pick"><span class="sn">' + SONGS[0] + '</span><span>▾</span></button><button class="b" data-act="song" data-by="1">▶</button>' }),
+    part: () => ({ cap: "Part", html: '<div class="grp" data-grp="part" style="display:contents">' + PARTS.map((t, i) => '<button class="b' + (i ? '' : ' on') + '"' + (i >= 2 ? ' data-chords' : '') + '>' + t + '</button>').join('') + '</div>' }),
+    sign: () => ({ cap: "Chord sign", cls: "needs-chords hidden", html: '<div class="grp" data-grp="sign" style="display:contents"><button class="b on">Name</button><button class="b">Bass clef</button></div>' }),
+    practice: () => ({ cap: "Practice mode", html: '<button class="b" data-tog>off</button><span class="aside">infinite bananas</span>' }),
+    hint: () => ({ cap: "Keyboard hint", html: '<button class="b on" data-tog>on</button>' }),
+    kinds: () => ({ cap: "Chords", html: KINDS.map((k, i) => '<button class="b kind' + (i ? '' : ' on') + '" data-q="' + k[1] + '">' + k[0] + '</button>').join('') +
+      '<div class="brk"></div><span class="summary">' + summary([""]) + '</span><button class="b" data-toast="Opens the full chord grid, as it is today">More options</button>' }),
+    round: () => ({ cap: "In a round", html: '<div class="grp" data-grp="round" style="display:contents">' + [8, 16, 32, 64].map(n => '<button class="b' + (n === 16 ? ' on' : '') + '">' + n + '</button>').join('') + '</div><span class="aside">chords</span>' }),
+    every: () => ({ cap: "Chord every", html: '<button class="b" data-act="every" data-by="-1">◀</button><span class="val">4 beats</span><button class="b" data-act="every" data-by="1">▶</button>' }),
+  };
+  const ROWS = { play: ["song", "part", "sign", "practice"], learn: ["song", "part", "sign", "hint"], drill: ["kinds", "round", "every", "hint"] };
+  function grid(s) {
+    return '<div class="grid">' + ROWS[s].map(k => { const r = ROW[k](); return '<div class="row ' + (r.cls || '') + '"><div class="cap">' + r.cap + '</div><div class="ctl">' + r.html + '</div></div>'; }).join('') + '</div>';
+  }
+  function stacked(s) {
+    return ROWS[s].map(k => { const r = ROW[k](); return '<div class="row-st ' + (r.cls || '') + '"><div class="cap">' + r.cap + '</div><div class="ctl">' + r.html + '</div></div>'; }).join('');
+  }
+  function summary(qs) {
+    const names = [];
+    qs.forEach(q => WHITE.forEach(r => { if (!(q === "aug" && r === "B")) names.push(r + q); }));
+    const shown = [];
+    for (const n of names) { if (shown.concat([n]).join(" ").length > 40) break; shown.push(n); }
+    return shown.join(" ") + (shown.length < names.length ? " and " + (names.length - shown.length) + " more" : "");
+  }
+  const rope = (side, h) => '<div class="rope" style="' + side + ':' + 40 + 'px;height:' + h + 'px"></div>';
+  const plank = (text, go, r, soon) => '<div class="wood plank' + (soon ? ' soon' : '') + '" style="--r:' + r + 'deg"' + (go ? ' data-go="' + go + '"' : '') + '>' +
+    '<div class="rope" style="left:36px;height:32px"></div><div class="rope" style="right:36px;height:32px"></div>' + text + (soon ? '<span class="ptag">coming soon</span>' : '') + '</div>';
+
+  const DESIGNS = {
+    A: {
+      main: () => '<div class="ov"></div><div class="col"><div class="title"><img src="/files/banana.svg">King Gong</div>' +
+        '<button class="b item soon">Tutorial <span class="tag">coming soon</span></button>' +
+        '<button class="b item soon">Campaign <span class="tag">coming soon</span></button>' +
+        '<button class="b item" data-go="play">Play song</button><button class="b item" data-go="learn">Learn song</button>' +
+        '<button class="b item" data-go="drill">Chord drill</button><button class="b item exit" data-toast="Quits the game">Exit game</button></div>',
+      sub: s => '<div class="ov"></div><div class="panel"><div class="subtitle">' + TITLE[s] + '</div>' + grid(s) +
+        '<div class="foot"><button class="b" data-go="main">‹ Back</button><button class="b start" data-toast="Starts the level">Start ▶</button></div></div>',
+    },
+    B: {
+      main: () => '<div class="rail"><div class="title">King Gong</div>' +
+        '<div class="item soon">Tutorial<span class="chip">coming soon</span></div><div class="item soon">Campaign<span class="chip">coming soon</span></div>' +
+        '<div class="item" data-go="play">Play song</div><div class="item" data-go="learn">Learn song</div><div class="item" data-go="drill">Chord drill</div>' +
+        '<div class="item exit" data-toast="Quits the game">Exit game</div></div>',
+      sub: s => '<div class="rail"><div class="back" data-go="main">‹ Main menu</div><div class="subtitle">' + TITLE[s] + '</div>' + stacked(s) +
+        '<button class="b start bstart" data-toast="Starts the level">Start ▶</button></div>' +
+        '<div class="preview">' + (s === "drill" ? "Chord drill · C D E F G A B" : '<span class="sn">' + SONGS[0] + '</span> · <span class="pn">Treble clef</span>') + '</div>',
+    },
+    C: {
+      main: () => '<div class="ov"></div><button class="b exitc" data-toast="Quits the game">⏻ Exit game</button><div class="wrap2"><div class="title">King Gong</div>' +
+        '<div class="tiles"><div class="tile" data-go="play">' + ICON.play + 'Play song</div><div class="tile" data-go="learn">' + ICON.learn + 'Learn song</div>' +
+        '<div class="tile" data-go="drill">' + ICON.drill + 'Chord drill</div></div>' +
+        '<div class="small"><div class="tile sm soon">' + ICON.tut + 'Tutorial<em>coming soon</em></div><div class="tile sm soon">' + ICON.camp + 'Campaign<em>coming soon</em></div></div></div>',
+      sub: s => '<div class="ov"></div><div class="panel"><div class="head"><button class="b cback" data-go="main">‹</button>' + ICON[s] + TITLE[s] + '</div>' +
+        '<div class="body">' + grid(s) + '</div><div class="foot"><button class="b start cstart" data-toast="Starts the level">Start ▶</button></div></div>',
+    },
+    D: {
+      main: () => '<div class="ov light"></div><div class="hang"><div class="wood sign">' + rope('left', 80) + rope('right', 80) + 'King Gong</div>' +
+        plank("Tutorial", null, -1.4, true) + plank("Campaign", null, 1.1, true) + plank("Play song", "play", -0.8) +
+        plank("Learn song", "learn", 1.3) + plank("Chord drill", "drill", -1.1) +
+        '<div class="wood plank exitp" style="--r:1deg" data-toast="Quits the game"><div class="rope" style="left:30px;height:32px"></div><div class="rope" style="right:30px;height:32px"></div>Exit game</div></div>',
+      sub: s => '<div class="ov light"></div><div class="wood board"><div class="rope" style="left:90px;height:400px"></div><div class="rope" style="right:90px;height:400px"></div>' +
+        '<div class="wood bsign">' + TITLE[s] + '</div>' + grid(s) +
+        '<div class="dfoot"><div class="wood dback" data-go="main">‹ Back</div><button class="b start dstart" data-toast="Starts the level">Start ▶</button></div></div>',
+    },
+  };
+
+  document.querySelectorAll('.design').forEach(sec => {
+    const d = DESIGNS[sec.dataset.d];
+    const stage = sec.querySelector('.stage');
+    const tabs = sec.querySelector('.tabs');
+    let song = 0, every = 4, toastTimer = null;
+    stage.innerHTML = ['main', 'play', 'learn', 'drill'].map(s => '<div class="screen" data-s="' + s + '">' + (s === 'main' ? d.main() : d.sub(s)) + '</div>').join('') + '<div class="toast"></div>';
+    tabs.innerHTML = [['main', 'Main menu'], ['play', 'Play song'], ['learn', 'Learn song'], ['drill', 'Chord drill']].map(t => '<button data-tab="' + t[0] + '">' + t[1] + '</button>').join('');
+    function show(s) {
+      stage.querySelectorAll('.screen').forEach(x => x.classList.toggle('show', x.dataset.s === s));
+      tabs.querySelectorAll('button').forEach(b => b.classList.toggle('cur', b.dataset.tab === s));
+    }
+    function toast(t) {
+      const el = stage.querySelector('.toast'); el.textContent = t; el.classList.add('show');
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 1400);
+    }
+    tabs.addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) show(b.dataset.tab); });
+    stage.addEventListener('click', e => {
+      const t = e.target.closest('[data-go],[data-toast],[data-act],[data-tog],.kind,.grp button');
+      if (!t || t.classList.contains('soon')) return;
+      const screen = t.closest('.screen');
+      if (t.dataset.go) return show(t.dataset.go);
+      if (t.dataset.toast) return toast(t.dataset.toast);
+      if (t.dataset.act === 'song') {
+        song = (song + Number(t.dataset.by) + SONGS.length) % SONGS.length;
+        stage.querySelectorAll('.sn').forEach(x => x.textContent = SONGS[song]);
+        return;
+      }
+      if (t.dataset.act === 'every') {
+        every = Math.max(1, Math.min(8, every + Number(t.dataset.by)));
+        screen.querySelector('.val').textContent = every + (every === 1 ? ' beat' : ' beats');
+        return;
+      }
+      if (t.hasAttribute('data-tog')) {
+        t.classList.toggle('on'); t.textContent = t.classList.contains('on') ? 'on' : 'off';
+        return;
+      }
+      if (t.classList.contains('kind')) {
+        const on = screen.querySelectorAll('.kind.on');
+        if (t.classList.contains('on') && on.length === 1) return;   // one kind at least
+        t.classList.toggle('on');
+        const qs = [...screen.querySelectorAll('.kind.on')].map(k => k.dataset.q);
+        screen.querySelector('.summary').textContent = summary(qs);
+        const pv = screen.querySelector('.preview'); if (pv) pv.textContent = 'Chord drill · ' + summary(qs);
+        return;
+      }
+      const g = t.closest('.grp');
+      g.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === t));
+      if (g.dataset.grp === 'part') {
+        screen.querySelectorAll('.needs-chords').forEach(r => r.classList.toggle('hidden', !t.hasAttribute('data-chords')));
+        const pn = screen.querySelector('.pn'); if (pn) pn.textContent = t.textContent;
+      }
+    });
+    const h = location.hash.slice(1);
+    show(['play', 'learn', 'drill'].includes(h) ? h : 'main');
+  });
+
+  function fit() {
+    document.querySelectorAll('.wrap').forEach(w => { w.firstElementChild.style.zoom = Math.min(0.8, w.clientWidth / 1280); });
+  }
+  window.addEventListener('resize', fit);
+  fit();
+})();
+</script>

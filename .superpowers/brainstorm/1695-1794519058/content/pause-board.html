@@ -1,0 +1,76 @@
+<style>
+  .wrap { width: 100%; max-width: 1040px; }
+  .stage { position: relative; width: 1280px; height: 720px; overflow: hidden; border-radius: 8px;
+    font-family: "Segoe UI", Arial, sans-serif; color: #ecebe4; line-height: 1.25; user-select: none;
+    background: #334a2e url(/files/level.png) no-repeat; background-size: 1380px auto; background-position: -50px -56px; }
+  .stage * { box-sizing: border-box; }
+  .ov { position: absolute; inset: 0; background: rgba(12, 18, 12, .5); }
+  .stage .b { font-family: inherit; font-size: 15px; color: #ecebe4; background: #2b352d; border: 1px solid #3e4b40;
+    border-radius: 4px; padding: 4px 12px; min-height: 32px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .stage .b:hover { background: #374339; }
+  .stage .b.on { background: #4f8a3c; border-color: #4f8a3c; color: #fff; }
+  .stage .b.start { background: #f2c230; border-color: #f2c230; color: #1f2a1c; font-weight: 700; }
+  .stage .b.start:hover { background: #f7d35a; }
+  .wood { background: repeating-linear-gradient(177deg, rgba(0, 0, 0, 0) 0 7px, rgba(0, 0, 0, .08) 7px 9px), linear-gradient(180deg, #9b6d3e 0%, #7d5330 50%, #5f3d21 100%);
+    box-shadow: inset 0 2px 0 rgba(255, 220, 160, .25), inset 0 -3px 0 rgba(0, 0, 0, .3), 0 5px 10px rgba(0, 0, 0, .45);
+    border-radius: 9px; color: #f7e7a6; text-shadow: 0 2px 0 rgba(0, 0, 0, .55); font-weight: 700; }
+  .rope { position: absolute; bottom: 100%; width: 4px; background: linear-gradient(90deg, #8a6a3a, #c9a46a, #8a6a3a); box-shadow: 0 0 2px rgba(0, 0, 0, .5); }
+  .board { position: absolute; left: 50%; top: 54%; transform: translate(-50%, -50%); width: 470px; padding: 56px 46px 34px; }
+  .board::before { content: ""; position: absolute; inset: 12px; border-radius: 6px; background: rgba(22, 16, 10, .86); }
+  .board > * { position: relative; }
+  .board > .rope { position: absolute; }
+  .bsign { position: absolute !important; left: 50%; top: -26px; transform: translateX(-50%) rotate(-1deg); font-size: 28px; padding: 8px 36px; white-space: nowrap; z-index: 2; }
+  .stage .act { display: flex; width: 100%; min-height: 48px; font-size: 20px; border-radius: 8px; }
+  .plank { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 42px; font-size: 18px; cursor: pointer; margin-top: 10px; transition: filter .15s, transform .15s; }
+  .plank:hover { filter: brightness(1.12); transform: scale(1.02); }
+  .grid { display: grid; grid-template-columns: 1fr max-content; gap: 12px 18px; align-items: center; margin: 22px 6px; }
+  .cap { color: #f0dcb0; font-size: 16px; font-weight: 700; }
+  .ctl { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
+  .val { min-width: 76px; text-align: center; font-size: 15px; }
+  .toast { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); background: rgba(0, 0, 0, .82); color: #f7e7a6;
+    padding: 8px 18px; border-radius: 20px; font-size: 16px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+</style>
+
+<h2>The pause menu as a hanging board</h2>
+<p class="subtitle">Same rows and order as now (Continue, Restart song, Practice mode, Tempo, Beat tick, Labels, Menu), on the wood from design D. It's clickable: toggles and tempo work.</p>
+
+<div class="wrap"><div class="stage" id="pause">
+  <div class="ov"></div>
+  <div class="wood board">
+    <div class="rope" style="left:80px;height:400px"></div><div class="rope" style="right:80px;height:400px"></div>
+    <div class="wood bsign">Paused</div>
+    <button class="b start act" data-toast="Continues the song">Continue ▶</button>
+    <div class="wood plank" data-toast="Restarts the song">Restart song</div>
+    <div class="grid">
+      <div class="cap">Practice mode</div><div class="ctl"><button class="b" data-tog>off</button></div>
+      <div class="cap">Tempo</div><div class="ctl"><button class="b" data-by="-5">◀</button><span class="val">60 BPM</span><button class="b" data-by="5">▶</button></div>
+      <div class="cap">Beat tick</div><div class="ctl"><button class="b on" data-tog>on</button></div>
+      <div class="cap">Labels</div><div class="ctl"><button class="b on" data-tog>on</button></div>
+    </div>
+    <div class="wood plank" data-toast="Back to the song's menu">Menu</div>
+  </div>
+  <div class="toast"></div>
+</div></div>
+
+<script>
+(function () {
+  const stage = document.getElementById('pause');
+  let bpm = 60, timer = null;
+  stage.addEventListener('click', e => {
+    const t = e.target.closest('[data-toast],[data-tog],[data-by]');
+    if (!t) return;
+    if (t.dataset.toast) {
+      const el = stage.querySelector('.toast'); el.textContent = t.dataset.toast; el.classList.add('show');
+      clearTimeout(timer); timer = setTimeout(() => el.classList.remove('show'), 1400);
+    } else if (t.hasAttribute('data-tog')) {
+      t.classList.toggle('on'); t.textContent = t.classList.contains('on') ? 'on' : 'off';
+    } else {
+      bpm = Math.max(40, Math.min(120, bpm + Number(t.dataset.by)));
+      stage.querySelector('.val').textContent = bpm + ' BPM';
+    }
+  });
+  const fit = () => { stage.style.zoom = Math.min(0.8, stage.parentElement.clientWidth / 1280); };
+  window.addEventListener('resize', fit); fit();
+})();
+</script>

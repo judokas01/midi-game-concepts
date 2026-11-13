@@ -1,34 +1,33 @@
 extends ColorRect
-## The chord drill's chord menu: which chords a round deals, on a grid of the kinds of chord,
-## by difficulty, against the twelve roots, and how many chords a round has. Worked with the
-## mouse, or from the MIDI keyboard: a note from C4 to B4 picks the button on its key in the
-## marked row, a note below C4 marks the row above, one above B4 the row below.
+## The chord drill's chord grid (More options on the drill board): which chords a round deals,
+## on a grid of the kinds of chord, by difficulty, against the twelve roots. Worked with the
+## mouse, or from the MIDI keyboard, the one menu that listens to it: a note from C4 to B4
+## picks the button on its key in the marked row, a note below C4 marks the row above, one
+## above B4 the row below.
 
-signal closed(chords: Array, count: int)
+signal closed(chords: Array)
 
 const Drill := preload("res://scripts/drill.gd")
 const Song := preload("res://scripts/song.gd")
 const LOW := 60                    # C4: the key over the grid's first column, C
-const COUNT_KEYS := [0, 2, 4, 5]   # C4 D4 E4 F4 pick Drill.COUNTS
 const GROUP_W := 104               # the difficulties' column
 const KIND_W := 52                 # the kinds of chord's
 const CHORD_W := 64
+const WHITE_ROOTS := [0, 2, 4, 5, 7, 9, 11]   # C D E F G A B, by their place in Drill.ROOTS
 const MARK := Color("f2c230")      # the marked row's frame: the colour of the next note on the little keyboard
 
-var count: int = Drill.COUNT
 var _chords := {}                  # chord name -> its button, in the grid's order
 var _rows: Array = []              # top to bottom, what the twelve keys pick in each row: a button or null
 var _frames: Array[StyleBoxFlat] = []   # each row's frame, lit on the marked one
 var _mark := 0
 
-@onready var _grid: VBoxContainer = $Center/Box/Grid
+@onready var _grid: VBoxContainer = $Center/Board/Box/Grid
 
 
 func _ready() -> void:
 	_add_keys()
 	for group: Array in Drill.GROUPS:
 		_add_group(group[0], group[1])
-	_add_counts()
 	var done := _button("Done · %s" % Song.note_name(LOW), 0)
 	done.pressed.connect(close)
 	var keyed := []
@@ -42,6 +41,30 @@ func picked() -> Array:
 	return _chords.keys().filter(func(name: String) -> bool: return _chords[name].button_pressed)
 
 
+## Picks the kind of chord `quality` ("" major, "m", "7" ...) on the white-key roots, or unpicks
+## every chord of that kind, unless that would leave none picked.
+func set_kind(quality: String, on: bool) -> void:
+	var of_kind := _chords.keys().filter(func(name: String) -> bool: return Drill.quality_of(name) == quality)
+	if on:
+		for i: int in WHITE_ROOTS:
+			var root: String = Drill.ROOTS[quality][i]
+			if root != "":
+				_chords[root + quality].set_pressed_no_signal(true)
+	elif not picked().all(func(name: String) -> bool: return name in of_kind):
+		for name: String in of_kind:
+			_chords[name].set_pressed_no_signal(false)
+
+
+## The kinds of chord with any chord picked, as qualities, in the grid's order.
+func kinds() -> Array:
+	var out := []
+	for name: String in picked():
+		var quality := Drill.quality_of(name)
+		if not quality in out:
+			out.append(quality)
+	return out
+
+
 func open() -> void:
 	_mark_row(0)
 	show()
@@ -49,7 +72,7 @@ func open() -> void:
 
 func close() -> void:
 	hide()
-	closed.emit(picked(), count)
+	closed.emit(picked())
 
 
 ## A MIDI note: below C4 marks the row above, above B4 the row below, round from one end to
@@ -102,30 +125,6 @@ func _add_group(difficulty: String, qualities: Array) -> void:
 		_rows.append(keyed)
 		in_group.append_array(in_row)
 	_grid.add_child(_line(_all(difficulty, GROUP_W, in_group), rows))
-
-
-## How many chords a round has, on C4 D4 E4 F4.
-func _add_counts() -> void:
-	var counts := ButtonGroup.new()
-	var keyed := []
-	keyed.resize(12)
-	var cells: Array = [_gap(KIND_W)]
-	for i in Drill.COUNTS.size():
-		var n: int = Drill.COUNTS[i]
-		var b := _button("%d chords · %s" % [n, Song.note_name(LOW + COUNT_KEYS[i])], 0)
-		b.toggle_mode = true
-		b.button_group = counts
-		b.button_pressed = n == count
-		b.toggled.connect(func(on: bool) -> void:
-			if on:
-				count = n)
-		keyed[COUNT_KEYS[i]] = b
-		cells.append(b)
-	var caption := Label.new()
-	caption.text = "In a round"
-	caption.custom_minimum_size.x = GROUP_W
-	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_add_row(caption, cells, keyed)
 
 
 func _add_row(left: Control, cells: Array, keyed: Array) -> void:

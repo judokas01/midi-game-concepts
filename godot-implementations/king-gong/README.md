@@ -19,21 +19,21 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | Input | Does what |
 | --- | --- |
 | MIDI notes | Grab the branch on that note; hold for its length; release to let go. The built-in songs use C4–C5, an octave or two lower in the bass clef. A song with a key signature plays every note on its lines and spaces sharp or flat, but on a branch with a sign: a macaw is a sharp, a bat a flat, a blossom a natural |
-| Keyboard `A S D F G H J K`, `W E T Y U` | C4 D4 E4 F4 G4 A4 B4 C5 on the home row, and the black keys between them in the row above, as on a piano: `W E` = C# D#, `T Y U` = F# G# A# (Db Eb, Gb Ab Bb). Moved by octaves to where the song is (lower in the bass clef); fallback when no MIDI device is connected. The floor lists the black keys when the song has any |
+| Keyboard `A S D F G H J K`, `W E T Y U` | C4 D4 E4 F4 G4 A4 B4 C5 on the home row, and the black keys between them in the row above, as on a piano: `W E` = C# D#, `T Y U` = F# G# A# (Db Eb, Gb Ab Bb). Moved by octaves to where the song is (lower in the bass clef); fallback when no MIDI device is connected. Each branch's label shows its key |
 | MIDI notes below the next branch's | Treble + chords: the left hand's chord. Any octave and any order, but only its notes. A note lower than the next branch's note is the left hand's until let go, so a wrong note below the tune makes nobody fall, though it spoils a chord. With Chords only and in the chord drill every note is the chord's |
-| Keyboard `Z X C V B N M` | With chords: one key per chord, by its root: C D E F G A B, and with `Shift` the black key above (`Shift+N` = Bb). The start screen and the floor list the song's, e.g. `Z` = C, `V` = F, `B` = G. In the chord drill every root plays the kind of chord the next log wants (`X` = Dm when it wants Am) |
-| Mode: Play / Learn / Chord drill | On the start screen: play a song, [learn it](#learn-mode) untimed, or [drill chords](#chord-drill) |
-| Song `◀` list `▶` | On the start screen: which song to play, the built-in ones and then [your own](#your-own-songs) |
-| Part: Treble clef / Bass clef / Treble + chords / Chords only | On the start screen: how to play the song. [Chords only](#chords-only): the gorilla plays the tune, you the chords |
-| Chord hint | On the start screen, with chords: the sign on each log shows the chord's name, or its notes in the bass clef. The chord drill always shows the name |
-| Chords: Choose | On the start screen, chord drill: opens the [chord menu](#the-chord-menu), which chords it deals and how many a round. The start screen shows the first few |
-| MIDI note written on a menu button | Picks that button, on the start screen (C3 and D3 step through the songs, E3 to G3 pick the mode, C4 to B4 the rest) and on the end panel (C4 play again, D4 main menu). In the chord menu, C4 to B4 pick in the marked row and a note below or above moves the mark. Computer keys don't; use the mouse |
-| `Space` / click / any other MIDI note | Start, on the start screen. The note only starts the game; it grabs nothing. `Space` also closes the chord menu, and continues from the pause menu |
+| Keyboard `Z X C V B N M` | With chords: one key per chord, by its root: C D E F G A B, and with `Shift` the black key above (`Shift+N` = Bb). The sign on each log shows its key, e.g. `Z` = C, `V` = F, `B` = G. In the chord drill every root plays the kind of chord the next log wants (`X` = Dm when it wants Am) |
+| Main menu | Wooden planks: **Play song**, **Learn song** ([learn mode](#learn-mode)), **Chord drill** ([drill chords](#chord-drill)), **Exit game**; Tutorial and Campaign are coming. Each of the first three opens a board with its options and **Start** |
+| Song `◀` list `▶` | On the Play song and Learn song boards: which song, the built-in ones and then [your own](#your-own-songs) |
+| Part: Treble clef / Bass clef / Treble + chords / Chords only | On the song boards: how to play the song. [Chords only](#chords-only): the gorilla plays the tune, you the chords |
+| Chord sign | On the song boards, with chords: the sign on each log shows the chord's name, or its notes in the bass clef. The chord drill always shows the name |
+| Chords, In a round, Chord every | On the Chord drill board: which chords it deals (More options opens the [chord grid](#the-chord-grid)), how many a round has (8, 16, 32, 64) and how many beats apart they come (1 to 8) |
+| MIDI notes on the menus | Only the chord grid listens: C4 to B4 pick in the marked row and a note below or above moves the mark. Elsewhere use the mouse |
+| `Space` | Start, on a board. Also closes the chord grid, and continues from the pause menu |
 | `Enter` / Restart button | Restart the song, or in the chord drill a new round |
-| `Esc` | During a song: the [pause menu](#the-pause-menu). From the end panel: back to the start screen. In the chord menu: closes it |
+| `Esc` | During a song: the [pause menu](#the-pause-menu). From the end panel: back to the board the song was started from. On a board: back to the main menu. In the chord grid: back to the drill board |
 | `←` / `→` | In the pause menu: the tempo down or up, 5 BPM a step |
-| Practice mode | On the start screen, Play, and in the pause menu: the magic bananas never run out |
-| Keyboard hint | On the start screen, Learn and chord drill: the [little keyboard](#the-little-keyboard) at the bottom. On by default |
+| Practice mode | On the Play song board, and in the pause menu: the magic bananas never run out |
+| Keyboard hint | On the Learn song and Chord drill boards: the [little keyboard](#the-little-keyboard) at the bottom. On by default |
 | Tempo, Labels, Beat tick | In the pause menu. Tempo 40–120 BPM (default 60); Labels and Beat tick are the spike's toggles |
 
 There are no bars on screen. A yellow line along the top edge follows the gorilla across the
@@ -41,13 +41,14 @@ level, from the stump (0%) to the nest (100%), with the percentage under its end
 is laid out in time, so a whole note fills four times as much of it as a quarter. The line
 never goes back, on a fall or a swing back. A small pill top-right shows
 the magic bananas (`∞` in practice mode), the falls (`wrong` in Learn mode and the drill) and
-`Esc ‖`, the pause.
+`Esc ‖`, the pause. The counters and the little keyboard hide while the main menu is up.
 
 ## The pause menu
 
 `Esc` during a song freezes it under the pause menu: **Continue**, **Restart song**,
 **Practice mode** (in Play mode), **Tempo** (`◀ 60 BPM ▶`, 40 to 120 in steps of 5, or `←`
-and `→`), **Beat tick**, **Labels** and **Main menu**. `Esc` or `Space` continues too.
+and `→`), **Beat tick**, **Labels** and **Menu**, back to the board the song was started
+from. `Esc` or `Space` continues too.
 
 You let go of the key to reach for `Esc`, so a branch can't be held through a pause. On
 Continue the gorilla floats up at the branch it hung on, or the next one if it was in the
@@ -61,7 +62,7 @@ Two ways to get ready for a level, and a drill for the chords.
 
 ### Learn mode
 
-Pick **Learn** on the start screen, then a song and a part. Nothing is timed and the gorilla
+Pick **Learn song** on the main menu, then a song and a part. Nothing is timed and the gorilla
 can't fall: it hangs on its branch until you play the next branch's note, however long that
 takes, then swings over. Rests are jumped. With Treble + chords it also waits at each log
 until the left hand plays the chord; the note and the chord can come in either order. A
@@ -79,28 +80,31 @@ log until you play its chord, and the beat restarts from there.
 
 ### Chord drill
 
-Pick **Chord drill**, then **Choose** which chords in the [chord menu](#the-chord-menu): the
-major chords on the white keys until you do. Each round is a made-up tune of 8, 16, 32 or 64
-chords, a new one every two beats, dealt like cards from the ones picked: each comes up as
-often as the others, in a shuffled order, never twice running unless it is the only one. The
+Pick **Chord drill** on the main menu. On its board, **Chords** has a button for each kind of
+chord: Major, Minor, 7, maj7, m7, dim and aug. Turning one on adds that kind on the white
+keys (Minor: Cm Dm Em Fm Gm Am Bm; aug has no B); turning it off drops every chord of that
+kind, and the last one can't be turned off. Under them the board names what is picked, the
+major chords on the white keys until you choose. **More options** opens the
+[chord grid](#the-chord-grid), for any chord on any root, black keys too. Each round is a
+made-up tune of 8, 16, 32 or 64 chords (**In a round**), a new one every 4 beats (1 to 8,
+**Chord every**), dealt like cards from the ones picked: each comes up as often as the
+others, in a shuffled order, never twice running unless it is the only one. The
 gorilla climbs it by itself and waits at every log until you play its chord, anywhere on the
 keyboard. The tune is the chord's own notes between C4 and C5. A banana hangs at every
 fourth chord. Restart or Play again deals a new round.
 
-### The chord menu
+### The chord grid
 
 A grid of every chord the drill offers: one row for each kind of chord, under its difficulty
 (Major, Minor, Sevenths with 7, maj7 and m7, Dim & aug), and one column for each of the
 twelve roots, C to B, spelled as the chord is usually written (Db, but C#m). Baug is left out,
 since its fifth is F double sharp; it sounds the same as Gaug and Ebaug anyway. Click a chord
 to pick it, or a row's or a difficulty's name to pick all of it, or none if all of it is
-already picked. One chord at least stays picked. Under the grid, how many chords a round has,
-and **Done**.
+already picked. One chord at least stays picked. **Done** goes back to the drill board.
 
 On the MIDI keyboard one row is marked with a yellow frame, Major when the menu opens. The
 keys C4 to B4 pick in it, each the button under the key written over its column: C#4 is Db
-in the Major row, C#m in the Minor one. In the round's row C4 D4 E4 F4 pick 8 16 32 64, and
-in Done's row any of them goes back. A note below C4 marks the row above, a note above B4 the
+in the Major row, C#m in the Minor one. In Done's row any of them goes back. A note below C4 marks the row above, a note above B4 the
 row below, round from one end to the other. `Space` and `Esc` go back too. What you picked
 lasts until the game is closed.
 
@@ -119,8 +123,8 @@ next:
 Keys held down show pressed in; a wrong note, or the odd note out of a wrong chord, goes
 grey with a red cross. Every C is marked, and with the computer keyboard live its letters
 are on the keys. With Chords only and in the drill the next chord lights up as soon as the
-last one is played, however far ahead its log is. Turn **Keyboard hint** off on the start
-screen to practise reading the notes alone.
+last one is played, however far ahead its log is. Turn **Keyboard hint** off on the board to
+practise reading the notes alone.
 
 ## Your own songs
 
@@ -162,7 +166,7 @@ A file the importer can't read is left out of the list, with a warning in the co
 	so an eighth can't be held like a quarter.
   - A rest is one bounce along the liana per beat, so a long rest can be counted.
   - The beat tick also marks a let-go into a rest that doesn't fall on a whole beat.
-- **More songs.** The spike has Twinkle Twinkle. The start screen here also offers, from
+- **More songs.** The spike has Twinkle Twinkle. The song boards here also offer, from
   easiest to hardest, Mary's Lamb, Ducklings (Alle meine Entchen), Lightly Row (Hänschen
   klein), Ode to Joy and the chorus of Jingle Bells. All are public domain, written in C,
   one note at a time between C4 and A4, in 4/4 from the first beat. Ode to Joy is its
@@ -194,12 +198,11 @@ A file the importer can't read is left out of the list, with a warning in the co
   says. The note label moves up over the macaw and the blossom. The macaw and the bat fly
   off as the gorilla takes hold; the blossom goes down with the first piece of bark, and
   all three are back for the retry after a magic banana.
-- **Bass clef.** The spike is treble only. Here the start screen also offers the bass
+- **Bass clef.** The spike is treble only. Here the song boards also offer the bass
   clef, which plays the song an octave down (C3–A3) so it sits inside the bass staff,
   Ode to Joy in F two (F2–C3), and Mountain King and Für Elise two as well (C2–C3, down to
   the second ledger line below).
-  The level behind the start screen redraws as you choose; the choice holds until you
-  quit.
+  The level behind the menu redraws as you choose; the choice holds until you quit.
 - **Treble + chords.** Also not in the spike. Each song carries its chords (`song.gd`,
   third column), and wherever the chord changes a log stands across the gap before that
   branch, coloured by its chord, with a sign on top. Play the chord in the left hand,
@@ -223,13 +226,12 @@ A file the importer can't read is left out of the list, with a warning in the co
 - **Learning.** Not in the spike: [learn mode](#learn-mode), [chords only](#chords-only),
   the [chord drill](#chord-drill) with sevenths, diminished and augmented chords, and the
   [little keyboard](#the-little-keyboard) that shows what to play.
-- **Menus.** The spike has a start overlay and an end message. Here the start screen also
-  has practice mode, `Esc` opens a [pause menu](#the-pause-menu) holding the settings the
-  spike keeps in its top bar, and the end panel offers Play again and Main menu. Every button
-  on the start screen and the end panel carries a MIDI note that picks it, and the chord
-  drill's chord menu is picked from by playing roots; the pause menu has no notes yet. The end
-  panel ignores notes for
-  0.8 s, so a note still being played can't pick by accident.
+- **Menus.** The spike has a start overlay of instructions and an end message. Here there are
+  no instructions (a tutorial will teach the rules): a main menu of wooden planks hanging on
+  lianas opens a board for each way to play, `Esc` opens a [pause menu](#the-pause-menu)
+  holding the settings the spike keeps in its top bar, and the end panel offers Play again
+  and Menu, all on the same wood. Only the chord grid is picked from by playing notes; the
+  other menus take the mouse until piano control comes back.
 - **Input timing.** Godot input events carry no timestamp, so a note is stamped when the
   event is dispatched, once per frame: about 16 ms of resolution at 60 fps against a
   ±350 ms window at 60 BPM. The spike uses Web MIDI's own timestamps.
@@ -241,8 +243,7 @@ A file the importer can't read is left out of the list, with a warning in the co
   a fixed 36 px on a 1280×720 canvas and the window scales the whole picture.
 - **Small visual liberties.** The floor is drawn in front of the world, so tree trunks and
   liana posts sink into it. A strained branch bends as two halves meeting at the grip,
-  not along a curve. There is no legend: the start screen explains the branches, and the
-  settings bar is the pause menu.
+  not along a curve. There is no legend, and the settings bar is the pause menu.
 - **Branch ends stand out.** The spike's leaves reach on past a branch's tip in the same
   green as the staff-line bushes, so two notes in a row on a line read as one long branch.
   Here the leaves are a lighter green, outlined, and stand up from the tip, and the bark's
@@ -266,22 +267,24 @@ them around:
 | `scenes/gorilla.tscn` | Body sprite, scared body, arms (Line2Ds), hands, banana balloon, prompt |
 | `scenes/glowing_banana.tscn` | The banana that pops out of the ground or flies to the counter |
 | `art/*.svg` | All the art; see `art/CREDITS.md` |
-| `ui/` | Theme for the bar and overlay, label styles |
+| `ui/` | The theme, with the menus' wood (Plank, Sign, Board, Tag, StartButton, BoardCaption), and label styles |
 | `scripts/game.gd` | The rules and the gorilla's pose (the same rules as the spike), and learn mode's |
 | `scripts/level.gd` | Builds the level from the song: places branches, lianas, trees |
 | `scripts/staff.gd` | Where things sit: staff step, line heights, floor |
 | `scripts/branch.gd`, `liana.gd`, `chord_log.gd`, `gorilla.gd` | What each of those scenes can do |
 | `scripts/song.gd` | The songs and their chords and keys, their parsing into branches with the signs they carry, and the two clefs |
 | `scripts/key_signature.gd` | Puts the song's sharps or flats after the clef |
-| `scripts/drill.gd` | Makes up the chord drill's tune and deals its chords; which the chord menu offers, and how they are spelled |
-| `scripts/chord_menu.gd` | The chord drill's chord menu: builds its grid and works it from the MIDI keyboard |
+| `scripts/drill.gd` | Makes up the chord drill's tune and deals its chords; which the chord grid offers, and how they are spelled |
+| `scripts/main_menu.gd` | The main menu: its planks, and the song and drill boards they open |
+| `scripts/plank.gd`, `ropes.gd` | A wooden plank that hangs askew and straightens under the mouse; the two lianas a plank or board hangs by |
+| `scripts/chord_menu.gd` | The chord drill's chord grid: builds it and works it from the MIDI keyboard |
 | `scripts/pause_menu.gd` | The pause menu: its buttons and toggles, the tempo's steps |
 | `scripts/progress_line.gd` | Draws the progress line along the top, gliding after the gorilla |
 | `scripts/piano.gd` | Draws the little keyboard |
 | `scripts/score_import.gd` | Reads the MusicXML scores in `songs/` into songs |
 | `scripts/metronome.gd` | The beat tick |
 | `scripts/note_input.gd` | MIDI and keyboard input |
-| `scripts/hud.gd` | The counters, the menus and their MIDI notes, messages, what the little keyboard lights |
+| `scripts/hud.gd` | The counters, the menus' wiring, messages, what the little keyboard lights |
 | `scripts/dev_autoplay.gd` | Dev check only, see below |
 
 Branches, lianas and logs only appear when the game runs, because `level.gd` lays them out
@@ -299,7 +302,7 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
 ```
 
 - `--autoplay` plays the song, prints the result and quits. Expect `WON falls=2 bananas=5`.
-- `--song=<n>` plays another song, counting from 0 in the start screen's order. Songs 1
+- `--song=<n>` plays another song, counting from 0 in the song list's order. Songs 1
   to 9 hang three bananas, not four, so expect one banana fewer than for song 0, in every
   mode below. Songs 6 to 9 have a key signature, and 8 and 9 signs on their branches.
 - `--bass` plays the bass clef instead.
@@ -311,8 +314,11 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
 - `--learn` plays learn mode. The bot plays each note a moment after the last grab, once a
   wrong one: expect `WON falls=0 bananas=4 misses=1`, with `--chords` or `--chords-only` too
   (there, the wrong one is a chord).
-- `--drill` plays the chord drill, with every chord the chord menu offers picked, 16 a
-  round, once striking a wrong chord: expect `WON falls=0 bananas=4 misses=1`.
+- `--drill` plays the chord drill, with every chord the chord grid offers picked, 16 a
+  round, once striking a wrong chord: expect `WON falls=0 bananas=4 misses=1`. It first
+  checks that the chords sit the chosen number of beats apart and says so:
+  `drill: 16 chords, 4 beats apart`.
+- `--beats=<n>`, with `--drill`, a chord every n beats instead of 4; the result is the same.
 - `--pause` pauses with `Esc` three times, once each: mid-fall, hanging on branch 10 and in
   the first rest. It lets go of its note while paused, steps the tempo up with `→` and
   continues with `Space` a second later. Each `paused state=... cur=...` line is followed by
@@ -320,5 +326,14 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   rest as `WAIT` on the next, the tempo 5 BPM higher each time. A pause costs nothing, so
   expect the same result as without it: `WON falls=2 bananas=5`, or with `--learn` one
   pause and `WON falls=0 bananas=4 misses=1`.
+- `--menu` works the main menu before playing instead of starting at once: `Esc` and
+  `Space` on the main page (nothing happens), the board for the mode (Play song, or Learn
+  song or Chord drill with `--learn` or `--drill`; on the drill board it also turns Minor on
+  and Major off, tries to turn Minor off, and opens More options and closes it), `Esc` back,
+  the board again, `Space`. At the end it presses the end panel's Menu. It checks each step
+  and prints `menu: started from PLAY` and `menu: back on PLAY` (or `LEARN`, `DRILL`); on
+  the drill, `menu: kinds ok` once the round deals only the minor chords picked.
+- `--bpm=<n>` plays at n BPM instead of 60, for a quicker check. Every result above is the
+  same at 120.
 - `--perf` prints fps and draw calls once a second.
 - `--shots=<dir>` saves a screenshot every second.
