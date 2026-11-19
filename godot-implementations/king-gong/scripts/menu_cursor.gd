@@ -2,9 +2,10 @@ extends Control
 ## The selection on the menus. Worked with six white keys of the piano in any octave (C ▲ and
 ## D ▼ move it, E ◀ and F ▶ change the selected row, A ✓ presses, B ✕ goes back), with the
 ## arrows, Enter, Space and Esc, which hud.gd turns into the same acts, or with the mouse,
-## which selects what it points at. Each menu hands it its rows; it shows what is selected (a
-## plank straightened, a yellow button lit, or a frame round the row and the cell) and puts the
-## sign (menu_sign.gd) beside it, the keys that do something there lit.
+## which selects what it points at. Each menu hands it its rows; it shows what is selected in
+## gold, which on the menus means nothing else (a plank straightened with a gold edge, the
+## yellow button lit gold from its resting ochre, or a gold frame round the row and the cell)
+## and puts the sign (menu_sign.gd) beside it, the keys that do something there lit.
 
 signal back_requested
 
@@ -276,16 +277,23 @@ func _unlight() -> void:
 	_lit_button = null
 
 
-## A plank or a yellow button looks as under the mouse while selected; a plank also straightens.
+## A plank or a yellow button shows its theme's hover look while selected: a plank its gold
+## edge, the yellow button its gold with dark text. Both grow a touch, and a plank straightens.
 func _light(button: Button, on: bool) -> void:
+	var yellow := button.theme_type_variation == &"StartButton"
 	if on:
 		button.add_theme_stylebox_override(&"normal", button.get_meta(&"cursor_hover"))
 		button.add_theme_stylebox_override(&"hover", button.get_meta(&"cursor_hover"))
 		button.add_theme_color_override(&"font_color", button.get_meta(&"cursor_hover_font"))
+		button.add_theme_color_override(&"font_hover_color", button.get_meta(&"cursor_hover_font"))
+		if yellow:
+			button.add_theme_constant_override(&"outline_size", 0)   # dark text on gold needs no outline
 	else:
 		button.remove_theme_stylebox_override(&"normal")
 		button.remove_theme_color_override(&"font_color")
+		button.remove_theme_constant_override(&"outline_size")
 		button.add_theme_stylebox_override(&"hover", button.get_theme_stylebox(&"normal"))
+		button.add_theme_color_override(&"font_hover_color", button.get_theme_color(&"font_color"))
 	if button.has_method(&"reach"):
 		button.call(&"reach", on)
 

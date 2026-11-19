@@ -53,7 +53,9 @@ var cursor: MenuCursor        # the selection on whichever menu is up, over ever
 @onready var _menu: MainMenu = $MainMenu
 @onready var _chord_menu: ChordMenu = $ChordMenu
 @onready var _pause: PauseMenu = $PauseMenu
-@onready var _banner: Label = $Banner
+@onready var _banner: Control = $Banner
+@onready var _banner_pill: Control = $Banner/Pill
+@onready var _banner_text: Label = $Banner/Pill/Text
 @onready var _piano: Control = $Piano
 @onready var _chord_keys: Piano = $Piano/Panel/Row/Chord/Keys
 @onready var _tune_keys: Piano = $Piano/Panel/Row/Tune/Keys
@@ -224,17 +226,23 @@ func menu_key(a: MenuCursor.Act) -> void:
 	cursor.act(a)
 
 
-## Why you fell: shown for 2.8 s, fading over the last fifth.
+## Why you fell, or what was wrong: shown in a pill under the progress line, above the signs,
+## for 2.8 s, fading over the last fifth.
 func show_banner(text: String) -> void:
 	if _banner_fade:
 		_banner_fade.kill()
-	_banner.text = text
+	_banner_text.text = text
 	_banner.modulate.a = 1.0
 	_banner.show()
 	_banner_fade = create_tween()
 	_banner_fade.tween_interval(2.24)
 	_banner_fade.tween_property(_banner, "modulate:a", 0.0, 0.56)
 	_banner_fade.tween_callback(_banner.hide)
+
+
+## Where the message shows on screen; empty while none does. For the dev check.
+func banner_rect() -> Rect2:
+	return _banner_pill.get_global_rect() if _banner.visible else Rect2()
 
 
 func show_end(title: String, line: String) -> void:

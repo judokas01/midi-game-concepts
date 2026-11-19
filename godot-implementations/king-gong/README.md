@@ -27,7 +27,7 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | Part: Treble clef / Bass clef / Treble + chords / Chords only | On the song boards: how to play the song. [Chords only](#chords-only): the gorilla plays the tune, you the chords |
 | Chord sign | On the song boards (with chords), the Chord drill board and the pause menu (with chords): the sign on each log shows the chord's name, or its notes in the bass clef. One setting: changed in one place, it changes in all |
 | Chords, In a round, Chord every | On the Chord drill board: which chords it deals (More options opens the [chord grid](#the-chord-grid)), how many a round has (8, 16, 32, 64) and how many beats apart they come (1 to 8) |
-| MIDI notes on the menus | Six white keys, in any octave: **C** ▲ up, **D** ▼ down, **E** ◀ and **F** ▶ change the selected row (the song, part or value before or after, along a row of buttons, or an on/off flipped), **A** ✓ presses, **B** ✕ goes back. A wooden sign beside the selection shows one octave with the keys that do something there lit. The other keys do nothing, and the end panel waits a second before it listens, in case your hands are still playing |
+| MIDI notes on the menus | Six white keys, in any octave: **C** ▲ up, **D** ▼ down, **E** ◀ and **F** ▶ change the selected row (the song, part or value before or after, along a row of buttons, or an on/off flipped), **A** ✓ presses, **B** ✕ goes back. Gold marks what is selected, and nothing else on the menus: a gold frame round a row, a gold edge on a plank (which also straightens and grows a touch), or the yellow button (**Start**, **Continue**, **Play again**) lit gold and a touch bigger; at rest the yellow button is a dull ochre. A wooden sign beside the selection shows one octave with the keys that do something there lit. The other keys do nothing, and the end panel waits a second before it listens, in case your hands are still playing |
 | `↑` `↓` `←` `→`, `Enter` or `Space`, `Esc` | On the menus: the same as C D E F, A and B, at once on the end panel too. The mouse selects what it points at and clicks as ever |
 | `Enter` / Restart button | During a song: restart it, or in the chord drill deal a new round |
 | `Esc` | During a song: the [pause menu](#the-pause-menu). On a menu it goes back, as B: from the pause menu into the song, from the end panel to the board the song was started from, from a board to the main menu, from the chord grid to the drill board |
@@ -40,7 +40,9 @@ level, from the stump (0%) to the nest (100%), with the percentage under its end
 is laid out in time, so a whole note fills four times as much of it as a quarter. The line
 never goes back, on a fall or a swing back. A small pill top-right shows
 the magic bananas (`∞` in practice mode), the falls (`wrong` in Learn mode and the drill) and
-`Esc ‖`, the pause. The counters and the little keyboard hide while the main menu is up.
+`Esc ‖`, the pause. Why you fell, or what was wrong, shows for a moment in a dark pill
+under the progress line, above the chord signs. The counters and the little keyboard hide
+while the main menu is up.
 
 ## The pause menu
 
@@ -66,9 +68,10 @@ Pick **Learn song** on the main menu, then a song and a part. Nothing is timed a
 can't fall: it hangs on its branch until you play the next branch's note, however long that
 takes, then swings over. Rests are jumped. With Treble + chords it also waits at each log
 until the left hand plays the chord; the note and the chord can come in either order. A
-wrong note or chord only counts: the banner names the right one, the counter top-right says
-`wrong`, and the end panel how many there were. Let go of the last note to finish. Bananas
-are still there to collect, but there are no magic ones, as there is nothing to fall from.
+wrong note or chord only counts: the message at the top names the right one, the counter
+top-right says `wrong`, and the end panel how many there were. Let go of the last note to
+finish. Bananas are still there to collect, but there are no magic ones, as there is nothing
+to fall from.
 
 ### Chords only
 
@@ -281,7 +284,7 @@ them around:
 | `scripts/key_signature.gd` | Puts the song's sharps or flats after the clef |
 | `scripts/drill.gd` | Makes up the chord drill's tune and deals its chords; which the chord grid offers, and how they are spelled |
 | `scripts/main_menu.gd` | The main menu: its planks, and the song and drill boards they open |
-| `scripts/plank.gd`, `ropes.gd` | A wooden plank that hangs askew and straightens while selected; the two lianas a plank or board hangs by |
+| `scripts/plank.gd`, `ropes.gd` | A wooden plank that hangs askew and straightens and grows while selected (the yellow button grows the same way); the two lianas a plank or board hangs by |
 | `scripts/menu_cursor.gd` | The selection on every menu: moves it, does what the six keys do on each kind of row, draws the frames, places the sign |
 | `scripts/menu_sign.gd` | Draws the sign beside the selection: one octave, the keys that do something lit |
 | `scripts/chord_menu.gd` | The chord drill's chord grid: builds it, and hands the menu cursor its rows |
@@ -347,19 +350,29 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   options, picks and unpicks C in the chord grid, goes back with B and picks Bass clef on
   Chord sign; B to the main page,
   A on the same plank, and `↑`, `↓`, `Space` to start. At the end it picks Menu on the end
-  panel with F and A. It prints `menu: started from PLAY` and `menu: back on PLAY` (or
+  panel with F and A. Along the way it checks that one thing alone looks selected (gold) and
+  has grown: on the main page, on the board's Back | Start both ways, on the end panel both
+  ways, and with `--pause` on the pause menu's Continue and Restart song, and prints
+  `menu: looks ok`. It prints `menu: started from PLAY` and `menu: back on PLAY` (or
   `LEARN`, `DRILL`); on the drill, `menu: kinds ok` once the round deals only the minor
   chords picked, and `menu: bass clef ok` once every log shows the bass clef. If the walk
   never starts the song, the run ends with `autoplay: the menus never started the song`.
 - Every `--autoplay` run also plays an A on the end panel in its first second, which does
   nothing, and once the panel's sign shows prints `end: guard ok`.
+- Every run also checks that the message (why you fell, what was wrong), whenever it shows,
+  covers no chord sign or key under one, stays above where a seventh's tall sign reaches and
+  clears the percentage and the counters, and prints `banner: clear of the signs` (in every
+  mode above, as each has a fall or a wrong note).
 - `--bpm=<n>` plays at n BPM instead of 60, for a quicker check. Every result above is the
   same at 120.
 - `--perf` prints fps and draw calls once a second.
-- `--shots=<dir>` saves a screenshot every second.
+- `--shots=<dir>` saves a screenshot every second. With `--menu` it also saves
+  `look_<menu>_<selected>.png` for each check of the looks above (`--menu --pause` adds the
+  pause menu), to judge by eye whether what is selected is plain to see.
 
 The menu cursor's rules (rows wrapping, values stopping at their ends, hidden rows skipped,
-the nearest cell below, what the sign lights) have a check of their own, on throwaway
+the nearest cell below, what the sign lights, the selected plank's and yellow button's look,
+and the yellow button's text contrast at rest) have a check of their own, on throwaway
 buttons:
 
 ```powershell

@@ -25,3 +25,4 @@ on its bottom edge.
 `plank.svg` and `board.svg` are the menus' wood: a plank for the hanging buttons and signs,
 and a board with a dark panel inside for the menus' options. Both are stretched as 9-slice
 (the theme's `Plank`, `Sign` and `Board`), so their ends and corners keep their size.
+`plank_lit.svg` is the same plank with a gold rim, for the plank the menu selection is on.

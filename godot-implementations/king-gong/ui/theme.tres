@@ -2,6 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://bpb7upkhgp6j2" path="res://art/plank.svg" id="1_plank"]
 [ext_resource type="Texture2D" uid="uid://kjdxpjp5ebt6" path="res://art/board.svg" id="2_board"]
+[ext_resource type="Texture2D" uid="uid://f8gykmmr0dyw" path="res://art/plank_lit.svg" id="3_plank_lit"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
 
@@ -76,7 +77,7 @@ content_margin_left = 22.0
 content_margin_top = 6.0
 content_margin_right = 22.0
 content_margin_bottom = 9.0
-texture = ExtResource("1_plank")
+texture = ExtResource("3_plank_lit")
 texture_margin_left = 14.0
 texture_margin_top = 10.0
 texture_margin_right = 14.0
@@ -156,12 +157,12 @@ shadow_color = Color(0, 0, 0, 0.35)
 shadow_size = 3
 shadow_offset = Vector2(0, 2)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_hover"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_rest"]
 content_margin_left = 22.0
 content_margin_top = 4.0
 content_margin_right = 22.0
 content_margin_bottom = 5.0
-bg_color = Color(0.968627, 0.827451, 0.352941, 1)
+bg_color = Color(0.490196, 0.352941, 0.0705882, 1)
 corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
@@ -232,17 +233,19 @@ Sign/font_sizes/font_size = 28
 Sign/fonts/font = SubResource("SystemFont_bold")
 Sign/styles/normal = SubResource("StyleBoxTexture_sign")
 StartButton/base_type = &"Button"
-StartButton/colors/font_color = Color(0.121569, 0.164706, 0.109804, 1)
-StartButton/colors/font_focus_color = Color(0.121569, 0.164706, 0.109804, 1)
+StartButton/colors/font_color = Color(0.968627, 0.905882, 0.65098, 1)
+StartButton/colors/font_focus_color = Color(0.968627, 0.905882, 0.65098, 1)
 StartButton/colors/font_hover_color = Color(0.121569, 0.164706, 0.109804, 1)
 StartButton/colors/font_hover_pressed_color = Color(0.121569, 0.164706, 0.109804, 1)
+StartButton/colors/font_outline_color = Color(0.164706, 0.101961, 0.0470588, 1)
 StartButton/colors/font_pressed_color = Color(0.121569, 0.164706, 0.109804, 1)
+StartButton/constants/outline_size = 4
 StartButton/font_sizes/font_size = 19
 StartButton/fonts/font = SubResource("SystemFont_bold")
 StartButton/styles/focus = SubResource("StyleBoxEmpty_focus")
-StartButton/styles/hover = SubResource("StyleBoxFlat_start_hover")
-StartButton/styles/hover_pressed = SubResource("StyleBoxFlat_start_hover")
-StartButton/styles/normal = SubResource("StyleBoxFlat_start")
+StartButton/styles/hover = SubResource("StyleBoxFlat_start")
+StartButton/styles/hover_pressed = SubResource("StyleBoxFlat_start")
+StartButton/styles/normal = SubResource("StyleBoxFlat_start_rest")
 StartButton/styles/pressed = SubResource("StyleBoxFlat_start_pressed")
 Tag/base_type = &"Label"
 Tag/colors/font_color = Color(0.227451, 0.164706, 0.0784314, 1)

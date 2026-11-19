@@ -6,7 +6,7 @@ font_weight = 700
 
 [resource]
 font = SubResource("SystemFont_bold")
-font_size = 25
+font_size = 22
 font_color = Color(1, 0.823529, 0.768627, 1)
 outline_size = 4
 outline_color = Color(0.0627451, 0.0941176, 0.0627451, 0.85)

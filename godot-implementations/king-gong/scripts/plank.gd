@@ -1,7 +1,8 @@
 extends Button
 ## A wooden plank on the menus (theme variation Plank). It hangs a little askew and, while
 ## selected (the menu cursor calls reach()), straightens and grows a touch, like a sign you
-## reach for. A disabled one stays put.
+## reach for. A disabled one stays put. The yellow button (StartButton) uses it too: it hangs
+## straight (tilt 0) and grows the same touch while selected.
 ## A container sets its children straight whenever it lays them out, so the plank hangs itself
 ## again after every layout of its parent.
 

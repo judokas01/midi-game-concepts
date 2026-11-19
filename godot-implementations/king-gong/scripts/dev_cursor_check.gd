@@ -97,8 +97,69 @@ func _run() -> void:
 	cursor.act(MenuCursor.Act.DOWN)
 	_expect(cursor.selected() == s[1], "down from a cell lands on the nearest cell below")
 
+	# the looks: gold only on what is selected, one thing at a time
+	var foot := _line(box)
+	var back := _wood(foot, "Back", &"Plank")
+	var start := _wood(foot, "Start ▶", &"StartButton")
+	await process_frame
+	cursor.use([MenuCursor.cells([back, start], 1)], 0, null, true)
+	await create_timer(0.3).timeout
+	_expect_look(start, back, "Start selected")
+	cursor.act(MenuCursor.Act.LEFT)
+	await create_timer(0.3).timeout
+	_expect_look(back, start, "Back selected")
+	cursor.act(MenuCursor.Act.RIGHT)
+	await create_timer(0.3).timeout
+	_expect_look(start, back, "Start selected again")
+	var theme := ThemeDB.get_project_theme()
+	var rest: StyleBoxFlat = theme.get_stylebox(&"normal", &"StartButton")
+	var text := theme.get_color(&"font_color", &"StartButton")
+	_expect(_contrast(text, rest.bg_color) >= 4.5, "the resting yellow button's text reads: %.2f:1" % _contrast(text, rest.bg_color))
+	_expect(_luminance(rest.bg_color) < 0.5 * _luminance(MenuCursor.MARK), "the resting yellow button is clearly not gold")
+
 	print("cursor: ok" if not _failed else "cursor: failed")
 	quit()
+
+
+## `on` shows the selected look (its theme's hover), straight and a touch bigger; `off` its
+## resting one. A yellow button's text is dark on gold, without an outline, only while selected.
+func _expect_look(on: Button, off: Button, when: String) -> void:
+	var theme := ThemeDB.get_project_theme()
+	_expect(on.get_theme_stylebox(&"normal") == theme.get_stylebox(&"hover", on.theme_type_variation), "%s: %s looks selected" % [when, on.text])
+	_expect(off.get_theme_stylebox(&"normal") == theme.get_stylebox(&"normal", off.theme_type_variation), "%s: %s looks at rest" % [when, off.text])
+	_expect(on.scale.is_equal_approx(Vector2.ONE * 1.04), "%s: %s grows, scale %s" % [when, on.text, on.scale])
+	_expect(off.scale.is_equal_approx(Vector2.ONE), "%s: %s is its own size, scale %s" % [when, off.text, off.scale])
+	for b: Button in [on, off]:   # the mouse on it shows what the keys show
+		_expect(b.get_theme_stylebox(&"hover") == b.get_theme_stylebox(&"normal") and b.get_theme_color(&"font_hover_color") == b.get_theme_color(&"font_color"),
+			"%s: %s looks the same under the mouse" % [when, b.text])
+	for b: Button in [on, off]:
+		if b.theme_type_variation != &"StartButton":
+			continue
+		var lit := b == on
+		_expect(b.get_theme_color(&"font_color") == theme.get_color(&"font_hover_color" if lit else &"font_color", &"StartButton"),
+			"%s: the yellow button's text is %s" % [when, "dark" if lit else "cream"])
+		_expect((b.get_theme_constant(&"outline_size") == 0) == lit, "%s: the yellow button's text outlined only at rest" % when)
+
+
+## A Plank or a yellow button, with plank.gd, as the menus have them.
+func _wood(parent: Container, text: String, variation: StringName) -> Button:
+	var b := Button.new()
+	b.set_script(load("res://scripts/plank.gd"))
+	b.text = text
+	b.theme_type_variation = variation
+	parent.add_child(b)
+	return b
+
+
+static func _luminance(c: Color) -> float:
+	return c.srgb_to_linear().get_luminance()
+
+
+## WCAG contrast ratio.
+static func _contrast(a: Color, b: Color) -> float:
+	var hi := maxf(_luminance(a), _luminance(b))
+	var lo := minf(_luminance(a), _luminance(b))
+	return (hi + 0.05) / (lo + 0.05)
 
 
 func _lit(cursor: MenuCursor) -> String:

@@ -33,10 +33,15 @@ extends Node
 ##                        picks Bass clef on Chord sign;
 ##                        B to the main page, A on the same plank, and the arrows and Space to
 ##                        start. At the end it presses the end panel's Menu and checks the same
-##                        board is back
+##                        board is back. Along the way it checks that one thing alone looks
+##                        selected (gold) and grown: on the main page, on the board's Back |
+##                        Start both ways, on the end panel both ways, and on the pause menu
+##                        (with --pause) Continue and Restart song; with --shots it saves each
+##                        as look_<menu>_<selected>.png
 ##   -- --bpm=<n>         plays at n BPM instead of 60, for a quicker check
 ##   -- --perf            prints fps and draw calls once a second
 ##   -- --shots=<dir>     saves a screenshot every second into <dir>
+##   every run checks the message, whenever it shows, clears the chord signs and the counters
 
 const Game := preload("res://scripts/game.gd")
 const Song := preload("res://scripts/song.gd")
@@ -73,6 +78,7 @@ var _tempo_due := 0.0      # the tempo a pause worked by keys should have left; 
 var _counts_at_pause := []   # falls and misses when it paused: a pause costs nothing
 var _held_over := -1       # the next branch's note, held down on the pause menu into the song; -1 for none
 var _progress := 0.0       # the most of the level the game has said is done
+var _banner_ok := false    # the message has been seen clear of the signs
 var _shots_dir := ""
 var _perf := false
 var _next_perf := 0.0
@@ -91,9 +97,12 @@ var _spacing_checked := false
 var _end_state := Game.State.WAIT   # how the song ended
 var _poked_end := false             # the bot has played a note on the end panel in its first second
 var _end_checked := false           # and seen it listen after that
+var _end_menu_at := 0.0             # with --menu, when it moved to the end panel's Menu
+var _looks_failed := false          # something other than the selection looked selected
+var _paused_looked := false         # the first pause has had its looks checked
 var _menu := false
 var _menu_page := MainMenu.Page.PLAY  # the board it starts from
-var _menu_steps: Array[String] = ["main", "pick", "board", "again", "start", "started"]
+var _menu_steps: Array[String] = ["main", "pick", "foot_back", "foot_start", "board", "again", "start", "started"]
 var _menu_step := 0
 var _menu_next := 0.0
 var _menu_back_at := 0.0            # when it pressed the end panel's Menu
@@ -137,7 +146,7 @@ func _ready() -> void:
 		game.set_drill.call_deferred(Drill.all_chords(), Drill.COUNT, _beats)
 		game.set_mode.call_deferred(Hud.Mode.DRILL)
 		_menu_page = MainMenu.Page.DRILL
-		_menu_steps = ["main", "pick", "drill", "width", "width_check", "more", "grid", "grid_back", "sign", "again", "start", "started"]
+		_menu_steps = ["main", "pick", "foot_back", "foot_start", "drill", "width", "width_check", "more", "grid", "grid_back", "sign", "again", "start", "started"]
 	if _autoplay and not _menu:
 		game.start.call_deferred()
 
@@ -177,6 +186,7 @@ func _play(now: float) -> void:
 			get_tree().quit()
 		return
 	_check_progress()
+	_check_banner()
 	if game.started and game.mode == Hud.Mode.DRILL and not _spacing_checked:
 		_spacing_checked = true
 		_check_drill_spacing()
@@ -196,17 +206,23 @@ func _play(now: float) -> void:
 			_expect(_cursor().sign_shown() and _lit() == "EFAB" and _cursor().selected() == game.hud.get_node("EndPanel/Lines/Buttons/Again"),
 				"after a second the end panel's sign shows, on Play again, E F A B lit: %s" % _lit())
 			print("end: guard ok")
-		elif now - _ended_at > 2000.0:
+			_look("end_again")
+			_expect_lit(_end_buttons(), game.hud.get_node("EndPanel/Lines/Buttons/Again"), "the end panel")
+		elif now - _ended_at > 2000.0 and _end_menu_at == 0.0:
 			if game.state == Game.State.WON and game.level_progress() < 1.0:
 				push_error("progress ended at %.3f, not 1, with the gorilla in its nest" % game.level_progress())
 			_check_counters()
-			if _menu:
-				_menu_back_at = now
-				_note("F", 6)
-				_expect(_cursor().selected() == game.hud.get_node("EndPanel/Lines/Buttons/Menu"), "F moves to Menu")
-				_note("A", 2)
+			if not _menu:
+				get_tree().quit()
 				return
-			get_tree().quit()
+			_end_menu_at = now
+			_note("F", 6)
+			_expect(_cursor().selected() == game.hud.get_node("EndPanel/Lines/Buttons/Menu"), "F moves to Menu")
+		elif _end_menu_at > 0.0 and now - _end_menu_at > MENU_STEP_MS:
+			_look("end_menu")
+			_expect_lit(_end_buttons(), game.hud.get_node("EndPanel/Lines/Buttons/Menu"), "the end panel")
+			_menu_back_at = now
+			_note("A", 2)
 		return
 	if game.by_itself:
 		_play_chords(now)
@@ -320,11 +336,30 @@ func _work_menu(now: float) -> bool:
 			_key(KEY_ESCAPE)
 			_note("B", 2)
 		"pick":
+			_look("main")
+			_expect_lit(menu.get_node("Main/Column").get_children().filter(func(c: Node) -> bool: return c is Button),
+				menu.get_node("Main/Column/Play"), "the main page")
 			_expect(menu.visible and menu.page == MainMenu.Page.MAIN and not game.started, "Esc and B do nothing on the main page")
 			for k in PLANKS.keys().find(_menu_page):
 				_note("D", 3 + k)
 			_expect(cursor.selected() == plank, "D walks down to the board's plank")
 			_note("A", 5)
+		"foot_back", "foot_start":
+			var page := MainMenu.Page.keys()[_menu_page].to_lower() as String
+			var foot := ("Drill" if _menu_page == MainMenu.Page.DRILL else "Songs") + "/Board/Rows/Foot/"
+			var back: Button = menu.get_node(foot + "Back")
+			var start: Button = menu.get_node(foot + "Start")
+			var on := start if step == "foot_back" else back
+			_look("%s_%s" % [page, on.name.to_lower()])
+			_expect_lit([back, start], on, "the board's foot")
+			if step == "foot_back":
+				_note("E", 3)
+				_expect(cursor.selected() == back, "E moves from Start to Back")
+			else:
+				_note("F", 5)
+				_expect(cursor.selected() == start, "F moves from Back to Start")
+				if not _looks_failed:
+					print("menu: looks ok")
 		"board":
 			_expect(menu.page == _menu_page and game.mode == MODES[_menu_page], "A on the plank opens its board, in its mode")
 			_expect(cursor.selected() == menu.get_node(songs + "Foot/Start") and _lit() == "CDEFAB", "the board opens on Start, all six lit: %s" % _lit())
@@ -452,6 +487,37 @@ func _row_name() -> String:
 	return selected.name if selected is HBoxContainer else selected.get_parent().name
 
 
+## On `where`, `which` alone of `buttons` looks selected (its theme's hover look, gold) and
+## has grown; the others look and sit as at rest.
+func _expect_lit(buttons: Array, which: Button, where: String) -> void:
+	var theme := ThemeDB.get_project_theme()
+	var lit := buttons.filter(func(b: Button) -> bool: return b.get_theme_stylebox(&"normal") == theme.get_stylebox(&"hover", b.theme_type_variation))
+	var grown := buttons.filter(func(b: Button) -> bool: return b.scale.x > 1.0)
+	if lit != [which] or grown != [which]:
+		_looks_failed = true
+		var names := func(bs: Array) -> String: return ", ".join(bs.map(func(b: Button) -> String: return b.name))
+		push_error("menu: not so: on %s only %s looks selected and grown, not lit [%s], grown [%s]" % [where, which.name, names.call(lit), names.call(grown)])
+
+
+## With --shots, saves the screen as it was a frame ago as look_<name>.png, for the user to
+## judge whether what is selected is plain to see.
+func _look(name: String) -> void:
+	if _shots_dir == "":
+		return
+	var path := "%s/look_%s.png" % [_shots_dir, name]
+	get_viewport().get_texture().get_image().save_png(path)
+	print("look: ", path)
+
+
+func _end_buttons() -> Array:
+	return [game.hud.get_node("EndPanel/Lines/Buttons/Again"), game.hud.get_node("EndPanel/Lines/Buttons/Menu")]
+
+
+func _pause_buttons() -> Array:
+	var rows := game.hud.get_node("PauseMenu/Center/Panel/Rows")
+	return [rows.get_node("Continue"), rows.get_node("Restart"), rows.get_node("Menu")]
+
+
 func _main_menu() -> MainMenu:
 	return game.hud.get_node("MainMenu")
 
@@ -499,6 +565,40 @@ func _check_progress() -> void:
 	if p < _progress:
 		push_error("progress went back from %.3f to %.3f" % [_progress, p])
 	_progress = p
+
+
+## The message (why you fell, what was wrong) covers nothing you need to read: no standing
+## chord sign on screen nor the key under it, nor where the tallest sign reaches, nor the
+## percentage or the counters, and it stays on screen.
+func _check_banner() -> void:
+	var at: Rect2 = game.hud.banner_rect()
+	if not at.has_area():
+		return
+	var covered: Array[String] = []
+	for i in game.notes.size():
+		var standing: ChordLog = game.world.chord_log(i)
+		if standing == null or not game.notes[i].log_up:
+			continue
+		var board: Sprite2D = standing.get_node("Top/Sign/Board")
+		var key: Label = standing.get_node("Top/Sign/Key")
+		if at.intersects(board.get_global_transform_with_canvas() * board.get_rect()):
+			covered.append("the %s sign" % game.notes[i].chord.name)
+		if key.text != "" and at.intersects(key.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, key.size)):
+			covered.append("the %s key" % game.notes[i].chord.name)
+	var tallest := get_viewport().get_canvas_transform() * Vector2(0.0, ChordLog.SIGN_Y - ChordLog.TALL_BOARD.get_height() / 2.0)
+	if at.end.y > tallest.y:
+		covered.append("where a seventh's tall sign reaches")
+	if at.intersects(game.hud.get_node("Progress").label_rect()):
+		covered.append("the percentage")
+	if at.intersects(_pill().get_global_rect()):
+		covered.append("the counters")
+	if not get_viewport().get_visible_rect().encloses(at):
+		covered.append("the screen's edge")
+	if not covered.is_empty():
+		push_error("the banner %s covers %s" % [at, ", ".join(covered)])
+	elif not _banner_ok:
+		_banner_ok = true
+		print("banner: clear of the signs")
 
 
 ## Plays `m` for branch `j`, and the chord of its log if one stands.
@@ -585,8 +685,18 @@ func _work_pause(now: float) -> void:
 		_paused_at = now
 		if _held >= 0:
 			_release(now)   # a player lets go to reach for Esc
+	elif _pauses == 0 and not _paused_looked and now - _paused_at >= PAUSE_FOR_MS / 2.0:
+		_paused_looked = true
+		var rows := game.hud.get_node("PauseMenu/Center/Panel/Rows")
+		_look("pause_continue")
+		_expect_lit(_pause_buttons(), rows.get_node("Continue"), "the pause menu")
+		_note("D", 4)
 	elif now - _paused_at >= PAUSE_FOR_MS:
 		var rows := game.hud.get_node("PauseMenu/Center/Panel/Rows")
+		if _pauses == 0:
+			_look("pause_restart")
+			_expect_lit(_pause_buttons(), rows.get_node("Restart"), "the pause menu")
+			_note("C", 4)
 		_expect(_cursor().selected() == rows.get_node("Continue") and _lit() == "CDAB", "the pause menu opens on Continue: %s" % _lit())
 		var downs := 3 if game.mode == Hud.Mode.PLAY else 2   # Practice mode's row is Play's only
 		var up_to := minf(game.bpm + 5.0, 120.0)

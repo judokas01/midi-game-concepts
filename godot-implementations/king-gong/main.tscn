@@ -73,6 +73,17 @@ corner_radius_top_right = 20
 corner_radius_bottom_right = 20
 corner_radius_bottom_left = 20
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+content_margin_left = 18.0
+content_margin_top = 3.0
+content_margin_right = 18.0
+content_margin_bottom = 3.0
+bg_color = Color(0.0627451, 0.0862745, 0.0627451, 0.85)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_esc"]
 content_margin_left = 6.0
 content_margin_top = 1.0
@@ -214,13 +225,22 @@ script = ExtResource("4_input")
 [node name="Hud" type="CanvasLayer" parent="." unique_id=2110018677]
 script = ExtResource("5_hud")
 
-[node name="Banner" type="Label" parent="Hud" unique_id=1746374453]
+[node name="Banner" type="CenterContainer" parent="Hud" unique_id=1746374453]
 visible = false
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 122.6
-offset_bottom = 152.6
+offset_top = 34.0
+offset_bottom = 70.0
 grow_horizontal = 2
+mouse_filter = 2
+
+[node name="Pill" type="PanelContainer" parent="Hud/Banner"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="Text" type="Label" parent="Hud/Banner/Pill"]
+layout_mode = 2
 label_settings = ExtResource("13_banner")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -333,6 +353,7 @@ layout_mode = 2
 focus_mode = 0
 text = "Play again"
 theme_type_variation = &"StartButton"
+script = ExtResource("19_plank")
 
 [node name="Menu" type="Button" parent="Hud/EndPanel/Lines/Buttons" unique_id=1504829774]
 custom_minimum_size = Vector2(170, 46)
@@ -813,6 +834,7 @@ custom_minimum_size = Vector2(170, 46)
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"StartButton"
+script = ExtResource("19_plank")
 text = "Start ▶"
 
 [node name="Drill" type="CenterContainer" parent="Hud/MainMenu"]
@@ -1107,6 +1129,7 @@ custom_minimum_size = Vector2(170, 46)
 layout_mode = 2
 focus_mode = 0
 theme_type_variation = &"StartButton"
+script = ExtResource("19_plank")
 text = "Start ▶"
 
 [node name="ChordMenu" type="ColorRect" parent="Hud" unique_id=1267639521]
@@ -1204,6 +1227,7 @@ layout_mode = 2
 focus_mode = 0
 text = "Continue ▶"
 theme_type_variation = &"StartButton"
+script = ExtResource("19_plank")
 
 [node name="Restart" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=470180046]
 custom_minimum_size = Vector2(0, 46)
