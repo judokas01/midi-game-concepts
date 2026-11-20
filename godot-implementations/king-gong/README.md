@@ -24,6 +24,7 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | Keyboard `Z X C V B N M` | With chords: one key per chord, by its root: C D E F G A B, and with `Shift` the black key above (`Shift+N` = Bb). The sign on each log shows its key, e.g. `Z` = C, `V` = F, `B` = G. In the chord drill every root plays the kind of chord the next log wants (`X` = Dm when it wants Am) |
 | Main menu | Wooden planks: **Play song**, **Learn song** ([learn mode](#learn-mode)), **Chord drill** ([drill chords](#chord-drill)), **Exit game**; Tutorial and Campaign are coming. Each of the first three opens a board with its options and **Start** |
 | Song `◀` list `▶` | On the Play song and Learn song boards: which song, the built-in ones and then [your own](#your-own-songs) |
+| Listen | At the foot of the Play song and Learn song boards, between Back and Start: [hear the song](#listen) played on the piano while the gorilla climbs it. Any key, note or click stops it (not the volume keys or the wheel) |
 | Part: Treble clef / Bass clef / Treble + chords / Chords only | On the song boards: how to play the song. [Chords only](#chords-only): the gorilla plays the tune, you the chords |
 | Chord sign | On the song boards (with chords), the Chord drill board and the pause menu (with chords): the sign on each log shows the chord's name, or its notes in the bass clef. One setting: changed in one place, it changes in all |
 | Chords, In a round, Chord every | On the Chord drill board: which chords it deals (More options opens the [chord grid](#the-chord-grid)), how many a round has (8, 16, 32, 64) and how many beats apart they come (1 to 8) |
@@ -32,6 +33,7 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | `Enter` / Restart button | During a song: restart it, or in the chord drill deal a new round |
 | `Esc` | During a song: the [pause menu](#the-pause-menu). On a menu it goes back, as B: from the pause menu into the song, from the end panel to the board the song was started from, from a board to the main menu, from the chord grid to the drill board |
 | Practice mode | On the Play song board, and in the pause menu: the magic bananas never run out |
+| Backing | On the song and Chord drill boards, and in the pause menu: the game plays the part you don't on its [piano](#backing). On by default; one setting, changed in one place, it changes in all |
 | Keyboard hint | On the Learn song and Chord drill boards: the [little keyboard](#the-little-keyboard) at the bottom. On by default |
 | Tempo, Labels, Beat tick | In the pause menu. Tempo 40–120 BPM (default 60); Labels and Beat tick are the spike's toggles |
 
@@ -48,7 +50,7 @@ while the main menu is up.
 
 `Esc` during a song freezes it under the pause menu: **Continue**, **Restart song**,
 **Practice mode** (in Play mode), **Tempo** (`◀ 60 BPM ▶`, 40 to 120 in steps of 5; E and F
-on its row), **Beat tick**, **Labels**, **Chord sign** (with chords: each log's name or its
+on its row), **Beat tick**, **Backing** (when the part has something to back), **Labels**, **Chord sign** (with chords: each log's name or its
 notes in the bass clef, changed on the logs at once) and **Menu**, back to the board the
 song was started from. It opens on Continue, so A, `Enter` or `Space` continues at once; B or `Esc` does too.
 
@@ -60,7 +62,20 @@ still costs its banana. Notes played or let go while paused are ignored.
 
 ## Learning
 
-Two ways to get ready for a level, and a drill for the chords.
+Three ways to get ready for a level, and a drill for the chords.
+
+### Listen
+
+Pick a song and a part on the Play song or Learn song board, then **Listen** (Back · Listen ·
+Start at the foot). The level is laid out as for playing it, and the gorilla climbs it by
+itself on the beat, as in Chords only, while the [piano](#the-piano) plays the tune and its
+chords: the chords below the tune, each ringing until the next. A song without chords plays
+its tune. It plays at the tempo set in the pause menu, and in the part's octave: in the
+bass clef, where the bass clef puts the tune. The beat tick is silent, as the music carries
+the beat, and nothing counts: no falls, no wrong notes, no bananas taken, no end panel. At
+the nest, or as soon as you press any key, play any note, or click, it stops and the board
+comes back, on Start. The volume keys, Shift, Ctrl or Alt on their own and the mouse wheel
+leave it playing.
 
 ### Learn mode
 
@@ -81,6 +96,27 @@ in the same ±0.35-beat window as a grab, or the gorilla bounces off its log, an
 bananas work as usual; in Learn mode the gorilla waits at the end of the branch before each
 log until you play its chord, and the beat restarts from there.
 
+### Backing
+
+With **Backing** on (the default), the game plays on its [piano](#the-piano) the part of the
+song you don't, each sound as the gorilla takes hold of a branch, so it follows you the way
+the beat tick does:
+
+| Part | You play | Backing plays |
+| --- | --- | --- |
+| Treble clef, Bass clef | the tune | the song's chords, below the tune: each chord as your note grabs the branch it starts on, ringing until the next chord comes in |
+| Chords only | the chords | the tune, the gorilla's own notes: each as it grabs that note's branch, for the note's length |
+| Treble + chords | both | nothing (the Backing row hides) |
+
+A song without chords (Mountain King) has nothing to back in the tune parts, so the row hides
+there too. In Play mode with Treble or Bass, a chord comes in with your note, like a left hand
+following the right; with Chords only the tune is on the beat. In Learn mode nothing is timed:
+a chord comes when you play its note, a tune note when the gorilla moves on. When the gorilla
+falls, what is sounding is let go, and the next grab brings the backing back: the chord the
+branch is under too, though it started earlier. The pause menu silences it, and Continue
+picks it up the same way at the next grab. In the chord drill Backing plays its tune, as for
+Chords only: the arpeggios on its branches (see [Chord drill](#chord-drill)).
+
 ### Chord drill
 
 Pick **Chord drill** on the main menu. On its board, **Chords** has a button for each kind of
@@ -93,12 +129,25 @@ made-up tune of 8, 16, 32 or 64 chords (**In a round**), a new one every 4 beats
 **Chord every**), dealt like cards from the ones picked: each comes up as often as the
 others, in a shuffled order, never twice running unless it is the only one. The
 gorilla climbs it by itself and waits at every log until you play its chord, anywhere on the
-keyboard. The tune is the chord's own notes between C4 and C5, unnamed: the drill is about
-the chords, so its branches carry no note names, Labels on or off. A banana hangs at every
+keyboard. The tune leads into each chord: every log stands on its chord's root, and the
+branches up to the next log are the next chord's notes between C4 and C5, low to high, an
+arpeggio of the chord you play there. Its notes are all as long: half notes, quarters or
+eighths, the longest that leaves the log's own branch at least as long (G after C, a chord
+every 4 beats: C on one beat, then D4 G4 B4 in quarters). Where even eighths don't fit (a
+chord every 2 beats, a chord with four notes in that range) its lowest notes drop out; a
+chord every beat leaves no room, so there are only logs. The first log has nothing before
+it, and the last holds the round's last beats. The branches carry no note names, Labels on
+or off: the drill is about the chords. A banana hangs at every
 fourth chord. Restart or Play again deals a new round. **Chord sign** puts each chord's
 name on its log, or its notes in the bass clef. A seventh's four notes reach a ledger line
 off the staff, E2 below (E7, Eb7, Em7…) or C4 above (D7, Db7…), so its sign is a taller
 board than a triad's.
+
+With **Backing** on (the default; a row on the drill board and in the pause menu), the
+[piano](#the-piano) plays the tune as the gorilla climbs it, each branch's note as it takes
+hold, on the gorilla's beat: you hear the next chord's arpeggio, then answer it at the log,
+where the piano adds the root as the gorilla grabs it. It plays nothing that isn't on a
+branch, and nothing while the gorilla waits.
 
 ### The chord grid
 
@@ -243,10 +292,9 @@ A file the importer can't read is left out of the list, with a warning in the co
 - **Input timing.** Godot input events carry no timestamp, so a note is stamped when the
   event is dispatched, once per frame: about 16 ms of resolution at 60 fps against a
   ±350 ms window at 60 BPM. The spike uses Web MIDI's own timestamps.
-- **The only sound is the beat tick.** You hear your own instrument, so there is no note
-  synth and none of the spike's effects (grab, creak, crack, fall, boing, banana, win).
-  On the computer keyboard that means you hear nothing but the tick. The tick is generated
-  in code like the spike's and scheduled on exact sample frames.
+- **A recorded piano, no effects.** The spike's synth and its effects (grab, creak, crack,
+  fall, boing, banana, win) are gone. The tick is generated in code like the spike's and
+  scheduled on exact sample frames. See [The piano](#the-piano).
 - **Fixed layout.** The spike sizes everything from the window height. Here a staff step is
   a fixed 36 px on a 1280×720 canvas and the window scales the whole picture.
 - **Small visual liberties.** The floor is drawn in front of the world, so tree trunks and
@@ -260,6 +308,19 @@ A file the importer can't read is left out of the list, with a warning in the co
   picked up until restart.
 - **No GPU.** If Windows falls back to its software renderer (no working graphics driver),
   vsync stutters at about 40 fps, so the game turns vsync off and caps itself at 60 fps.
+
+## The piano
+
+The game plays a recorded acoustic piano, the Salamander Grand Piano (see
+`art/CREDITS.md`): one recording every three semitones from A0 to C8, pitched a semitone up
+or down for the notes between. A held note rings and dies away as a piano's does; let go,
+it fades in a quarter of a second, as without the pedal. Up to 32 notes sound at once.
+
+It never plays what you play: your own instrument does that. It plays a song for
+[Listen](#listen), and the part you don't play with [Backing](#backing), in the chord drill
+its tune. The beat tick stays
+louder than the piano. A note due on a beat starts in whichever frame has it heard nearest to
+the beat, by the audio clock: within about 15 ms.
 
 ## How it is put together
 
@@ -282,8 +343,8 @@ them around:
 | `scripts/branch.gd`, `liana.gd`, `chord_log.gd`, `gorilla.gd` | What each of those scenes can do |
 | `scripts/song.gd` | The songs and their chords and keys, their parsing into branches with the signs they carry, and the two clefs |
 | `scripts/key_signature.gd` | Puts the song's sharps or flats after the clef |
-| `scripts/drill.gd` | Makes up the chord drill's tune and deals its chords; which the chord grid offers, and how they are spelled |
-| `scripts/main_menu.gd` | The main menu: its planks, and the song and drill boards they open |
+| `scripts/drill.gd` | Deals the chord drill's chords and makes up its tune, each chord's arpeggio before its log; which chords the chord grid offers, and how they are spelled |
+| `scripts/main_menu.gd` | The main menu: its planks, and the song and drill boards they open (with Listen on the song boards) |
 | `scripts/plank.gd`, `ropes.gd` | A wooden plank that hangs askew and straightens and grows while selected (the yellow button grows the same way); the two lianas a plank or board hangs by |
 | `scripts/menu_cursor.gd` | The selection on every menu: moves it, does what the six keys do on each kind of row, draws the frames, places the sign |
 | `scripts/menu_sign.gd` | Draws the sign beside the selection: one octave, the keys that do something lit |
@@ -293,9 +354,12 @@ them around:
 | `scripts/piano.gd` | Draws the little keyboard |
 | `scripts/score_import.gd` | Reads the MusicXML scores in `songs/` into songs |
 | `scripts/metronome.gd` | The beat tick |
+| `scripts/piano_sound.gd` | The piano: the recordings in `sounds/piano/`, its voices, a note's fade when let go, a note started to be heard on time |
+| `scripts/song_player.gd` | Plays a song on the piano, its tune, its chords or both: in a level as the gorilla grabs each branch (and right on the beat when the next grab is certain), outside one from the song's start |
+| `sounds/piano/*.ogg` | The piano's recordings; see `art/CREDITS.md` |
 | `scripts/note_input.gd` | MIDI and keyboard input |
 | `scripts/hud.gd` | The counters, the menus' wiring, messages, what the little keyboard lights |
-| `scripts/dev_autoplay.gd`, `dev_cursor_check.gd`, `dev_sign_check.gd` | Dev checks only, see below |
+| `scripts/dev_autoplay.gd`, `dev_cursor_check.gd`, `dev_sign_check.gd`, `dev_sound_check.gd` | Dev checks only, see below |
 
 Branches, lianas and logs only appear when the game runs, because `level.gd` lays them out
 from the song. To change how they look, open `scenes/branch.tscn`, `scenes/liana.tscn` or
@@ -327,8 +391,12 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
 - `--drill` plays the chord drill, with every chord the chord grid offers picked, 16 a
   round, once striking a wrong chord: expect `WON falls=0 bananas=4 misses=1`. It first
   checks that the chords sit the chosen number of beats apart and that no branch carries a
-  note name, and says so: `drill: 16 chords, 4 beats apart`, then `drill: no note names`.
+  note name, and that each log stands on its chord's root with that chord's notes before it,
+  low to high, and says so: `drill: 16 chords, 4 beats apart`, `drill: each log's chord on
+  the branches before it, low to high`, then `drill: no note names`. Backing is checked as
+  for Chords only: `backing: <n> tune notes sounded`.
 - `--beats=<n>`, with `--drill`, a chord every n beats instead of 4; the result is the same.
+  With 1 there are only logs: `drill: logs only, a chord every beat`.
 - `--pause` pauses with `Esc` three times, once each: mid-fall, hanging on branch 10 and in
   the first rest. It lets go of its note while paused, and a second later works the pause
   menu: the first time by notes (D down to Tempo, F a step up, B to continue), the second
@@ -351,8 +419,8 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   Chord sign; B to the main page,
   A on the same plank, and `↑`, `↓`, `Space` to start. At the end it picks Menu on the end
   panel with F and A. Along the way it checks that one thing alone looks selected (gold) and
-  has grown: on the main page, on the board's Back | Start both ways, on the end panel both
-  ways, and with `--pause` on the pause menu's Continue and Restart song, and prints
+  has grown: on the main page, along the board's foot (Back · Listen · Start, or Back |
+  Start on the drill board) and back, on the end panel both ways, and with `--pause` on the pause menu's Continue and Restart song, and prints
   `menu: looks ok`. It prints `menu: started from PLAY` and `menu: back on PLAY` (or
   `LEARN`, `DRILL`); on the drill, `menu: kinds ok` once the round deals only the minor
   chords picked, and `menu: bass clef ok` once every log shows the bass clef. If the walk
@@ -363,6 +431,23 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   covers no chord sign or key under one, stays above where a seventh's tall sign reaches and
   clears the percentage and the counters, and prints `banner: clear of the signs` (in every
   mode above, as each has a fall or a wrong note).
+- Every run prints `sound: piano ready (30 samples)`.
+- `--backing` turns Backing on (it is on by default, so this makes it plain). Every
+  `--autoplay` run counts the gorilla's grabs and at the end checks the backing against them:
+  with Treble or Bass clef a chord per grab of a branch a chord starts on, and one at the
+  first grab after a fall or a pause (`backing: 23 chords sounded` for song 0 in Play
+  mode: its 21, and one after each of its 2 falls); with Chords only, and in the drill, a tune note per grab (`backing: 42 tune notes sounded`); with Treble + chords nothing, and the Backing row
+  hidden (`backing: none for this part`). With `--pause`, halfway through the first pause it
+  checks no backing voice sounds: `backing: silent while paused`.
+- `--listen` doesn't play: it opens the board (Play song, or Learn song with `--learn`),
+  moves to Listen with E and presses A, and lets it play to the nest. Meanwhile it checks
+  that nothing counts and no tick is queued; then that the piano played the song's notes and
+  chords, each heard (by the audio clock) within 20 ms of the gorilla's grab of its branch:
+  `listen: 42 notes, 21 chords, worst 4.0 ms off the beat` for song 0. It checks the board
+  is back on Start, then listens twice more, stopped after a moment by the `Q` key
+  (`listen: a key stops it`, the piano silent at once) and by the note A, which must not
+  also press Start (`listen: a note stops it`). With `--bass`, `--chords-only` or `--song=<n>`
+  it listens to that part or song.
 - `--bpm=<n>` plays at n BPM instead of 60, for a quicker check. Every result above is the
   same at 120.
 - `--perf` prints fps and draw calls once a second.
@@ -390,3 +475,12 @@ sharp or flat, and the name and every triad on the board they always had:
 ```
 
 It prints `sign: ok`.
+
+The piano and the song player have a headless check too: every key of the keyboard within
+a semitone of a recording, 20 notes at once, more than 32 taking over the oldest, a let-go
+fading out, no piano for the player's own notes, the keys that stop Listen, chords voiced
+below the tune, and a song's sounds as grabs and expected grabs start them:
+
+```powershell
+& "C:/game-dev/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot-implementations/king-gong --script res://scripts/dev_sound_check.gd
+```

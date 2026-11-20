@@ -34,14 +34,31 @@ extends Node
 ##                        B to the main page, A on the same plank, and the arrows and Space to
 ##                        start. At the end it presses the end panel's Menu and checks the same
 ##                        board is back. Along the way it checks that one thing alone looks
-##                        selected (gold) and grown: on the main page, on the board's Back |
-##                        Start both ways, on the end panel both ways, and on the pause menu
+##                        selected (gold) and grown: on the main page, along the board's foot
+##                        (Back · Listen · Start, or Back | Start) and back, on the end panel both ways, and on the pause menu
 ##                        (with --pause) Continue and Restart song; with --shots it saves each
 ##                        as look_<menu>_<selected>.png
 ##   -- --bpm=<n>         plays at n BPM instead of 60, for a quicker check
+##   -- --backing         turns Backing on (it is on by default): the game plays the part the
+##                        bot doesn't. Every --autoplay run checks it at the end: the chords
+##                        sounded, one per grab of a branch a chord starts on (Treble or Bass
+##                        clef: "backing: <n> chords sounded"), the tune, one note per grab
+##                        (Chords only: "backing: <n> tune notes sounded"), or nothing and the
+##                        Backing row hidden (Treble + chords: "backing: none for this part");
+##                        with --pause, no backing voice while paused ("backing: silent while
+##                        paused")
+##                        In the drill, Backing is its tune, as for Chords only: the arpeggios
+##                        on its branches and each log's root
+##   -- --listen          instead of playing: Listen from the board (Play song, or Learn song
+##                        with --learn), to the nest, checking that nothing counts and no tick
+##                        sounds, then that the piano played the song's notes and chords each
+##                        within 20 ms of the gorilla's grab: "listen: <n> notes, <m> chords,
+##                        worst <x> ms off the beat". Then Listen twice more, stopped by a key
+##                        ("listen: a key stops it") and by a note ("listen: a note stops it")
 ##   -- --perf            prints fps and draw calls once a second
 ##   -- --shots=<dir>     saves a screenshot every second into <dir>
-##   every run checks the message, whenever it shows, clears the chord signs and the counters
+##   every run checks the message, whenever it shows, clears the chord signs and the counters,
+##   and prints "sound: piano ready (<n> samples)"
 
 const Game := preload("res://scripts/game.gd")
 const Song := preload("res://scripts/song.gd")
@@ -50,6 +67,7 @@ const Drill := preload("res://scripts/drill.gd")
 const ChordLog := preload("res://scripts/chord_log.gd")
 const MainMenu := preload("res://scripts/main_menu.gd")
 const ChordMenu := preload("res://scripts/chord_menu.gd")
+const PianoSound := preload("res://scripts/piano_sound.gd")
 const FLUB_AT := 5         # the bot plays a wrong note when reaching for this branch, once
 const OVERHOLD_AT := 20    # and hangs on to this one until it breaks, once
 const CHORDLESS_AT := 9    # with chords, it plays the first log from this branch on without its chord, once
@@ -102,16 +120,36 @@ var _looks_failed := false          # something other than the selection looked 
 var _paused_looked := false         # the first pause has had its looks checked
 var _menu := false
 var _menu_page := MainMenu.Page.PLAY  # the board it starts from
-var _menu_steps: Array[String] = ["main", "pick", "foot_back", "foot_start", "board", "again", "start", "started"]
+var _menu_steps: Array[String] = ["main", "pick", "foot", "foot", "foot", "board", "again", "start", "started"]
+var _foot_seen := 0                 # the foot's buttons looked at so far, from Start leftwards
 var _menu_step := 0
 var _menu_next := 0.0
 var _menu_back_at := 0.0            # when it pressed the end panel's Menu
 var _board_width := 0.0             # the drill board's, before a long line of chords
 var _chords := false                # a part with chords was asked for
+var _listen := false                # --listen
+var _grabs_n := 0                   # the gorilla's grabs in the song, for backing
+var _chord_grabs := 0               # of them, grabs of a branch a chord starts on, or under a chord let go
+var _chord_gone := true             # no chord rings: none yet, or let go at a fall, or stopped at a pause
+var _falls_seen := 0
+var _was_hanging := false
+var _last_cur := -1
+var _counted := {}                  # "branch@grab_t" of each grab counted
+var _resumed := false               # it just continued from a pause: the gorilla grabs again, maybe unseen
+var _silent_said := false           # "backing: silent while paused", once
+var _heard: Array = []              # what the song player played while listening; the board's level clears it
+var _listen_step := ""
+var _listen_round := 0              # 0 to the nest, 1 stopped by a key, 2 by a note
+var _listen_next := 0.0             # the next step not before then
+var _listen_since := 0.0            # when listening started
+var _grabs := {}                    # branch -> when the gorilla grabbed it, while listening
+var _bananas_at := 0
+var _listen_failed := false         # something counted while listening; said once
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS   # works the pause menu, and keeps taking screenshots, while the game is paused
+	print("sound: piano ready (%d samples)" % PianoSound.sample_count())
 	for arg in OS.get_cmdline_user_args():
 		if arg == "--autoplay":
 			_autoplay = true
@@ -142,18 +180,25 @@ func _ready() -> void:
 			game.bpm = float(arg.trim_prefix("--bpm="))
 		elif arg.begins_with("--song="):
 			game.set_song.call_deferred(int(arg.trim_prefix("--song=")))
+		elif arg == "--listen":
+			_listen = true
+		elif arg == "--backing":
+			game.set_backing.call_deferred(true)
 	if _drill:
 		game.set_drill.call_deferred(Drill.all_chords(), Drill.COUNT, _beats)
 		game.set_mode.call_deferred(Hud.Mode.DRILL)
 		_menu_page = MainMenu.Page.DRILL
-		_menu_steps = ["main", "pick", "foot_back", "foot_start", "drill", "width", "width_check", "more", "grid", "grid_back", "sign", "again", "start", "started"]
-	if _autoplay and not _menu:
+		_menu_steps = ["main", "pick", "foot", "foot", "drill", "width", "width_check", "more", "grid", "grid_back", "sign", "again", "start", "started"]
+	if _autoplay and not _menu and not _listen:
 		game.start.call_deferred()
 
 
 func _process(_delta: float) -> void:
 	var now := Game.now_ms()
-	if _autoplay:
+	_count_grabs()
+	if _listen:
+		_work_listen(now)
+	elif _autoplay:
 		if _menu and _work_menu(now):
 			pass
 		elif _pausing_since > 0.0:
@@ -212,6 +257,7 @@ func _play(now: float) -> void:
 			if game.state == Game.State.WON and game.level_progress() < 1.0:
 				push_error("progress ended at %.3f, not 1, with the gorilla in its nest" % game.level_progress())
 			_check_counters()
+			_check_backing()
 			if not _menu:
 				get_tree().quit()
 				return
@@ -344,20 +390,21 @@ func _work_menu(now: float) -> bool:
 				_note("D", 3 + k)
 			_expect(cursor.selected() == plank, "D walks down to the board's plank")
 			_note("A", 5)
-		"foot_back", "foot_start":
+		"foot":   # from Start leftwards to Back, a look at each, then back to Start
 			var page := MainMenu.Page.keys()[_menu_page].to_lower() as String
-			var foot := ("Drill" if _menu_page == MainMenu.Page.DRILL else "Songs") + "/Board/Rows/Foot/"
-			var back: Button = menu.get_node(foot + "Back")
-			var start: Button = menu.get_node(foot + "Start")
-			var on := start if step == "foot_back" else back
+			var foot: Array = (menu.get_node(("Drill" if _menu_page == MainMenu.Page.DRILL else "Songs") + "/Board/Rows/Foot")
+				.get_children().filter(func(c: Node) -> bool: return c is Button))
+			var on: Button = foot[foot.size() - 1 - _foot_seen]
 			_look("%s_%s" % [page, on.name.to_lower()])
-			_expect_lit([back, start], on, "the board's foot")
-			if step == "foot_back":
+			_expect_lit(foot, on, "the board's foot")
+			_foot_seen += 1
+			if _foot_seen < foot.size():
 				_note("E", 3)
-				_expect(cursor.selected() == back, "E moves from Start to Back")
+				_expect(cursor.selected() == foot[foot.size() - 1 - _foot_seen], "E moves left along the foot to %s" % foot[foot.size() - 1 - _foot_seen].name)
 			else:
-				_note("F", 5)
-				_expect(cursor.selected() == start, "F moves from Back to Start")
+				for k in foot.size() - 1:
+					_note("F", 4 + k)
+				_expect(cursor.selected() == foot[-1], "F walks back along the foot to Start")
 				if not _looks_failed:
 					print("menu: looks ok")
 		"board":
@@ -374,7 +421,7 @@ func _work_menu(now: float) -> bool:
 			_expect(pick.selected == first and game.song == first, "E steps back")
 			_note("D", 1)
 			_note("D", 5)
-			var below := "Sign" if _chords else ("Practice" if _menu_page == MainMenu.Page.PLAY else "Hint")
+			var below := "Sign" if _chords else ("Backing" if menu.get_node(songs + "Grid/Backing").visible else ("Practice" if _menu_page == MainMenu.Page.PLAY else "Hint"))
 			_expect(_row_name() == below, "D below the part lands on %s, not %s" % [below, _row_name()])
 			_note("B", 3)
 		"drill":
@@ -460,6 +507,103 @@ func _work_menu(now: float) -> bool:
 	return true
 
 
+## With --listen: Listen from the board to the nest, then again stopped by a key, then by a
+## note, one step every MENU_STEP_MS.
+func _work_listen(now: float) -> void:
+	if now < _listen_next:
+		return
+	var menu := _main_menu()
+	var foot := "Songs/Board/Rows/Foot/"
+	match _listen_step:
+		"":
+			menu.open(_menu_page)
+			_listen_step = "press"
+			_listen_next = now + MENU_STEP_MS
+		"press":
+			_expect(menu.visible and _cursor().selected() == menu.get_node(foot + "Start"), "the board is up, on Start")
+			_note("E", 4)
+			_expect(_cursor().selected() == menu.get_node(foot + "Listen"), "E moves from Start to Listen")
+			_note("A", 3)
+			_expect(game.listening and game.started and not menu.visible, "A on Listen starts listening, the board hidden")
+			_grabs.clear()
+			_bananas_at = game.bananas
+			_listen_since = now
+			_listen_step = ["hear", "key", "note"][_listen_round]
+		"hear":
+			if game.listening:
+				_watch_listening()
+				return
+			_check_heard()
+			_back_on_board("at the nest")
+			_next_listen(now)
+		"key":
+			if now - _listen_since < 1500.0:
+				_watch_listening()
+				return
+			_key(KEY_Q)
+			_listen_step = "key_check"
+			_listen_next = now + MENU_STEP_MS
+		"key_check":
+			_back_on_board("after a key")
+			_expect(game.song_player.sounding() == 0, "a key stops the piano at once: %d sounding" % game.song_player.sounding())
+			print("listen: a key stops it")
+			_next_listen(now)
+		"note":
+			if now - _listen_since < 1000.0:
+				_watch_listening()
+				return
+			_note("A", 4)   # also what presses Start on the board, once it is back
+			_back_on_board("after a note")
+			print("listen: a note stops it")
+			get_tree().quit()
+
+
+func _next_listen(now: float) -> void:
+	_listen_round += 1
+	_listen_step = "press"
+	_listen_next = now + MENU_STEP_MS
+
+
+## While listening: the grabs, for the timing; and nothing counts, nothing ticks, no end panel.
+func _watch_listening() -> void:
+	_heard = game.song_player.played.duplicate()
+	if game.state == Game.State.HANG and not _grabs.has(game.cur):
+		_grabs[game.cur] = game.grab_t
+	var counted := game.falls != 0 or game.misses != 0 or game.bananas != _bananas_at
+	var ticking: bool = not game.metronome._ticks.is_empty()
+	var panel: bool = game.hud.get_node("EndPanel").visible
+	if (counted or ticking or panel) and not _listen_failed:
+		_listen_failed = true
+		push_error("listen: not so: nothing counts or ticks: falls %d, misses %d, bananas %d of %d, ticks queued %s, end panel %s"
+			% [game.falls, game.misses, game.bananas, _bananas_at, ticking, panel])
+
+
+## Listened to the nest: the piano played the song's own notes and chords, each heard within
+## 20 ms of the gorilla's grab of its branch.
+func _check_heard() -> void:
+	var notes := Song.parse(game.song, game.clef, true)
+	var chords := notes.filter(func(n: Song.Note) -> bool: return n.chord != null).size()
+	var played := _heard
+	var heard_chords := played.filter(func(p: Dictionary) -> bool: return p.chord).size()
+	var worst := 0.0
+	for p: Dictionary in played:
+		if not _grabs.has(p.branch):
+			push_error("listen: not so: branch %d sounded but was never grabbed" % p.branch)
+			continue
+		worst = maxf(worst, absf(p.heard_ms - _grabs[p.branch]))
+	_expect(played.size() - heard_chords == notes.size() and heard_chords == chords,
+		"the piano played the song's %d notes and %d chords, not %d and %d" % [notes.size(), chords, played.size() - heard_chords, heard_chords])
+	_expect(worst <= 20.0, "every sound within 20 ms of its beat, not %.1f ms" % worst)
+	print("listen: %d notes, %d chords, worst %.1f ms off the beat" % [played.size() - heard_chords, heard_chords, worst])
+
+
+func _back_on_board(when: String) -> void:
+	var menu := _main_menu()
+	_expect(not game.listening and not game.started and menu.visible and menu.page == _menu_page,
+		"%s the board is back, the song not started" % when)
+	_expect(_cursor().selected() == menu.get_node("Songs/Board/Rows/Foot/Start"), "%s the board is on Start" % when)
+
+
 ## The white key `name` ("C" … "B") in `octave` (4 is middle C's), played and let go on the
 ## MIDI keyboard, as only notes from one work the menus.
 func _note(name: String, octave: int) -> void:
@@ -542,7 +686,52 @@ func _check_counters() -> void:
 		push_error("bananas fly under the pill")
 
 
-## The drill's chords sit game.drill_beats apart.
+## A new grab: the gorilla took hold of a branch since the last frame (not while listening).
+## Hanging on the same branch with its grab moved on is the beat catching up after a wait,
+## unless it just continued from a pause, where it grabs again before the bot looks.
+func _count_grabs() -> void:
+	if _resumed or game.falls != _falls_seen:
+		_chord_gone = true
+		_falls_seen = game.falls
+	var hanging := game.started and not game.listening and game.state == Game.State.HANG
+	var key := "%d@%.3f" % [game.cur, game.grab_t]
+	var again := _was_hanging and game.cur == _last_cur and not _resumed
+	if hanging and not _counted.has(key) and not again:
+		_counted[key] = true
+		_grabs_n += 1
+		var cur: int = game.cur
+		var starts: bool = game.song_player.sounds.any(func(x) -> bool: return x.chord and x.branch == cur)
+		var under: bool = game.song_player.sounds.any(func(x) -> bool: return x.chord and x.branch < cur)
+		if starts or (_chord_gone and under):
+			_chord_grabs += 1
+			_chord_gone = false
+	_was_hanging = hanging
+	_last_cur = game.cur
+	_resumed = false
+
+
+## Backing played the part the bot didn't, at the gorilla's grabs: the chords of the branches
+## they start on, or the tune, or for Treble + chords nothing.
+func _check_backing() -> void:
+	var played: Array = game.song_player.played
+	var chord_sounds := played.filter(func(p: Dictionary) -> bool: return p.chord).size()
+	match game.backing_part():
+		"chords":
+			_expect(chord_sounds == played.size() and chord_sounds == _chord_grabs and _chord_grabs > 0,
+				"a chord sounded at each of the %d grabs a chord starts on, or after a fall or a pause: %d chords, %d sounds" % [_chord_grabs, chord_sounds, played.size()])
+			print("backing: %d chords sounded" % chord_sounds)
+		"tune":
+			_expect(chord_sounds == 0 and played.size() == _grabs_n and _grabs_n > 0,
+				"a tune note sounded at each of the %d grabs: %d sounds, %d chords" % [_grabs_n, played.size(), chord_sounds])
+			print("backing: %d tune notes sounded" % played.size())
+		"":
+			_expect(played.is_empty() and not _main_menu().get_node("Songs/Board/Rows/Grid/Backing").visible,
+				"nothing backed and no Backing row: %d sounds" % played.size())
+			print("backing: none for this part")
+
+
+## The drill's chords sit game.drill_beats apart, each log on its chord's root, and the
+## branches before it are its chord's notes, low to high (none with a chord every beat).
 func _check_drill_spacing() -> void:
 	var at: Array = game.notes.filter(func(n: Song.Note) -> bool: return n.chord != null).map(func(n: Song.Note) -> float: return n.beat)
 	for k in range(1, at.size()):
@@ -550,6 +739,18 @@ func _check_drill_spacing() -> void:
 			push_error("drill chords %.2f beats apart, not %d" % [at[k] - at[k - 1], game.drill_beats])
 			return
 	print("drill: %d chords, %d beats apart" % [at.size(), game.drill_beats])
+	var logs := range(game.notes.size()).filter(func(i: int) -> bool: return game.notes[i].chord != null)
+	for k in logs.size():
+		var on: Song.Note = game.notes[logs[k]]
+		var classes := Array(on.chord.midi).map(func(m: int) -> int: return posmod(m, 12))
+		var run := game.notes.slice(logs[k - 1] + 1, logs[k]) if k > 0 else []
+		var ok: bool = posmod(on.midi, 12) == classes[0] and (k == 0 or run.size() >= 2 or (game.drill_beats == 1 and run.is_empty()))
+		for i in run.size():
+			ok = ok and posmod(run[i].midi, 12) in classes and (i == 0 or run[i].midi > run[i - 1].midi)
+		if not ok:
+			push_error("drill: not so: log %d (%s on %s) has %s before it" % [k, on.chord.name, on.name, run.map(func(n: Song.Note) -> String: return n.name)])
+			return
+	print("drill: logs only, a chord every beat" if game.drill_beats == 1 else "drill: each log's chord on the branches before it, low to high")
 	# the drill is about the chords: the gorilla plays the notes itself, unnamed, labels on or off
 	for i in game.notes.size():
 		var name: String = game.world.branch(i).get_node("NoteLabel").text
@@ -666,6 +867,7 @@ func _work_pause(now: float) -> void:
 			print("autoplay: the pause menu did not continue")
 			get_tree().quit()
 		if not paused:
+			_resumed = true   # it grabs again at once: a new grab, even on the same branch
 			print("resumed state=%s cur=%d bpm=%d" % [Game.State.keys()[game.state], game.cur, roundi(game.bpm)])
 			_pausing_since = 0.0
 			if _tempo_due > 0.0:
@@ -687,6 +889,10 @@ func _work_pause(now: float) -> void:
 			_release(now)   # a player lets go to reach for Esc
 	elif _pauses == 0 and not _paused_looked and now - _paused_at >= PAUSE_FOR_MS / 2.0:
 		_paused_looked = true
+		_expect(game.song_player.sounding() == 0, "no backing while paused: %d sounding" % game.song_player.sounding())
+		if not _silent_said:
+			_silent_said = true
+			print("backing: silent while paused")
 		var rows := game.hud.get_node("PauseMenu/Center/Panel/Rows")
 		_look("pause_continue")
 		_expect_lit(_pause_buttons(), rows.get_node("Continue"), "the pause menu")
@@ -714,8 +920,8 @@ func _work_pause(now: float) -> void:
 				print("pause: tempo %d" % roundi(game.bpm))
 				_expect(rows.get_node("Sign").visible == game.chords, "the chord sign row shows with chords only")
 				if game.chords:
-					for k in 3:
-						_note("D", 3 + k)   # Tick, Labels, Chord sign
+					for k in (4 if rows.get_node("Backing").visible else 3):
+						_note("D", 3 + k)   # Tick, Backing (if shown), Labels, Chord sign
 					_expect(_cursor().selected() == rows.get_node("Sign") and _lit() == "CDFB", "D walks down to Chord sign, on Name: %s" % _lit())
 					_note("F", 4)
 					_expect(game.hint == ChordLog.Hint.BASS_CLEF, "F on Chord sign picks the bass clef")

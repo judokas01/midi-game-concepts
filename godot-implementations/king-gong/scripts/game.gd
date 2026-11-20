@@ -1,11 +1,14 @@
 extends Node2D
 ## King Gong, ported from concepts/002-king-gong/spike: the rules and the gorilla's pose.
 ## The scene shows the result: World (level.gd) holds the branches and the gorilla, Hud the
-## bar and messages, Metronome the beat tick, NoteInput the MIDI and keyboard.
+## bar and messages, Metronome the beat tick, NoteInput the MIDI and keyboard, SongPlayer the
+## piano the game plays (song_player.gd). The player's own notes make no sound here: their
+## instrument has its own.
 ##
 ## Besides playing a song by the spike's rules there is learn mode, where nothing is timed and
 ## the gorilla waits for each note and chord, and the chord drill, a made-up tune the gorilla
-## climbs by itself, waiting at every log for its chord.
+## climbs by itself, waiting at every log for its chord. Listen, from a song board, plays the
+## song to you on the piano (SongPlayer) while the gorilla climbs it by itself.
 
 const Song := preload("res://scripts/song.gd")
 const Staff := preload("res://scripts/staff.gd")
@@ -19,6 +22,7 @@ const Drill := preload("res://scripts/drill.gd")
 const Metronome := preload("res://scripts/metronome.gd")
 const NoteInput := preload("res://scripts/note_input.gd")
 const MenuCursor := preload("res://scripts/menu_cursor.gd")
+const SongPlayer := preload("res://scripts/song_player.gd")
 
 enum State { WAIT, HANG, AIR, REST, FALL, BOUNCE, OVER, WON }
 
@@ -30,10 +34,17 @@ const SWING := 0.85        # pendulum half-angle, radians
 const RP := 1.5            # shoulders hang this many staff steps below the grip
 const LIANA_DIP := 0.95    # liana below LIANA_Y where the gorilla lands, in steps
 const HOP := 1.5           # height of a bounce along the liana during a long rest, in steps
+const LISTEN_LEAD_MS := 800.0   # Listen: the gorilla sits on the stump this long before the music starts
+const NEST_MS := 1000.0         # and stays in the nest this long before the board comes back
+const LISTEN_GUARD_MS := 300.0  # notes this soon after a note stopped Listen are the same hand's: the board ignores them
+# keys that don't stop Listen: turning the sound up, a modifier on its own (Alt+Tab away)
+const KEEP_LISTENING: Array[Key] = [KEY_VOLUMEUP, KEY_VOLUMEDOWN, KEY_VOLUMEMUTE, KEY_MEDIAPLAY, KEY_MEDIASTOP,
+	KEY_MEDIAPREVIOUS, KEY_MEDIANEXT, KEY_SHIFT, KEY_CTRL, KEY_ALT, KEY_META]
 
 # settings, set from the HUD
 var bpm := 60.0
 var labels := true
+var backing := true            # the game plays the part you don't (backing_part()); one setting, on the boards and in the pause menu
 var tick_on := true
 var mode := Hud.Mode.PLAY      # this and the next eight are chosen on the main menu's boards
 var song := 0                  # which of Song.library()
@@ -43,6 +54,10 @@ var piano := true              # learn mode and the drill: the little keyboard l
 var drill_chords: Array = Drill.START_CHORDS   # the chords the drill deals, by name
 var drill_count := Drill.COUNT                 # and how many a round has
 var drill_beats := Drill.BEATS                 # and how many beats apart they are
+var listening := false         # Listen: the piano plays the song, the gorilla climbs it, nothing counts
+var _listen_from := 0.0        # when the first branch is grabbed, and the music starts
+var _back_at := 0.0            # in the nest: when the board comes back
+var _stopped_at := -INF        # when a key, note or click last stopped Listen
 var _style := {clef = Song.Clef.TREBLE, chords = false, by_itself = false}   # how the songs are played
 
 # how this level is played: the songs' style, or the drill's
@@ -95,6 +110,7 @@ var _last := 0.0
 @onready var hud: Hud = $Hud
 @onready var metronome: Metronome = $Metronome
 @onready var note_input: NoteInput = $NoteInput
+@onready var song_player: SongPlayer = $SongPlayer
 
 
 static func now_ms() -> float:
@@ -115,6 +131,7 @@ func _ready() -> void:
 	note_input.menu_requested.connect(_on_menu_key)
 	note_input.arrow_pressed.connect(_on_arrow_key)
 	hud.start_pressed.connect(start)
+	hud.listen_pressed.connect(listen)
 	hud.restart_pressed.connect(restart)
 	hud.tempo_changed.connect(func(v: float) -> void: bpm = v)
 	hud.labels_toggled.connect(_on_labels_toggled)
@@ -126,10 +143,11 @@ func _ready() -> void:
 	hud.drill_chosen.connect(set_drill)
 	hud.practice_toggled.connect(set_practice)
 	hud.piano_toggled.connect(set_piano)
+	hud.backing_toggled.connect(set_backing)
 	hud.menu_pressed.connect(show_menu)
 	hud.continue_pressed.connect(resume)
 	hud.back_pressed.connect(_back)
-	var dev_flags := ["--autoplay", "--perf", "--chords", "--bass", "--chords-only", "--learn", "--drill", "--pause", "--menu"]
+	var dev_flags := ["--autoplay", "--perf", "--chords", "--bass", "--chords-only", "--learn", "--drill", "--pause", "--menu", "--listen", "--backing"]
 	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in dev_flags or a.begins_with("--shots=") or a.begins_with("--song=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
 	now = now_ms()
@@ -161,13 +179,40 @@ func start() -> void:
 	restart()
 
 
+## Listen, from a song board: the gorilla climbs the song by itself on the beat, as in Chords
+## only, never waiting at a log, while the piano plays it, tune and chords, in the part's octave
+## at the tempo. Nothing counts and the beat tick is silent. Any key, note or click, or the
+## nest, brings back the board.
+func listen() -> void:
+	if started:
+		return
+	started = true
+	listening = true
+	hud.hide_main_menu()
+	restart()
+	_listen_from = now_ms() + LISTEN_LEAD_MS
+	song_player.load_song(Song.parse(song, clef, true))
+	song_player.expect(0, _listen_from)
+	hud.show_banner("Listening · any key stops")
+
+
+## Stops listening, if it is: the piano at once, and the board back. True if it was.
+func _stop_listening() -> bool:
+	if not listening:
+		return false
+	listening = false
+	song_player.stop()
+	show_menu()
+	return true
+
+
 func restart() -> void:
 	get_tree().paused = false
 	hud.close_pause()
 	var drill := mode == Hud.Mode.DRILL
 	clef = Song.Clef.TREBLE if drill else _style.clef
 	chords = drill or _style.chords
-	by_itself = drill or _style.by_itself
+	by_itself = drill or _style.by_itself or listening
 	fifths = 0 if drill else Song.key_of(song)   # the drill's tune is the gorilla's, so it needs none
 	$Clef/Treble.visible = clef == Song.Clef.TREBLE
 	$Clef/Bass.visible = clef == Song.Clef.BASS
@@ -191,6 +236,9 @@ func restart() -> void:
 	_stale.clear()
 	done_up_to = 0
 	metronome.cancel_ticks()
+	var part := backing_part()   # the song player gets the part backing plays
+	song_player.load_song(notes if chords else Song.parse(song, clef, true), part == "tune", part == "chords")
+	hud.show_backing(part != "")
 	state = State.WAIT
 	cur = 0
 	perch_stump = true
@@ -289,6 +337,7 @@ func can_pause() -> bool:
 func pause() -> void:
 	_paused_at = now_ms()
 	metronome.cancel_ticks()
+	song_player.stop()
 	_left.clear()
 	_right.clear()
 	_wrong.clear()
@@ -296,7 +345,7 @@ func pause() -> void:
 	_blocked = {}
 	_missed_chord = false
 	get_tree().paused = true
-	hud.open_pause(mode == Hud.Mode.PLAY, practice, bpm, tick_on, labels, chords, hint)
+	hud.open_pause(mode == Hud.Mode.PLAY, practice, bpm, tick_on, backing_part() != "", backing, labels, chords, hint)
 
 
 ## Continue. A fall or a bounce carries on where it was. Hanging can't survive the pause, as the
@@ -393,9 +442,13 @@ func wait_spot(r: int) -> Vector2:
 
 func note_on(m: int, ts: float) -> void:
 	_menu_notes.erase(m)   # pressed again: whatever held it from a menu has let go, unseen (a lost key-up)
+	if _stop_listening():
+		_stopped_at = now_ms()
+		_menu_notes[m] = true   # its let-go is no part of anything
+		return
 	if hud.menu_up():
 		_menu_notes[m] = true
-		if note_input.source == "MIDI":
+		if note_input.source == "MIDI" and now_ms() - _stopped_at > LISTEN_GUARD_MS:
 			hud.menu_note(m)   # the computer keyboard's notes don't work the menus: its arrows do
 		return
 	if chords and (by_itself or m < _next_note()):
@@ -568,6 +621,8 @@ func _break_log(j: int, ts: float) -> void:
 	_update_hud()
 	if by_itself and state == State.HANG:
 		_catch_up()
+	if j == cur + 1 and state in [State.HANG, State.AIR, State.REST] and _backs("tune"):
+		_expect_next()   # the next grab is certain now
 	if _blocked.is_empty():
 		return
 	# from the magic banana, and in learn mode, the grab restarts the beat, so it counts from when both are down
@@ -592,10 +647,17 @@ func _play_tune() -> void:
 		State.WAIT:
 			if not _blocked.is_empty():
 				return
+			var at := now
+			if listening:   # a moment on the stump, then the first grab as the music starts
+				if now < _listen_from:
+					return
+				at = _listen_from
+				if notes[cur].log_up:
+					_break_log(cur, at)
 			if notes[cur].log_up:
 				_blocked = {j = cur, ts = now, jump = false}   # grabbed once the chord breaks the log
 			else:
-				_grab(cur, now, false)
+				_grab(cur, at, false)
 		State.HANG:
 			var w := windows(cur, grab_t)
 			if now < w.end:
@@ -604,7 +666,7 @@ func _play_tune() -> void:
 				_complete(cur)
 				_win()
 				return
-			if mode != Hud.Mode.PLAY and notes[cur + 1].log_up:
+			if mode != Hud.Mode.PLAY and not listening and notes[cur + 1].log_up:
 				return
 			_complete(cur)
 			state = State.REST if notes[cur].rest_after > 0 else State.AIR
@@ -616,6 +678,8 @@ func _play_tune() -> void:
 				return
 			var j := cur + 1
 			var jump := state != State.REST and absi(notes[j].step - notes[cur].step) > 2
+			if listening and notes[j].log_up:
+				_break_log(j, w.next)   # the music plays the chord
 			if notes[j].log_up:
 				_blocked = {j = j, ts = w.next, jump = jump}   # grabbed if the chord comes in time
 			else:
@@ -634,17 +698,32 @@ func _grab(j: int, ts: float, jump: bool) -> void:
 	state = State.HANG
 	cur = j
 	grab_t = ts
-	if tick_on and (mode == Hud.Mode.PLAY or by_itself):   # in learn mode there is no beat to keep
+	if listening or _backs("tune") or _backs("chords"):   # the music follows the gorilla
+		song_player.grab(j, ts, beat_ms())
+		if not _backs("chords"):   # it climbs by itself: its next grab may be certain already
+			_expect_next()
+	if listening:   # the music carries the beat
+		metronome.cancel_ticks()
+	elif tick_on and (mode == Hud.Mode.PLAY or by_itself):   # in learn mode there is no beat to keep
 		metronome.schedule_ticks(ts, beat_ms(), notes[j].beats, notes[j].rest_after)
 	else:
 		metronome.cancel_ticks()
+
+
+## The gorilla's next grab, when it is certain (it climbs by itself and no log stands before
+## the next branch; while listening, always): the song player plays that branch right on time.
+func _expect_next() -> void:
+	var j := cur + 1
+	if j >= notes.size() or (notes[j].log_up and not listening):
+		return
+	song_player.expect(j, windows(cur, grab_t).next)
 
 
 func _complete(i: int) -> void:
 	done_up_to = maxi(done_up_to, i + 1)
 	var n := notes[i]
 	world.branch(i).mark_done()
-	if n.banana and not n.taken:
+	if n.banana and not n.taken and not listening:
 		n.taken = true
 		bananas += 1
 		world.branch(i).take_banana()
@@ -673,6 +752,7 @@ func _bump_log(j: int) -> void:
 func _fall(reason: String, retry: int, back := false) -> void:
 	falls += 1
 	metronome.cancel_ticks()
+	song_player.let_go()
 	state = State.FALL
 	cur = retry
 	_blocked = {}
@@ -688,8 +768,12 @@ func _fall(reason: String, retry: int, back := false) -> void:
 
 func _win() -> void:
 	metronome.cancel_ticks()
+	song_player.let_go()
 	_blend = {from = render.pos, rot = render.rot, t0 = now_ms(), dur = 450.0, hop = 1.5 * S}
 	state = State.WON
+	if listening:   # no end panel: a moment in the nest, then the board
+		_back_at = now_ms() + NEST_MS
+		return
 	var wrong := "no mistakes" if misses == 0 else "%d mistake%s" % [misses, "" if misses == 1 else "s"]
 	match mode:
 		Hud.Mode.LEARN:
@@ -704,6 +788,9 @@ func _win() -> void:
 
 
 func _update(dt: float) -> void:
+	if listening and state == State.WON and now >= _back_at:
+		_stop_listening()
+		return
 	if mode != Hud.Mode.PLAY:
 		var j := _log_ahead()
 		if j >= 0 and notes[j].chord.is_played_by(_left.keys()):
@@ -759,12 +846,16 @@ func _update_hud() -> void:
 
 ## Space: on a menu, presses what is selected, as A does. Nothing during a song.
 func _on_start_key() -> void:
+	if _stop_listening():
+		return
 	if hud.menu_up():
 		hud.menu_key(MenuCursor.Act.PRESS)
 
 
 ## Enter: on a menu, presses what is selected, as A does; during a song, restarts it.
 func _on_restart_key() -> void:
+	if _stop_listening():
+		return
 	if hud.menu_up():
 		hud.menu_key(MenuCursor.Act.PRESS)
 	elif started:
@@ -773,6 +864,8 @@ func _on_restart_key() -> void:
 
 ## Esc: on a menu, back, as B does; during a song, the pause menu.
 func _on_menu_key() -> void:
+	if _stop_listening():
+		return
 	if hud.menu_up():
 		hud.menu_key(MenuCursor.Act.BACK)
 	elif can_pause():
@@ -781,8 +874,22 @@ func _on_menu_key() -> void:
 
 ## The arrows: on a menu, as C D E F.
 func _on_arrow_key(key: Key) -> void:
+	if _stop_listening():
+		return
 	if hud.menu_up():
 		hud.menu_key(MenuCursor.KEY_ACTS[key])
+
+
+## While listening, any other key, or a click, stops it; not the volume keys, a modifier on its
+## own or the wheel. The click is used up, so the board that comes back gets no press from it.
+## (Notes, Space, Enter, Esc and the arrows stop it in their own handlers: NoteInput sees them
+## first.)
+func _input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	var click := event as InputEventMouseButton
+	if (key and key.pressed and not key.echo and not key.keycode in KEEP_LISTENING) 			or (click and click.pressed and click.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT, MOUSE_BUTTON_MIDDLE]):
+		if _stop_listening():
+			get_viewport().set_input_as_handled()
 
 
 ## Back, from B or Esc on a menu: the chord grid closes, the pause menu continues, the end panel
@@ -827,6 +934,29 @@ func _set_chord_keys() -> void:
 					keyed.append(Song.parse_chord(root + quality))
 	note_input.set_chords(keyed)
 	_refresh_labels()
+
+
+## What backing plays in this level: the song's chords under a tune you play ("chords"), the
+## tune under chords you play ("tune", the drill's too: the arpeggios on its branches), or
+## nothing, where you play it all or the song has no chords ("").
+func backing_part() -> String:
+	if mode == Hud.Mode.DRILL or _style.by_itself:
+		return "tune"
+	if _style.chords:
+		return ""
+	return "chords" if Song.library()[song].notes.any(func(e: Array) -> bool: return e.size() > 2) else ""
+
+
+## Backing is on, and plays `part` here.
+func _backs(part: String) -> bool:
+	return backing and not listening and backing_part() == part
+
+
+func set_backing(on: bool) -> void:
+	backing = on
+	hud.set_backing(on)
+	if not on:
+		song_player.stop()
 
 
 func _on_tick_toggled(on: bool) -> void:
@@ -882,7 +1012,7 @@ func _show_liana() -> void:
 
 
 func _show_prompt() -> void:
-	if state != State.WAIT or not started:
+	if state != State.WAIT or not started or listening:
 		gorilla.show_prompt("", 0.0)
 		return
 	var n := notes[cur]

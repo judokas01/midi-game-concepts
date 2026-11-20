@@ -2,7 +2,8 @@ extends Control
 ## The main menu: wooden planks hanging from the canopy (Play song, Learn song, Chord drill,
 ## Exit game, and Tutorial and Campaign still to come), and the boards they open, where a song
 ## or the drill's chords are chosen before Start. Play song and Learn song share one board. It
-## shows the choices and reports them; the game keeps them. Worked with the mouse, or through
+## shows the choices and reports them; the game keeps them. The song boards' foot is Back,
+## Listen (the song played to you, the gorilla climbing it) and Start. Worked with the mouse, or through
 ## the menu cursor (menu_cursor.gd), which hud.gd hands the rows of the page shown.
 
 enum Page { MAIN, PLAY, LEARN, DRILL }
@@ -10,11 +11,13 @@ enum Page { MAIN, PLAY, LEARN, DRILL }
 signal page_opened(page: Page)   # a board, which plays in its own mode
 signal page_shown                # any page, the main one too
 signal start_pressed
+signal listen_pressed
 signal song_chosen(song: int)
 signal style_chosen(clef: Song.Clef, chords: bool, by_itself: bool)
 signal hint_chosen(hint: ChordLog.Hint)
 signal practice_toggled(on: bool)
 signal piano_toggled(on: bool)
+signal backing_toggled(on: bool)   # the game plays the part you don't
 signal drill_changed(count: int, beats: int)
 signal chords_requested   # More options: the chord grid
 signal kind_toggled(quality: String, on: bool)
@@ -40,6 +43,7 @@ var _last_board := Page.PLAY    # the main page opens with its plank selected
 @onready var _song: OptionButton = _song_rows.get_node("Song/Pick")
 @onready var _practice: Button = _song_rows.get_node("Practice/Toggle")
 @onready var _hints: Array[Button] = [_song_rows.get_node("Hint/Toggle"), _drill_rows.get_node("Hint/Toggle")]
+@onready var _backings: Array[Button] = [_song_rows.get_node("Backing/Toggle"), _drill_rows.get_node("Backing/Toggle")]
 @onready var _signs: Array = [_song_rows, _drill_rows].map(func(rows: GridContainer) -> Array:
 	return [rows.get_node("Sign/Name"), rows.get_node("Sign/Bass")])   # Chord sign, on each board
 @onready var _beats: Label = _drill_rows.get_node("Every/Value")
@@ -55,6 +59,7 @@ func _ready() -> void:
 	for board: Control in [_songs, _drill]:
 		board.get_node("Board/Rows/Foot/Back").pressed.connect(back)
 		board.get_node("Board/Rows/Foot/Start").pressed.connect(func() -> void: start_pressed.emit())
+	$Songs/Board/Rows/Foot/Listen.pressed.connect(func() -> void: listen_pressed.emit())
 	_ready_songs()
 	_ready_drill()
 	for hint in _hints:
@@ -62,6 +67,10 @@ func _ready() -> void:
 			for other in _hints:
 				_set_toggle(other, on)   # the same on both boards
 			piano_toggled.emit(on))
+	for backing in _backings:
+		_toggle(backing, func(on: bool) -> void:
+			set_backing(on)   # the same on both boards
+			backing_toggled.emit(on))
 	for sign: Array in _signs:
 		_on_chosen(sign[0], _choose_hint.bind(ChordLog.Hint.NAME))
 		_on_chosen(sign[1], _choose_hint.bind(ChordLog.Hint.BASS_CLEF))
@@ -138,6 +147,7 @@ func cursor_rows() -> Array:
 				MenuCursor.press(_drill_rows.get_node("Chords/Picked/More")),
 				MenuCursor.choice(rounds, _parts(_drill_rows, "Round")),
 				MenuCursor.value(_step_beats, _can_step_beats, _parts(_drill_rows, "Every")),
+				MenuCursor.press(_backings[1], _parts(_drill_rows, "Backing")),
 				MenuCursor.choice(_signs[1], _parts(_drill_rows, "Sign")),
 				MenuCursor.press(_drill_rows.get_node("Hint/Toggle"), _parts(_drill_rows, "Hint")),
 				_foot(_drill),
@@ -147,6 +157,7 @@ func cursor_rows() -> Array:
 		MenuCursor.value(_next_song, _can_step_song, _parts(_song_rows, "Song")),
 		MenuCursor.choice(parts, _parts(_song_rows, "Part")),
 		MenuCursor.choice(_signs[0], _parts(_song_rows, "Sign")),
+		MenuCursor.press(_backings[0], _parts(_song_rows, "Backing")),
 		MenuCursor.press(_practice, _parts(_song_rows, "Practice")),
 		MenuCursor.press(_song_rows.get_node("Hint/Toggle"), _parts(_song_rows, "Hint")),
 		_foot(_songs),
@@ -176,14 +187,26 @@ func _parts(rows: GridContainer, row: String) -> Array:
 	return [rows.get_node(row), rows.get_node(row + "Caption")]
 
 
-## Back | Start, on Start.
+## Back · Listen · Start on the song boards, Back | Start on the drill's; on Start.
 func _foot(board: Control) -> MenuCursor.Row:
-	return MenuCursor.cells([board.get_node("Board/Rows/Foot/Back"), board.get_node("Board/Rows/Foot/Start")], 1)
+	var buttons := board.get_node("Board/Rows/Foot").get_children().filter(func(c: Node) -> bool: return c is Button)
+	return MenuCursor.cells(buttons, buttons.size() - 1)
 
 
 ## The Chord sign row is for a part with chords only.
 func show_style(chords: bool) -> void:
 	_show_row("Sign", chords)
+
+
+## The song boards' Backing row, for a part with something to back.
+func show_backing(shown: bool) -> void:
+	_show_row("Backing", shown)
+
+
+## Backing on or off, on both boards.
+func set_backing(on: bool) -> void:
+	for backing in _backings:
+		_set_toggle(backing, on)
 
 
 func set_practice(on: bool) -> void:

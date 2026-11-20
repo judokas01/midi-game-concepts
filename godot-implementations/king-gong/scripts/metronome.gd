@@ -1,7 +1,7 @@
 extends Node
-## The beat tick, the game's only sound: the player hears their own instrument. The ticks are
-## sine blips, like the spike's Web Audio ones, pushed through a generator so each lands on an
-## exact sample frame.
+## The beat tick. Beside it the game's piano (SongPlayer) plays the song for Listen and the
+## part you don't play; the tick stays louder. The ticks are sine blips, like the spike's Web Audio
+## ones, pushed through a generator so each lands on an exact sample frame.
 
 var _player: AudioStreamPlayer
 var _gen: AudioStreamGeneratorPlayback

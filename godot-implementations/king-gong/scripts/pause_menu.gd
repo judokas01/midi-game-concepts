@@ -1,6 +1,6 @@
 extends ColorRect
 ## The pause menu, over a song frozen by Esc: continue, restart, practice mode, the tempo, the
-## beat tick, the labels, the chord sign (with chords), or back to the main menu. It runs
+## beat tick, backing (the part you don't play, when there is one), the labels, the chord sign (with chords), or back to the main menu. It runs
 ## while the game is paused. It shows the game's settings as they are when it opens and only
 ## reports changes; the game keeps them. Worked with the mouse, or through the menu cursor
 ## (menu_cursor.gd).
@@ -11,6 +11,7 @@ signal menu_pressed
 signal practice_toggled(on: bool)
 signal tempo_changed(bpm: float)
 signal tick_toggled(on: bool)
+signal backing_toggled(on: bool)
 signal labels_toggled(on: bool)
 signal hint_chosen(hint: ChordLog.Hint)
 
@@ -24,6 +25,7 @@ var _bpm := 60
 
 @onready var _practice: Button = $Center/Panel/Rows/Practice/Toggle
 @onready var _tick: Button = $Center/Panel/Rows/Tick/Toggle
+@onready var _backing: Button = $Center/Panel/Rows/Backing/Toggle
 @onready var _labels: Button = $Center/Panel/Rows/Labels/Toggle
 @onready var _tempo: Label = $Center/Panel/Rows/Tempo/Value
 @onready var _signs: Array[Button] = [$Center/Panel/Rows/Sign/Name, $Center/Panel/Rows/Sign/Bass]   # by ChordLog.Hint
@@ -37,6 +39,7 @@ func _ready() -> void:
 	$Center/Panel/Rows/Tempo/Up.pressed.connect(step_tempo.bind(1))
 	_toggle(_practice, practice_toggled)
 	_toggle(_tick, tick_toggled)
+	_toggle(_backing, backing_toggled)
 	_toggle(_labels, labels_toggled)
 	for hint: ChordLog.Hint in [ChordLog.Hint.NAME, ChordLog.Hint.BASS_CLEF]:
 		_signs[hint].toggled.connect(func(on: bool) -> void:
@@ -46,12 +49,13 @@ func _ready() -> void:
 
 ## Shows the menu with the game's settings. Practice mode is only for playing a song, the
 ## chord sign only for a level with chords.
-func open(play_mode: bool, practice: bool, bpm: float, tick: bool, labels: bool, chords: bool, hint: ChordLog.Hint) -> void:
+func open(play_mode: bool, practice: bool, bpm: float, tick: bool, backing_shown: bool, backing: bool, labels: bool, chords: bool, hint: ChordLog.Hint) -> void:
 	$Center/Panel/Rows/Practice.visible = play_mode
+	$Center/Panel/Rows/Backing.visible = backing_shown
 	$Center/Panel/Rows/Sign.visible = chords
 	for k in _signs.size():
 		_signs[k].set_pressed_no_signal(k == hint)
-	for setting: Array in [[_practice, practice], [_tick, tick], [_labels, labels]]:
+	for setting: Array in [[_practice, practice], [_tick, tick], [_backing, backing], [_labels, labels]]:
 		var button: Button = setting[0]
 		button.set_pressed_no_signal(setting[1])
 		button.text = "on" if setting[1] else "off"
@@ -84,6 +88,7 @@ func cursor_rows() -> Array:
 		MenuCursor.press(_practice, [rows.get_node("Practice")]),
 		MenuCursor.value(step_tempo, _can_step_tempo, [rows.get_node("Tempo")]),
 		MenuCursor.press(_tick, [rows.get_node("Tick")]),
+		MenuCursor.press(_backing, [rows.get_node("Backing")]),
 		MenuCursor.press(_labels, [rows.get_node("Labels")]),
 		MenuCursor.choice(_signs, [rows.get_node("Sign")]),
 		MenuCursor.press(rows.get_node("Menu")),

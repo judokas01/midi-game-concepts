@@ -5,6 +5,7 @@ extends CanvasLayer
 ## menu is up is worked through the menu cursor, from the piano's white keys or the arrows.
 
 signal start_pressed
+signal listen_pressed
 signal restart_pressed
 signal tempo_changed(bpm: float)
 signal labels_toggled(on: bool)
@@ -16,6 +17,7 @@ signal hint_chosen(hint: ChordLog.Hint)
 signal drill_chosen(chords: Array, count: int, beats: int)
 signal practice_toggled(on: bool)
 signal piano_toggled(on: bool)
+signal backing_toggled(on: bool)
 signal menu_pressed
 signal continue_pressed
 signal back_pressed   # B or Esc on a menu: what Esc does there
@@ -66,11 +68,13 @@ var cursor: MenuCursor        # the selection on whichever menu is up, over ever
 func _ready() -> void:
 	_menu.page_opened.connect(func(page: MainMenu.Page) -> void: mode_chosen.emit(MODES[page]))
 	_menu.start_pressed.connect(func() -> void: start_pressed.emit())
+	_menu.listen_pressed.connect(func() -> void: listen_pressed.emit())
 	_menu.song_chosen.connect(func(i: int) -> void: song_chosen.emit(i))
 	_menu.style_chosen.connect(func(clef: Song.Clef, chords: bool, by_itself: bool) -> void: style_chosen.emit(clef, chords, by_itself))
 	_menu.hint_chosen.connect(func(hint: ChordLog.Hint) -> void: hint_chosen.emit(hint))
 	_menu.practice_toggled.connect(func(on: bool) -> void: practice_toggled.emit(on))
 	_menu.piano_toggled.connect(func(on: bool) -> void: piano_toggled.emit(on))
+	_menu.backing_toggled.connect(func(on: bool) -> void: backing_toggled.emit(on))
 	_menu.drill_changed.connect(func(_count: int, _beats: int) -> void: _choose_drill())
 	_menu.chords_requested.connect(open_chords)
 	_menu.kind_toggled.connect(func(quality: String, on: bool) -> void:
@@ -87,6 +91,9 @@ func _ready() -> void:
 	_pause.menu_pressed.connect(func() -> void: menu_pressed.emit())
 	_pause.tempo_changed.connect(func(bpm: float) -> void: tempo_changed.emit(bpm))
 	_pause.tick_toggled.connect(func(on: bool) -> void: tick_toggled.emit(on))
+	_pause.backing_toggled.connect(func(on: bool) -> void:
+		_menu.set_backing(on)   # the boards say the same
+		backing_toggled.emit(on))
 	_pause.labels_toggled.connect(func(on: bool) -> void: labels_toggled.emit(on))
 	_pause.hint_chosen.connect(func(hint: ChordLog.Hint) -> void:
 		_menu.show_hint(hint)   # the boards say the same
@@ -126,6 +133,16 @@ func show_progress(share: float) -> void:
 ## The Chord sign choice on the song boards is for a part with `chords` only.
 func show_style(chords: bool) -> void:
 	_menu.show_style(chords)
+
+
+## The song boards' Backing row, for a part with something to back.
+func show_backing(shown: bool) -> void:
+	_menu.show_backing(shown)
+
+
+## Backing on or off on the boards, when the game sets it.
+func set_backing(on: bool) -> void:
+	_menu.set_backing(on)
 
 
 ## The little keyboard: the chord's two octaves from the C `chord_from`, and the tune's keys
@@ -189,8 +206,8 @@ func menu_up() -> bool:
 
 
 ## The pause menu, showing the game's settings as they are.
-func open_pause(play_mode: bool, practice: bool, bpm: float, tick: bool, labels: bool, chords: bool, hint: ChordLog.Hint) -> void:
-	_pause.open(play_mode, practice, bpm, tick, labels, chords, hint)
+func open_pause(play_mode: bool, practice: bool, bpm: float, tick: bool, backing_shown: bool, backing: bool, labels: bool, chords: bool, hint: ChordLog.Hint) -> void:
+	_pause.open(play_mode, practice, bpm, tick, backing_shown, backing, labels, chords, hint)
 
 
 func close_pause() -> void:

@@ -1,7 +1,9 @@
 extends RefCounted
 ## The chord drill: a made-up tune with a new chord every few beats, dealt from the chords
-## picked on the drill board and in its chord grid. The gorilla climbs the tune by itself and
-## waits at each chord's log until it is played.
+## picked on the drill board and in its chord grid. Each log stands on its chord's root, and
+## the branches up to the next log are the next chord's notes, low to high: an arpeggio that
+## leads into it. The gorilla climbs the tune by itself and waits at each chord's log until it
+## is played.
 
 const Song := preload("res://scripts/song.gd")
 
@@ -25,9 +27,8 @@ const BEATS := 4                  # a new chord this many beats after the last, 
 const BEATS_MIN := 1
 const BEATS_MAX := 8
 const BANANA_EVERY := 4     # chords
-const RHYTHMS := [[1.0, 1.0], [2.0], [1.0, 0.5, 0.5], [0.5, 0.5, 1.0]]   # the tune under a chord, two beats at a time
-const ONE_BEAT := [[1.0], [0.5, 0.5]]                                     # and its last beat, when the chord has an odd number
-const LOWEST := 60          # the tune is the chord's own notes, from C4
+const LENGTHS := [2.0, 1.0, 0.5]   # an arpeggio's notes, in beats: the longest that fits
+const LOWEST := 60          # the tune is the chords' own notes, from C4
 const HIGHEST := 72         # to C5, below the signs on the logs
 
 
@@ -49,48 +50,61 @@ static func quality_of(name: String) -> String:
 
 ## Entries as in Song.SONGS: `count` chords dealt from `chords`, by name, like cards: each
 ## comes up as often as the others, in a shuffled order, never twice running unless it is
-## the only one. Each chord's tune lasts `beats` beats.
+## the only one. A chord every `beats` beats: its log's branch, on its root, then the next
+## chord's arpeggio(); the last log holds all its beats.
 static func entries(chords: Array, count: int, beats: int = BEATS) -> Array:
-	var out := []
+	var names := []
 	var deck := []
-	var last := ""
 	for k in count:
 		if deck.is_empty():
 			deck = chords.duplicate()
 			deck.shuffle()
-			if deck.size() > 1 and deck[-1] == last:   # dealt from the end
+			if deck.size() > 1 and not names.is_empty() and deck[-1] == names[-1]:   # dealt from the end
 				deck.reverse()
-		var name: String = deck.pop_back()
-		last = name
-		var tones := _tones(Song.parse_chord(name))
-		var rhythm := _rhythm(beats)
-		for i in rhythm.size():
-			var note: String = tones.pick_random()
-			if i > 0:
-				out.append([note, rhythm[i]])
-			else:
-				out.append([note + ("*" if k % BANANA_EVERY == BANANA_EVERY - 1 else ""), rhythm[i], name])
-	return out
-
-
-## Note lengths that add up to `beats`: two beats at a time, then one if it is odd.
-static func _rhythm(beats: int) -> Array:
+		names.append(deck.pop_back())
 	var out := []
-	var left := beats
-	while left >= 2:
-		out.append_array(RHYTHMS.pick_random())
-		left -= 2
-	if left == 1:
-		out.append_array(ONE_BEAT.pick_random())
+	for k in count:
+		var run := [] if k + 1 == count else arpeggio(Song.parse_chord(names[k + 1]), beats)
+		var held := float(beats)
+		for note: Array in run:
+			held -= note[1]
+		var root: String = Song.parse_chord(names[k]).tones[0]
+		out.append([root + "4" + ("*" if k % BANANA_EVERY == BANANA_EVERY - 1 else ""), held, names[k]])
+		out.append_array(run)
 	return out
 
 
-## The chord's notes between LOWEST and HIGHEST, by name: "C4", "E4", "G4", "C5".
+## The branches before `chord`'s log, a chord every `beats` beats, as [name, beats]: its notes
+## from C4 to C5, low to high, all as long, the longest of LENGTHS that leaves the branch of
+## the log before them at least as long. Where even an eighth is too long, the lowest notes
+## drop out; fewer than two, there are none.
+static func arpeggio(chord: Song.Chord, beats: int) -> Array:
+	var tones := _tones(chord)
+	var length := 0.0
+	for each: float in LENGTHS:
+		if (tones.size() + 1) * each <= beats:
+			length = each
+			break
+	if length == 0.0:
+		length = LENGTHS[-1]
+		var fit := floori(beats / length) - 1   # the log's own branch takes one
+		if fit < 2:
+			return []
+		tones = tones.slice(tones.size() - fit)
+	return tones.map(func(tone: String) -> Array: return [tone, length])
+
+
+## The chord's notes between LOWEST and HIGHEST, low to high, by name: "C4", "E4", "G4", "C5".
 static func _tones(chord: Song.Chord) -> Array[String]:
-	var out: Array[String] = []
+	var by_pitch := {}
 	for tone in chord.tones:
 		for octave in [4, 5]:
 			var m: int = 12 * (octave + 1) + Song.LETTER_SEMI[tone[0]] + Song.ACCIDENTALS[tone.substr(1)]
 			if m >= LOWEST and m <= HIGHEST:
-				out.append(tone + str(octave))
+				by_pitch[m] = tone + str(octave)
+	var pitches := by_pitch.keys()
+	pitches.sort()
+	var out: Array[String] = []
+	for m: int in pitches:
+		out.append(by_pitch[m])
 	return out
