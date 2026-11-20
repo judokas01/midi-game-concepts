@@ -214,9 +214,7 @@ func restart() -> void:
 	chords = drill or _style.chords
 	by_itself = drill or _style.by_itself or listening
 	fifths = 0 if drill else Song.key_of(song)   # the drill's tune is the gorilla's, so it needs none
-	$Clef/Treble.visible = clef == Song.Clef.TREBLE
-	$Clef/Bass.visible = clef == Song.Clef.BASS
-	$Clef/KeySignature.show_key(fifths, clef)
+	$Clef.show_clef(clef, fifths)
 	var bars: Array
 	if drill:   # new chords every time
 		notes = Song.parse_entries(Drill.entries(drill_chords, drill_count, drill_beats), clef, true)

@@ -15,6 +15,10 @@ extends Node
 ##   -- --drill           the chord drill, dealing every chord the chord grid offers
 ##   -- --beats=<n>       with --drill, a chord every n beats instead of Drill.BEATS
 ##   -- --song=<n>        plays song n of Song.library(), counting from 0, instead of the first
+##                        Every run checks, once the level is built, that the key signature
+##                        ends left of the gorilla's place on screen (0.3 of the width), and 7
+##                        sharps and 7 flats in either clef too: "key: <n> sharps, clear of
+##                        the gorilla" (or flats), or "key: none"
 ##   -- --pause           with --autoplay, pauses with Esc three times, once each: mid-fall,
 ##                        hanging on branch PAUSE_AT and in the first rest. It lets go of its
 ##                        note while paused, as a player reaching for Esc would; a second later
@@ -112,6 +116,7 @@ var _ended_at := 0.0
 var _drill := false
 var _beats: int = Drill.BEATS
 var _spacing_checked := false
+var _key_checked := false
 var _end_state := Game.State.WAIT   # how the song ended
 var _poked_end := false             # the bot has played a note on the end panel in its first second
 var _end_checked := false           # and seen it listen after that
@@ -232,6 +237,9 @@ func _play(now: float) -> void:
 		return
 	_check_progress()
 	_check_banner()
+	if game.started and not _key_checked:
+		_key_checked = true
+		_check_key()
 	if game.started and game.mode == Hud.Mode.DRILL and not _spacing_checked:
 		_spacing_checked = true
 		_check_drill_spacing()
@@ -728,6 +736,41 @@ func _check_backing() -> void:
 			_expect(played.is_empty() and not _main_menu().get_node("Songs/Board/Rows/Grid/Backing").visible,
 				"nothing backed and no Backing row: %d sounds" % played.size())
 			print("backing: none for this part")
+
+
+## The key signature ends left of the gorilla's place on screen, and so would 7 sharps or 7
+## flats in either clef (tried on a hidden copy of the clef).
+func _check_key() -> void:
+	var clear := get_viewport().get_visible_rect().size.x * 0.3
+	var key: Node2D = game.get_node("Clef/KeySignature")
+	var signs := _signs(key).size()
+	if signs > 0 and _key_right(key) >= clear:
+		push_error("key: not so: the key signature reaches x %.0f, past the gorilla at %.0f" % [_key_right(key), clear])
+	var probe = game.get_node("Clef").duplicate()
+	probe.visible = false
+	game.add_child(probe)
+	for clef in [Song.Clef.TREBLE, Song.Clef.BASS]:
+		for fifths in [7, -7]:
+			probe.show_clef(clef, fifths)
+			var right := _key_right(probe.get_node("KeySignature"))
+			if right >= clear:
+				push_error("key: not so: %d %s in the %s clef reach x %.0f, past the gorilla at %.0f"
+					% [absi(fifths), "sharps" if fifths > 0 else "flats", Song.Clef.keys()[clef].to_lower(), right, clear])
+	probe.queue_free()
+	print("key: none" if signs == 0 else "key: %d %s, clear of the gorilla" % [signs, "sharps" if game.fifths > 0 else "flats"])
+
+
+## The key signature's signs, not counting any on their way out.
+func _signs(key: Node2D) -> Array:
+	return key.get_children().filter(func(n: Node) -> bool: return n is Sprite2D and not n.is_queued_for_deletion())
+
+
+## The right edge of the key signature's last sign, in the clef's pixels (the window's).
+func _key_right(key: Node2D) -> float:
+	var right := key.position.x
+	for mark: Sprite2D in _signs(key):
+		right = maxf(right, key.position.x + (mark.get_transform() * mark.get_rect()).end.x)
+	return right
 
 
 ## The drill's chords sit game.drill_beats apart, each log on its chord's root, and the

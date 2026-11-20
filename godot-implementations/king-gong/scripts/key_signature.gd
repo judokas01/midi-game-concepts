@@ -2,6 +2,7 @@ extends Node2D
 ## The key signature, after the clef: a sharp or a flat on the line or space of each note the
 ## key raises or lowers, in the order and at the heights sheet music puts them. Every note of
 ## that name in the song is played so, unless its branch carries a sign (see Song.Sign).
+## clef.gd says where it starts and at what size; drawn small, the signs use mipmaps.
 
 const Song := preload("res://scripts/song.gd")
 const Staff := preload("res://scripts/staff.gd")
@@ -16,16 +17,16 @@ const FLAT_STEPS: Array[int] = [6, 9, 5, 8, 4, 7, 3]
 # the middle of its bowl. The origin goes on the line or space.
 const SHARP_CORNER := Vector2(-31, -80)
 const FLAT_CORNER := Vector2(-8, -98)
-const SHARP_EVERY := 1.6 * Staff.STEP   # across, from one sign to the next
+const SHARP_EVERY := 1.6 * Staff.STEP   # across, from one sign to the next, at full size
 const FLAT_EVERY := 1.4 * Staff.STEP
-const AFTER_CLEF := {Song.Clef.TREBLE: 258.0, Song.Clef.BASS: 236.0}   # the first sign's left edge, in pixels from the window's
 
 
-## `fifths` sharps, or flats when below 0, in `clef`.
-func show_key(fifths: int, clef: Song.Clef) -> void:
+## `fifths` sharps, or flats when below 0, in `clef`: the first sign's left edge at `left`
+## (in the window's pixels), each sign and the gaps between them at `size` of full size.
+func show_key(fifths: int, clef: Song.Clef, left: float, size: float) -> void:
 	for old in get_children():
 		old.queue_free()
-	position.x = AFTER_CLEF[clef]
+	position.x = left
 	var sharps := fifths > 0
 	var steps := SHARP_STEPS if sharps else FLAT_STEPS
 	var corner := SHARP_CORNER if sharps else FLAT_CORNER
@@ -34,6 +35,7 @@ func show_key(fifths: int, clef: Song.Clef) -> void:
 		var mark := Sprite2D.new()
 		mark.texture = SHARP if sharps else FLAT
 		mark.centered = false
-		mark.offset = corner
-		mark.position = Vector2(k * (SHARP_EVERY if sharps else FLAT_EVERY) - corner.x, Staff.y_of(steps[k] - drop))
+		mark.offset = corner   # the origin on the line or space, the sign scaled about it
+		mark.scale = Vector2.ONE * size
+		mark.position = Vector2((k * (SHARP_EVERY if sharps else FLAT_EVERY) - corner.x) * size, Staff.y_of(steps[k] - drop))
 		add_child(mark)

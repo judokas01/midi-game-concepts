@@ -245,7 +245,10 @@ A file the importer can't read is left out of the list, with a warning in the co
   (`key = "D"` in `song.gd`) shows its key signature after the clef, as sheet music
   does: a sharp or flat on the line or space of each note it raises or lowers, and every
   note there or an octave away is played so. Wrong-note messages and the computer keys'
-  list spell black keys as flats in a key with flats (Bb in F), else as sharps.
+  list spell black keys as flats in a key with flats (Bb in F), else as sharps. The clef
+  and the key signature are drawn small, at 40% of full notation size, so even 7 sharps or
+  flats end well clear of the gorilla, who hangs 30% of the way in. Each clef sits on the
+  line it names: the treble clef's curl on G, the bass clef's dots either side of F.
 - **Signs on branches.** A note the key signature doesn't give carries a sign at its
   branch's left end, drawn as part of the jungle instead of as notation: a **macaw**
   sitting there in the twig's place for a sharp, a **bat** hanging under it for a flat, a
@@ -342,6 +345,7 @@ them around:
 | `scripts/staff.gd` | Where things sit: staff step, line heights, floor |
 | `scripts/branch.gd`, `liana.gd`, `chord_log.gd`, `gorilla.gd` | What each of those scenes can do |
 | `scripts/song.gd` | The songs and their chords and keys, their parsing into branches with the signs they carry, and the two clefs |
+| `scripts/clef.gd` | The clef and key signature pinned at the left: their size (40%), and each clef placed on its line |
 | `scripts/key_signature.gd` | Puts the song's sharps or flats after the clef |
 | `scripts/drill.gd` | Deals the chord drill's chords and makes up its tune, each chord's arpeggio before its log; which chords the chord grid offers, and how they are spelled |
 | `scripts/main_menu.gd` | The main menu: its planks, and the song and drill boards they open (with Listen on the song boards) |
@@ -431,7 +435,9 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   covers no chord sign or key under one, stays above where a seventh's tall sign reaches and
   clears the percentage and the counters, and prints `banner: clear of the signs` (in every
   mode above, as each has a fall or a wrong note).
-- Every run prints `sound: piano ready (30 samples)`.
+- Every run prints `sound: piano ready (30 samples)`, and checks once the level is built
+  that the key signature ends left of the gorilla's place on screen, as would 7 sharps or 7
+  flats in either clef: `key: 4 flats, clear of the gorilla` (song 9), or `key: none`.
 - `--backing` turns Backing on (it is on by default, so this makes it plain). Every
   `--autoplay` run counts the gorilla's grabs and at the end checks the backing against them:
   with Treble or Bass clef a chord per grab of a branch a chord starts on, and one at the

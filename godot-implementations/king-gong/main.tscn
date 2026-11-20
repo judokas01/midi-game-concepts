@@ -22,6 +22,7 @@
 [ext_resource type="Script" uid="uid://ciyivb2gaajdk" path="res://scripts/ropes.gd" id="20_ropes"]
 [ext_resource type="Script" uid="uid://da66cd2vuobls" path="res://scripts/main_menu.gd" id="21_main_menu"]
 [ext_resource type="Script" path="res://scripts/song_player.gd" id="23_song_player"]
+[ext_resource type="Script" path="res://scripts/clef.gd" id="25_clef"]
 
 [sub_resource type="Gradient" id="Gradient_sky"]
 offsets = PackedFloat32Array(0.0611, 0.5804, 0.9267)
@@ -39,12 +40,12 @@ subpixel_positioning = 0
 
 [sub_resource type="LabelSettings" id="LabelSettings_clef"]
 font = SubResource("SystemFont_clef")
-font_size = 468
+font_size = 187
 font_color = Color(0.14902, 0.305882, 0.172549, 0.7)
 
 [sub_resource type="LabelSettings" id="LabelSettings_bass_clef"]
 font = SubResource("SystemFont_clef")
-font_size = 330
+font_size = 132
 font_color = Color(0.14902, 0.305882, 0.172549, 0.7)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_piano"]
@@ -150,25 +151,27 @@ centered = false
 
 [node name="Clef" type="Parallax2D" parent="." unique_id=10292697]
 scroll_scale = Vector2(0, 0)
+script = ExtResource("25_clef")
 
 [node name="Treble" type="Label" parent="Clef" unique_id=1518472346]
 offset_left = 7.2
-offset_top = -71.4
-offset_right = 268.2
-offset_bottom = 552.6
+offset_top = 144.6
+offset_right = 111.6
+offset_bottom = 394.2
 text = "𝄞"
 label_settings = SubResource("LabelSettings_clef")
 
 [node name="Bass" type="Label" parent="Clef" unique_id=42574803]
 visible = false
 offset_left = 13.3
-offset_top = -36.7
-offset_right = 197.3
-offset_bottom = 403.3
+offset_top = 89.6
+offset_right = 103.3
+offset_bottom = 265.6
 text = "𝄢"
 label_settings = SubResource("LabelSettings_bass_clef")
 
 [node name="KeySignature" type="Node2D" parent="Clef" unique_id=498778915]
+texture_filter = 4
 script = ExtResource("16_key_signature")
 
 [node name="World" type="Node2D" parent="." unique_id=741401966 node_paths=PackedStringArray("ledger", "trunks")]
