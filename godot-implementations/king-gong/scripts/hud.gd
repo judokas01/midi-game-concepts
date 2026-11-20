@@ -1,6 +1,6 @@
 extends CanvasLayer
 ## Everything drawn over the game: the counters (the progress line along the top, and the pill
-## with bananas and falls), the main menu and the chord drill's chord grid, the pause menu, why
+## with bananas and falls), the main menu, the song library and the chord drill's chord grid, the pause menu, why
 ## you fell, the end panel, the little keyboard, and bananas flying to the counter. Whichever
 ## menu is up is worked through the menu cursor, from the piano's white keys or the arrows.
 
@@ -12,6 +12,7 @@ signal labels_toggled(on: bool)
 signal tick_toggled(on: bool)
 signal mode_chosen(mode: Mode)
 signal song_chosen(song: int)
+signal library_requested   # A on a song board's Song row: the game opens the library
 signal style_chosen(clef: Song.Clef, chords: bool, by_itself: bool)
 signal hint_chosen(hint: ChordLog.Hint)
 signal drill_chosen(chords: Array, count: int, beats: int)
@@ -30,6 +31,7 @@ const ChordLog := preload("res://scripts/chord_log.gd")
 const Staff := preload("res://scripts/staff.gd")
 const Piano := preload("res://scripts/piano.gd")
 const ChordMenu := preload("res://scripts/chord_menu.gd")
+const Library := preload("res://scripts/library.gd")
 const MainMenu := preload("res://scripts/main_menu.gd")
 const PauseMenu := preload("res://scripts/pause_menu.gd")
 const ProgressLine := preload("res://scripts/progress_line.gd")
@@ -54,6 +56,7 @@ var cursor: MenuCursor        # the selection on whichever menu is up, over ever
 @onready var _falls: Label = $Pill/Row/Falls
 @onready var _menu: MainMenu = $MainMenu
 @onready var _chord_menu: ChordMenu = $ChordMenu
+@onready var _library: Library = $Library
 @onready var _pause: PauseMenu = $PauseMenu
 @onready var _banner: Control = $Banner
 @onready var _banner_pill: Control = $Banner/Pill
@@ -70,6 +73,13 @@ func _ready() -> void:
 	_menu.start_pressed.connect(func() -> void: start_pressed.emit())
 	_menu.listen_pressed.connect(func() -> void: listen_pressed.emit())
 	_menu.song_chosen.connect(func(i: int) -> void: song_chosen.emit(i))
+	_menu.library_requested.connect(func() -> void: library_requested.emit())
+	_library.picked.connect(func(song: int, filter: Dictionary) -> void:
+		_menu.show_song(song, filter)
+		song_chosen.emit(song))
+	_library.visibility_changed.connect(func() -> void:
+		if not _library.visible:
+			_menu.show())
 	_menu.style_chosen.connect(func(clef: Song.Clef, chords: bool, by_itself: bool) -> void: style_chosen.emit(clef, chords, by_itself))
 	_menu.hint_chosen.connect(func(hint: ChordLog.Hint) -> void: hint_chosen.emit(hint))
 	_menu.practice_toggled.connect(func(on: bool) -> void: practice_toggled.emit(on))
@@ -107,12 +117,13 @@ func _ready() -> void:
 	_progress.keep_clear = _pill
 	_menu.visibility_changed.connect(_show_layers)
 	_chord_menu.visibility_changed.connect(_show_layers)
+	_library.visibility_changed.connect(_show_layers)
 	_show_layers()
 	cursor = MenuCursor.new()
 	cursor.name = "Cursor"
 	add_child(cursor)
 	cursor.back_requested.connect(func() -> void: back_pressed.emit())
-	for menu: Control in [_menu, _chord_menu, _pause, _end]:
+	for menu: Control in [_menu, _chord_menu, _library, _pause, _end]:
 		menu.visibility_changed.connect(_refresh_cursor)
 	_menu.page_shown.connect(_refresh_cursor)
 	_refresh_cursor()
@@ -200,9 +211,9 @@ func menu_back() -> void:
 		_menu.back()
 
 
-## The main menu, the chord grid, the end panel or the pause menu is up.
+## The main menu, the library, the chord grid, the end panel or the pause menu is up.
 func menu_up() -> bool:
-	return _menu.visible or _chord_menu.visible or _end.visible or _pause.visible
+	return _menu.visible or _library.visible or _chord_menu.visible or _end.visible or _pause.visible
 
 
 ## The pause menu, showing the game's settings as they are.
@@ -212,6 +223,26 @@ func open_pause(play_mode: bool, practice: bool, bpm: float, tick: bool, backing
 
 func close_pause() -> void:
 	_pause.close()
+
+
+## The song boards show song `song` (the game picked it, or a dev flag did).
+func show_song(song: int) -> void:
+	_menu.show_song(song)
+
+
+## The song library, in place of the main menu until a song is picked or it is closed, with
+## the filter `song` was picked with.
+func open_library(song: int) -> void:
+	_menu.hide()
+	_library.open(song, _menu.filter)
+
+
+func library_open() -> bool:
+	return _library.visible
+
+
+func close_library() -> void:
+	_library.close()
 
 
 ## The chord grid (More options on the drill board), in place of the main menu until it is closed.
@@ -310,6 +341,8 @@ func _refresh_cursor() -> void:
 		on = "pause"
 	elif _chord_menu.visible:
 		on = "chords"
+	elif _library.visible:
+		on = "library"
 	elif _end.visible:
 		on = "end"
 	elif _menu.visible:
@@ -324,6 +357,8 @@ func _refresh_cursor() -> void:
 			cursor.use(_pause.cursor_rows(), 0, _pause.get_node("Center/Panel"), true)
 		"chords":
 			cursor.use(_chord_menu.cursor_rows(), 0, _chord_menu.get_node("Center/Board"), true)
+		"library":
+			cursor.use(_library.cursor_rows(), _library.cursor_start(), _library.get_node("Center/Board"), true)
 		"end":
 			var buttons := $EndPanel/Lines/Buttons
 			cursor.use([MenuCursor.cells([buttons.get_node("Again"), buttons.get_node("Menu")], 0)], 0, _end, true, END_WAIT_S)
@@ -331,9 +366,10 @@ func _refresh_cursor() -> void:
 			cursor.use(_menu.cursor_rows(), _menu.cursor_start(), _menu.cursor_anchor(), _menu.page != MainMenu.Page.MAIN)
 
 
-## The counters and the little keyboard hide while the main menu or the chord grid is up.
+## The counters and the little keyboard hide while the main menu, the library or the chord grid
+## is up.
 func _show_layers() -> void:
-	var covered := _menu.visible or _chord_menu.visible
+	var covered := _menu.visible or _library.visible or _chord_menu.visible
 	_progress.visible = not covered
 	_pill.visible = not covered
 	_piano.visible = _piano_wanted and not covered

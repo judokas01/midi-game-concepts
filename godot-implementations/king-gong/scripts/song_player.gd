@@ -32,6 +32,7 @@ class Sound:
 		chord = is_chord
 
 
+var bus := &"Master"                  # where its piano plays: set before it enters the tree
 var sounds: Array[Sound] = []         # in the order they come
 var played: Array[Dictionary] = []    # {branch, chord, heard_ms} per sound started, for the dev checks
 
@@ -47,6 +48,7 @@ var _piano: PianoSound
 func _ready() -> void:
 	_piano = PianoSound.new()
 	_piano.volume_db = VOLUME_DB
+	_piano.bus = bus
 	add_child(_piano)
 
 

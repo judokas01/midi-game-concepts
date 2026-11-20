@@ -97,6 +97,66 @@ func _run() -> void:
 	cursor.act(MenuCursor.Act.DOWN)
 	_expect(cursor.selected() == s[1], "down from a cell lands on the nearest cell below")
 
+	# a value row that A presses too (the song boards' Song row opens the library)
+	var opened := [0]
+	var song_value := MenuCursor.value(func(by: int) -> void: v[0] += by, func(_by: int) -> bool: return true, [v_line],
+		func() -> void: opened[0] += 1)
+	cursor.use([song_value, MenuCursor.press(p)], 0, null, true)
+	_expect(_lit(cursor) == "CDEFAB", "a value row with a press: all six lit, not %s" % _lit(cursor))
+	cursor.act(MenuCursor.Act.PRESS)
+	_expect(opened[0] == 1, "A on it runs its press")
+
+	# a list the page keeps itself: C and D move in it and out of it at its ends, E and F step,
+	# A presses the line selected
+	var list_box := VBoxContainer.new()
+	box.add_child(list_box)
+	var lines := _buttons(list_box, 4, 80)
+	var at := [0]
+	var shelf := [0]
+	var line_pressed := [-1]
+	for k in lines.size():
+		lines[k].pressed.connect(func() -> void: line_pressed[0] = k)
+	var list := MenuCursor.list(lines,
+		func(by: int) -> bool:
+			if at[0] + by < 0 or at[0] + by >= lines.size():
+				return false
+			at[0] += by
+			return true,
+		func(_by: int) -> bool: return lines.size() > 1,
+		func() -> Button: return lines[at[0]],
+		func(b: Button) -> void: at[0] = lines.find(b),
+		func(by: int) -> void: shelf[0] += by,
+		func(by: int) -> bool: return shelf[0] + by >= 0,
+		[list_box])
+	await process_frame
+	cursor.use([list, MenuCursor.press(p)], 0, null, true)
+	_expect(cursor.selected() == lines[0] and _lit(cursor) == "CDFAB", "a list on its first line, at its first step: no E, not %s" % _lit(cursor))
+	cursor.act(MenuCursor.Act.DOWN)
+	cursor.act(MenuCursor.Act.DOWN)
+	_expect(at[0] == 2 and cursor.selected() == lines[2], "D moves down the list, staying on the row")
+	cursor.act(MenuCursor.Act.UP)
+	_expect(at[0] == 1 and cursor.selected() == lines[1], "C moves up it")
+	cursor.act(MenuCursor.Act.UP)
+	cursor.act(MenuCursor.Act.UP)
+	_expect(at[0] == 0 and cursor.selected() == p, "C past its first line leaves the list, for the row above")
+	cursor.act(MenuCursor.Act.DOWN)
+	_expect(cursor.selected() == lines[0], "D comes back into the list, on its selection")
+	cursor.act(MenuCursor.Act.RIGHT)
+	_expect(shelf[0] == 1 and "E" in _lit(cursor), "F steps, and E can then")
+	cursor.act(MenuCursor.Act.PRESS)
+	_expect(line_pressed[0] == 0, "A presses the line selected")
+	lines[2].mouse_entered.emit()
+	_expect(at[0] == 2 and cursor.selected() == lines[2], "the mouse on a line points at it")
+	p.mouse_entered.emit()
+	cursor.act(MenuCursor.Act.DOWN)
+	_expect(cursor.selected() == lines[2], "from another row, D comes back to the list's line")
+	var single := MenuCursor.list([lines[0]], func(_by: int) -> bool: return false, func(_by: int) -> bool: return false,
+		func() -> Button: return lines[0], func(_b: Button) -> void: pass,
+		func(_by: int) -> void: pass, func(_by: int) -> bool: return true, [list_box])
+	cursor.use([single], 0, null, true)
+	_expect(_lit(cursor) == "EFAB", "a list of one: no C or D, not %s" % _lit(cursor))
+	list_box.hide()
+
 	# the looks: gold only on what is selected, one thing at a time
 	var foot := _line(box)
 	var back := _wood(foot, "Back", &"Plank")

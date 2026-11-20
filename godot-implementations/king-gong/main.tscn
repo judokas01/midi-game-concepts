@@ -23,6 +23,7 @@
 [ext_resource type="Script" uid="uid://da66cd2vuobls" path="res://scripts/main_menu.gd" id="21_main_menu"]
 [ext_resource type="Script" path="res://scripts/song_player.gd" id="23_song_player"]
 [ext_resource type="Script" path="res://scripts/clef.gd" id="25_clef"]
+[ext_resource type="Script" path="res://scripts/library.gd" id="26_library"]
 
 [sub_resource type="Gradient" id="Gradient_sky"]
 offsets = PackedFloat32Array(0.0611, 0.5804, 0.9267)
@@ -676,14 +677,14 @@ focus_mode = 0
 theme_override_font_sizes/font_size = 15
 text = "◀"
 
-[node name="Pick" type="OptionButton" parent="Hud/MainMenu/Songs/Board/Rows/Grid/Song"]
-custom_minimum_size = Vector2(320, 34)
+[node name="Name" type="Button" parent="Hud/MainMenu/Songs/Board/Rows/Grid/Song"]
+custom_minimum_size = Vector2(280, 34)
 layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 15
 text_overrun_behavior = 3
 clip_text = true
-fit_to_longest_item = false
+alignment = 0
 
 [node name="Next" type="Button" parent="Hud/MainMenu/Songs/Board/Rows/Grid/Song"]
 custom_minimum_size = Vector2(36, 34)
@@ -691,6 +692,13 @@ layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 15
 text = "▶"
+
+[node name="Browse" type="Button" parent="Hud/MainMenu/Songs/Board/Rows/Grid/Song"]
+custom_minimum_size = Vector2(96, 34)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "Browse…"
 
 [node name="PartCaption" type="Label" parent="Hud/MainMenu/Songs/Board/Rows/Grid"]
 layout_mode = 2
@@ -1248,6 +1256,207 @@ theme_type_variation = &"Sign"
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
+
+[node name="Library" type="ColorRect" parent="Hud"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0470588, 0.0705882, 0.0470588, 0.6)
+script = ExtResource("26_library")
+
+[node name="Center" type="CenterContainer" parent="Hud/Library"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Board" type="PanelContainer" parent="Hud/Library/Center"]
+layout_mode = 2
+theme_type_variation = &"Board"
+
+[node name="Ropes" type="Control" parent="Hud/Library/Center/Board"]
+script = ExtResource("20_ropes")
+layout_mode = 2
+inset = 120.0
+length = 0.0
+
+[node name="Box" type="VBoxContainer" parent="Hud/Library/Center/Board"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Hud/Library/Center/Board/Box"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_type_variation = &"Sign"
+text = "Songs"
+horizontal_alignment = 1
+
+[node name="Filters" type="GridContainer" parent="Hud/Library/Center/Board/Box"]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="CategoryCaption" type="Label" parent="Hud/Library/Center/Board/Box/Filters"]
+layout_mode = 2
+theme_type_variation = &"BoardCaption"
+text = "Category"
+horizontal_alignment = 2
+
+[node name="Category" type="HBoxContainer" parent="Hud/Library/Center/Board/Box/Filters"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Previous" type="Button" parent="Hud/Library/Center/Board/Box/Filters/Category"]
+custom_minimum_size = Vector2(36, 34)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "◀"
+
+[node name="Value" type="Label" parent="Hud/Library/Center/Board/Box/Filters/Category"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "All songs"
+horizontal_alignment = 1
+
+[node name="Next" type="Button" parent="Hud/Library/Center/Board/Box/Filters/Category"]
+custom_minimum_size = Vector2(36, 34)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "▶"
+
+[node name="Count" type="Label" parent="Hud/Library/Center/Board/Box/Filters/Category"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_type_variation = &"BoardCaption"
+text = "10 songs"
+horizontal_alignment = 2
+
+[node name="DifficultyCaption" type="Label" parent="Hud/Library/Center/Board/Box/Filters"]
+layout_mode = 2
+theme_type_variation = &"BoardCaption"
+text = "Difficulty"
+horizontal_alignment = 2
+
+[node name="Difficulty" type="HBoxContainer" parent="Hud/Library/Center/Board/Box/Filters"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Previous" type="Button" parent="Hud/Library/Center/Board/Box/Filters/Difficulty"]
+custom_minimum_size = Vector2(36, 34)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "◀"
+
+[node name="Value" type="Label" parent="Hud/Library/Center/Board/Box/Filters/Difficulty"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Any"
+horizontal_alignment = 1
+
+[node name="Next" type="Button" parent="Hud/Library/Center/Board/Box/Filters/Difficulty"]
+custom_minimum_size = Vector2(36, 34)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+theme_override_font_sizes/font_size = 15
+text = "▶"
+
+[node name="Above" type="Control" parent="Hud/Library/Center/Board/Box"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Mark" type="Label" parent="Hud/Library/Center/Board/Box/Above"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"BoardCaption"
+theme_override_font_sizes/font_size = 12
+text = "▲"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Songs" type="Control" parent="Hud/Library/Center/Board/Box"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="List" type="VBoxContainer" parent="Hud/Library/Center/Board/Box/Songs"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+theme_override_constants/separation = 4
+
+[node name="Empty" type="Label" parent="Hud/Library/Center/Board/Box/Songs"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"BoardCaption"
+text = "No songs of this difficulty here"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Below" type="Control" parent="Hud/Library/Center/Board/Box"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Mark" type="Label" parent="Hud/Library/Center/Board/Box/Below"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"BoardCaption"
+theme_override_font_sizes/font_size = 12
+text = "▼"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Foot" type="HBoxContainer" parent="Hud/Library/Center/Board/Box"]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="Back" type="Button" parent="Hud/Library/Center/Board/Box/Foot"]
+script = ExtResource("19_plank")
+custom_minimum_size = Vector2(140, 44)
+layout_mode = 2
+focus_mode = 0
+theme_type_variation = &"Plank"
+theme_override_font_sizes/font_size = 18
+text = "‹ Back"
 
 [node name="PauseMenu" type="ColorRect" parent="Hud" unique_id=307788213]
 process_mode = 3

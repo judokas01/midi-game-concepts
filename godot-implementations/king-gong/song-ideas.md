@@ -2,7 +2,8 @@
 
 Simple tunes known worldwide and in the Czech Republic that the game could add, with a
 rating for how hard each is to play. Tick the ones you want. "(in game)" marks songs King
-Gong already has; "(written out)" marks songs whose notes are at the end of this file.
+Gong already has: the first ten in scripts/song.gd, the rest in its song book,
+scripts/songbook/. "(written out)" marks songs whose notes are at the end of this file.
 
 **Public domain** here means a traditional song, or music whose composer died more than 70
 years ago (and, for the US, that was published in 1930 or earlier). This is a rule of thumb,
@@ -30,20 +31,20 @@ Within each section, the songs run from easiest to hardest.
 
 - [x] ★☆☆☆☆ Mary Had a Little Lamb (in game)
 - [x] ★☆☆☆☆ Alle meine Entchen (in game, as "Ducklings")
-- [ ] ★☆☆☆☆ Hot Cross Buns (written out)
+- [x] ★☆☆☆☆ Hot Cross Buns (in game)
 - [ ] ★☆☆☆☆ Ring Around the Rosie
-- [ ] ★☆☆☆☆ Go Tell Aunt Rhody
+- [x] ★☆☆☆☆ Go Tell Aunt Rhody (in game)
 - [x] ★★☆☆☆ Twinkle Twinkle Little Star (in game)
 - [x] ★★☆☆☆ Hänschen klein (in game, as "Lightly Row")
-- [ ] ★★☆☆☆ London Bridge (written out)
-- [ ] ★★☆☆☆ Au Clair de la Lune (written out)
-- [ ] ★★☆☆☆ Row, Row, Row Your Boat (written out)
-- [ ] ★★☆☆☆ Bratře Kubo (Frère Jacques) (over an octave)
-- [ ] ★★☆☆☆ Old MacDonald
-- [ ] ★★☆☆☆ This Old Man
+- [x] ★★☆☆☆ London Bridge (in game)
+- [x] ★★☆☆☆ Au Clair de la Lune (in game)
+- [x] ★★☆☆☆ Row, Row, Row Your Boat (in game)
+- [x] ★★☆☆☆ Bratře Kubo (Frère Jacques) (over an octave) (in game)
+- [x] ★★☆☆☆ Old MacDonald (in game)
+- [x] ★★☆☆☆ This Old Man (in game)
 - [ ] ★★☆☆☆ The Farmer in the Dell
 - [ ] ★★☆☆☆ Here We Go Round the Mulberry Bush
-- [ ] ★★☆☆☆ Itsy Bitsy Spider
+- [x] ★★☆☆☆ Itsy Bitsy Spider (in game)
 - [ ] ★★☆☆☆ Humpty Dumpty
 - [ ] ★★☆☆☆ Polly Put the Kettle On
 - [ ] ★★☆☆☆ Oranges and Lemons
@@ -54,33 +55,33 @@ Within each section, the songs run from easiest to hardest.
 - [ ] ★★☆☆☆ Sur le Pont d'Avignon
 - [ ] ★★☆☆☆ Alouette
 - [ ] ★★☆☆☆ O du lieber Augustin
-- [ ] ★★★☆☆ Hodně štěstí, zdraví (Happy Birthday) (written out)
+- [x] ★★★☆☆ Hodně štěstí, zdraví (Happy Birthday) (in game)
 - [ ] ★★★☆☆ Hickory Dickory Dock
-- [ ] ★★★☆☆ Pop Goes the Weasel
-- [ ] ★★★☆☆ Three Blind Mice
+- [x] ★★★☆☆ Pop Goes the Weasel (in game)
+- [x] ★★★☆☆ Three Blind Mice (in game)
 - [ ] ★★★☆☆ Rock-a-bye Baby
 - [ ] ★★★☆☆ Oh Where Has My Little Dog Gone
 - [ ] ★★★☆☆ Sing a Song of Sixpence
 
 ## Folk songs known worldwide
 
-- [ ] ★★☆☆☆ Yankee Doodle (written out)
-- [ ] ★★☆☆☆ Oh When the Saints
+- [x] ★★☆☆☆ Yankee Doodle (in game)
+- [x] ★★☆☆☆ Oh When the Saints (in game)
 - [ ] ★★☆☆☆ Michael, Row the Boat Ashore
 - [ ] ★★☆☆☆ Swing Low, Sweet Chariot
 - [ ] ★★☆☆☆ Go Down Moses
-- [ ] ★★☆☆☆ Aura Lee (the tune Elvis sang as Love Me Tender, in the 1956 film)
+- [x] ★★☆☆☆ Aura Lee (the tune Elvis sang as Love Me Tender, in the 1956 film) (in game)
 - [ ] ★★☆☆☆ Long, Long Ago
 - [ ] ★★☆☆☆ Bella Ciao (heard again in the TV series Money Heist)
-- [ ] ★★☆☆☆ Drunken Sailor
+- [x] ★★☆☆☆ Drunken Sailor (in game)
 - [ ] ★★☆☆☆ Wellerman
 - [ ] ★★☆☆☆ Wild Rover
-- [ ] ★★☆☆☆ Clementine
+- [x] ★★☆☆☆ Clementine (in game)
 - [ ] ★★☆☆☆ Red River Valley (known in Czech as Zelené pláně)
-- [ ] ★★☆☆☆ Amazing Grace
+- [x] ★★☆☆☆ Amazing Grace (in game)
 - [ ] ★★☆☆☆ For He's a Jolly Good Fellow
 - [ ] ★★☆☆☆ Gaudeamus igitur (the graduation song)
-- [ ] ★★★☆☆ Oh! Susanna
+- [x] ★★★☆☆ Oh! Susanna (in game)
 - [ ] ★★★☆☆ Camptown Races
 - [ ] ★★★☆☆ Buffalo Gals (It's a Wonderful Life)
 - [ ] ★★★☆☆ Polly Wolly Doodle
@@ -91,28 +92,28 @@ Within each section, the songs run from easiest to hardest.
 - [ ] ★★★☆☆ My Bonnie Lies over the Ocean
 - [ ] ★★★☆☆ Home on the Range
 - [ ] ★★★☆☆ Cotton Eye Joe (the old fiddle tune, not the 1994 dance hit)
-- [ ] ★★★☆☆ Greensleeves
+- [x] ★★★☆☆ Greensleeves (in game)
 - [ ] ★★★☆☆ Scarborough Fair (the traditional tune)
 - [ ] ★★★☆☆ The Water Is Wide
 - [ ] ★★★☆☆ Molly Malone
 - [ ] ★★★☆☆ Loch Lomond
 - [ ] ★★★☆☆ Skye Boat Song
 - [ ] ★★★☆☆ Shenandoah
-- [ ] ★★★☆☆ Auld Lang Syne (It's a Wonderful Life, When Harry Met Sally)
+- [x] ★★★☆☆ Auld Lang Syne (It's a Wonderful Life, When Harry Met Sally) (in game)
 - [ ] ★★★★☆ Turkey in the Straw
 - [ ] ★★★★☆ Danny Boy (over an octave)
 
 ## From other countries, known worldwide
 
 - [ ] ★★☆☆☆ Volga Boatmen
-- [ ] ★★☆☆☆ Sakura Sakura
+- [x] ★★☆☆☆ Sakura Sakura (in game)
 - [ ] ★★☆☆☆ Arirang
 - [ ] ★★☆☆☆ Tumbalalaika
 - [ ] ★★☆☆☆ Muss i denn (Elvis sang it as Wooden Heart, in G.I. Blues)
 - [ ] ★★☆☆☆ Lorelei
-- [ ] ★★★☆☆ Korobeiniki (the Tetris tune: the old Russian folk tune is free, Tetris's arrangement isn't)
+- [x] ★★★☆☆ Korobeiniki (the Tetris tune: the old Russian folk tune is free, Tetris's arrangement isn't) (in game)
 - [ ] ★★★☆☆ Kalinka
-- [ ] ★★★☆☆ La Cucaracha
+- [x] ★★★☆☆ La Cucaracha (in game)
 - [ ] ★★★☆☆ Jasmine Flower (Mo Li Hua)
 - [ ] ★★★☆☆ Santa Lucia
 - [ ] ★★★☆☆ Hava Nagila
@@ -129,7 +130,7 @@ Within each section, the songs run from easiest to hardest.
 The simplest, and the best fit.
 
 - [ ] ★☆☆☆☆ Prší, prší
-- [ ] ★☆☆☆☆ Skákal pes přes oves
+- [x] ★☆☆☆☆ Skákal pes přes oves (in game)
 - [ ] ★☆☆☆☆ Pec nám spadla
 - [ ] ★☆☆☆☆ Běží liška k Táboru
 - [ ] ★☆☆☆☆ Hody, hody, doprovody
@@ -145,7 +146,7 @@ The simplest, and the best fit.
 - [ ] ★★☆☆☆ Šel tudy, měl dudy
 - [ ] ★★☆☆☆ Komáři se ženili
 - [ ] ★★☆☆☆ Strejček Nimra
-- [ ] ★★☆☆☆ Zajíček ve své jamce
+- [x] ★★☆☆☆ Zajíček ve své jamce (in game)
 - [ ] ★★☆☆☆ Bude zima, bude mráz
 - [ ] ★★☆☆☆ Čížečku, čížečku
 - [ ] ★★☆☆☆ Já jsem muzikant
@@ -189,23 +190,23 @@ The simplest, and the best fit.
 - [ ] ★★☆☆☆ Jolly Old St Nicholas
 - [ ] ★★☆☆☆ Up on the Housetop
 - [ ] ★★☆☆☆ Away in a Manger
-- [ ] ★★☆☆☆ Good King Wenceslas (the song is about svatý Václav)
-- [ ] ★★☆☆☆ Joy to the World
+- [x] ★★☆☆☆ Good King Wenceslas (the song is about svatý Václav) (in game)
+- [x] ★★★☆☆ Joy to the World (in game)
 - [ ] ★★☆☆☆ In the Bleak Midwinter
-- [ ] ★★☆☆☆ Carol of the Bells (Home Alone; the Ukrainian tune is free, the 1936 English
-  words aren't, and the game doesn't use words)
-- [ ] ★★★☆☆ We Wish You a Merry Christmas
-- [ ] ★★★☆☆ O Christmas Tree (O Tannenbaum)
-- [ ] ★★★☆☆ O Come All Ye Faithful (Adeste fideles)
+- [x] ★★☆☆☆ Carol of the Bells (Home Alone; the Ukrainian tune is free, the 1936 English
+  words aren't, and the game doesn't use words) (in game)
+- [x] ★★★☆☆ We Wish You a Merry Christmas (in game)
+- [x] ★★★☆☆ O Christmas Tree (O Tannenbaum) (in game)
+- [x] ★★★☆☆ O Come All Ye Faithful (Adeste fideles) (in game)
 - [ ] ★★★☆☆ The First Noel
-- [ ] ★★★☆☆ Hark! The Herald Angels Sing
-- [ ] ★★★☆☆ Angels We Have Heard on High
-- [ ] ★★★☆☆ God Rest Ye Merry Gentlemen
+- [x] ★★★☆☆ Hark! The Herald Angels Sing (in game)
+- [x] ★★★☆☆ Angels We Have Heard on High (in game)
+- [x] ★★★☆☆ God Rest Ye Merry Gentlemen (in game)
 - [ ] ★★★☆☆ We Three Kings
 - [ ] ★★★☆☆ O Little Town of Bethlehem
-- [ ] ★★★☆☆ What Child Is This (the Greensleeves tune)
-- [ ] ★★★☆☆ Tichá noc (Silent Night) (over an octave)
-- [ ] ★★★☆☆ Deck the Halls (over an octave)
+- [x] ★★★☆☆ What Child Is This (the Greensleeves tune) (in game)
+- [x] ★★★☆☆ Tichá noc (Silent Night) (over an octave) (in game)
+- [x] ★★★☆☆ Deck the Halls (over an octave) (in game)
 - [ ] ★★★★☆ Ding Dong Merrily on High
 - [ ] ★★★★☆ O Holy Night (over an octave)
 
@@ -229,24 +230,24 @@ The simplest, and the best fit.
 ## Classical themes known worldwide
 
 - [x] ★★☆☆☆ Óda na radost (Ode to Joy, in game; also in Die Hard)
-- [ ] ★★☆☆☆ Beethoven: Symphony No. 5, the opening
+- [x] ★★☆☆☆ Beethoven: Symphony No. 5, the opening (in game)
 - [ ] ★★☆☆☆ Beethoven: Moonlight Sonata, the slow tune (without the triplets underneath)
-- [ ] ★★☆☆☆ Haydn: the Surprise Symphony theme
+- [x] ★★☆☆☆ Haydn: the Surprise Symphony theme (in game)
 - [ ] ★★☆☆☆ Haydn: the Emperor Hymn (the tune of the German anthem)
 - [ ] ★★☆☆☆ Handel: Largo (Ombra mai fu)
 - [ ] ★★☆☆☆ Verdi: Va, pensiero
 - [ ] ★★☆☆☆ Wagner: Bridal Chorus (Here Comes the Bride)
 - [ ] ★★☆☆☆ Elgar: Pomp and Circumstance No. 1, the big tune (graduations)
-- [ ] ★★☆☆☆ Chopin: Funeral March
+- [x] ★★☆☆☆ Chopin: Funeral March (in game)
 - [ ] ★★☆☆☆ Chopin: Prelude in E minor
 - [ ] ★★☆☆☆ Schumann: The Happy Farmer
 - [ ] ★★☆☆☆ Mussorgsky: The Great Gate of Kiev
 - [x] ★★★☆☆ In the Hall of the Mountain King (in game; also in The Social Network)
 - [ ] ★★★☆☆ Brahms: Lullaby (Brahmsova ukolébavka)
-- [ ] ★★★☆☆ Mozart: Eine kleine Nachtmusik
-- [ ] ★★★☆☆ Mozart: Symphony No. 40
+- [x] ★★★☆☆ Mozart: Eine kleine Nachtmusik (in game)
+- [x] ★★★☆☆ Mozart: Symphony No. 40 (in game)
 - [ ] ★★★☆☆ Mozart: Sonata facile (K. 545)
-- [ ] ★★★☆☆ Minuet in G (from Bach's Anna Magdalena notebook)
+- [x] ★★★☆☆ Minuet in G (from Bach's Anna Magdalena notebook) (in game)
 - [ ] ★★★☆☆ Bach: Musette in D
 - [ ] ★★★☆☆ Handel: Water Music, the Hornpipe
 - [ ] ★★★☆☆ Tchaikovsky: Nutcracker March
@@ -272,7 +273,7 @@ The simplest, and the best fit.
 - [ ] ★★★☆☆ Elgar: Nimrod
 - [ ] ★★★☆☆ Holst: Jupiter, the hymn tune
 - [ ] ★★★☆☆ Mussorgsky: Promenade (the beat switches between five and six)
-- [ ] ★★★☆☆ Satie: Gymnopédie No. 1
+- [x] ★★★☆☆ Satie: Gymnopédie No. 1 (in game)
 - [ ] ★★★☆☆ Debussy: The Girl with the Flaxen Hair
 - [ ] ★★★☆☆ Delibes: Flower Duet (the British Airways adverts)
 - [ ] ★★★☆☆ Saint-Saëns: The Swan (over an octave)
@@ -284,7 +285,7 @@ The simplest, and the best fit.
 - [ ] ★★★★☆ Puccini: Nessun dorma (over an octave)
 - [ ] ★★★★☆ Brahms: Hungarian Dance No. 5
 - [ ] ★★★★☆ Chopin: Nocturne Op. 9 No. 2
-- [ ] ★★★★★ Mozart: Rondo alla Turca
+- [x] ★★★★★ Mozart: Rondo alla Turca (in game)
 - [ ] ★★★★★ Mozart: the Queen of the Night aria
 - [ ] ★★★★★ Monti: Csárdás
 - [ ] ★★★★★ Rimsky-Korsakov: Flight of the Bumblebee
@@ -293,8 +294,8 @@ The simplest, and the best fit.
 
 ## Czech classics
 
-- [ ] ★★☆☆☆ Smetana: Vltava, the main theme (it is close to Kočka leze dírou)
-- [ ] ★★☆☆☆ Dvořák: Largo from the New World Symphony
+- [x] ★★☆☆☆ Smetana: Vltava, the main theme (it is close to Kočka leze dírou) (in game)
+- [x] ★★☆☆☆ Dvořák: Largo from the New World Symphony (in game)
 - [ ] ★★★☆☆ Škroup: Kde domov můj
 - [ ] ★★★☆☆ Dvořák: Humoreska
 - [ ] ★★★☆☆ Dvořák: Když mne stará matka (Songs My Mother Taught Me)
@@ -315,15 +316,15 @@ the best known. Film tunes in the sections above name their film there: Ode to J
 Hall of the Mountain King, Korobeiniki, Bella Ciao, Aura Lee, Muss i denn, Buffalo Gals,
 Auld Lang Syne, Carol of the Bells and Schubert's Ave Maria.
 
-- [ ] ★☆☆☆☆ Dies irae (the old chant behind The Shining's opening)
-- [ ] ★★☆☆☆ R. Strauss: Also sprach Zarathustra, the opening (2001: A Space Odyssey) (over an octave)
+- [x] ★☆☆☆☆ Dies irae (the old chant behind The Shining's opening) (in game)
+- [x] ★★☆☆☆ R. Strauss: Also sprach Zarathustra, the opening (2001: A Space Odyssey) (over an octave) (in game)
 - [ ] ★★☆☆☆ Strauss: The Blue Danube (2001: A Space Odyssey)
-- [ ] ★★☆☆☆ Grieg: Morning Mood (the sunrise in countless cartoons)
+- [x] ★★☆☆☆ Grieg: Morning Mood (the sunrise in countless cartoons) (in game)
 - [ ] ★★☆☆☆ Handel: Sarabande (Barry Lyndon)
 - [ ] ★★☆☆☆ Saint-Saëns: Organ Symphony, the finale (Babe)
 - [ ] ★★☆☆☆ Nearer, My God, to Thee (Titanic)
 - [ ] ★★☆☆☆ Offenbach: Barcarolle (Life Is Beautiful)
-- [ ] ★★★☆☆ Pachelbel: Canon (Ordinary People)
+- [x] ★★★☆☆ Pachelbel: Canon (Ordinary People) (in game)
 - [ ] ★★★☆☆ Bach: Air on the G String (Se7en)
 - [ ] ★★★☆☆ Boccherini: Minuet (The Ladykillers)
 - [ ] ★★★☆☆ Mascagni: Intermezzo from Cavalleria rusticana (Raging Bull, The Godfather Part III)
@@ -331,16 +332,16 @@ Auld Lang Syne, Carol of the Bells and Schubert's Ave Maria.
 - [ ] ★★★☆☆ Mozart: Sull'aria (The Shawshank Redemption)
 - [ ] ★★★☆☆ Mozart: Lacrimosa (Amadeus)
 - [ ] ★★★☆☆ Mozart: Piano Concerto No. 21, the Andante (Elvira Madigan)
-- [ ] ★★★☆☆ Tchaikovsky: Swan Lake (Black Swan)
+- [x] ★★★☆☆ Tchaikovsky: Swan Lake (Black Swan) (in game)
 - [ ] ★★★☆☆ Tchaikovsky: Dance of the Sugar Plum Fairy (Fantasia)
 - [ ] ★★★☆☆ Tchaikovsky: Waltz of the Flowers (Fantasia)
 - [ ] ★★★☆☆ Ponchielli: Dance of the Hours (Fantasia)
 - [ ] ★★★☆☆ Gounod: Funeral March of a Marionette (Alfred Hitchcock Presents)
 - [ ] ★★★☆☆ Sousa: The Liberty Bell (Monty Python's Flying Circus)
-- [ ] ★★★★☆ Offenbach: Can-can (Moulin Rouge!)
+- [x] ★★★★☆ Offenbach: Can-can (Moulin Rouge!) (in game)
 - [ ] ★★★★☆ Rossini: William Tell, the finale (The Lone Ranger, A Clockwork Orange)
 - [ ] ★★★★☆ Wagner: Ride of the Valkyries (Apocalypse Now, What's Opera, Doc?)
-- [ ] ★★★★☆ Joplin: The Entertainer (The Sting)
+- [x] ★★★★☆ Joplin: The Entertainer (The Sting) (in game)
 - [ ] ★★★★☆ Debussy: Clair de Lune (Ocean's Eleven)
 - [ ] ★★★★☆ Dukas: The Sorcerer's Apprentice (Fantasia)
 - [ ] ★★★★☆ Bach: Toccata and Fugue in D minor (Fantasia)
@@ -379,8 +380,8 @@ Auld Lang Syne, Carol of the Bells and Schubert's Ave Maria.
 
 ## Already written out, not yet in the game
 
-These six were written out in the King Gong song format. They stay between C4 and C5 and
-have chords. Each needs a play-through before it goes in.
+These six were written out in the King Gong song format, and are now in the game's song
+book (scripts/songbook/children.gd and folk.gd), as written here.
 
 - Hot Cross Buns
 - London Bridge

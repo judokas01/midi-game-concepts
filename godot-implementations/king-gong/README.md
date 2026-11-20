@@ -23,7 +23,7 @@ launching if you can; if none is found at start-up the game looks again every 2 
 | MIDI notes below the next branch's | Treble + chords: the left hand's chord. Any octave and any order, but only its notes. A note lower than the next branch's note is the left hand's until let go, so a wrong note below the tune makes nobody fall, though it spoils a chord. With Chords only and in the chord drill every note is the chord's |
 | Keyboard `Z X C V B N M` | With chords: one key per chord, by its root: C D E F G A B, and with `Shift` the black key above (`Shift+N` = Bb). The sign on each log shows its key, e.g. `Z` = C, `V` = F, `B` = G. In the chord drill every root plays the kind of chord the next log wants (`X` = Dm when it wants Am) |
 | Main menu | Wooden planks: **Play song**, **Learn song** ([learn mode](#learn-mode)), **Chord drill** ([drill chords](#chord-drill)), **Exit game**; Tutorial and Campaign are coming. Each of the first three opens a board with its options and **Start** |
-| Song `◀` list `▶` | On the Play song and Learn song boards: which song, the built-in ones and then [your own](#your-own-songs) |
+| Song `◀` name `▶` Browse… | On the Play song and Learn song boards: which song, with its difficulty in stars. `◀` `▶` (E, F) step through the songs of the [library](#the-song-library)'s filter it was picked with (every song, easiest first, until you pick with another). **Browse…** (A or `Enter` on the row, or a click on it or the name) opens the library |
 | Listen | At the foot of the Play song and Learn song boards, between Back and Start: [hear the song](#listen) played on the piano while the gorilla climbs it. Any key, note or click stops it (not the volume keys or the wheel) |
 | Part: Treble clef / Bass clef / Treble + chords / Chords only | On the song boards: how to play the song. [Chords only](#chords-only): the gorilla plays the tune, you the chords |
 | Chord sign | On the song boards (with chords), the Chord drill board and the pause menu (with chords): the sign on each log shows the chord's name, or its notes in the bass clef. One setting: changed in one place, it changes in all |
@@ -149,6 +149,35 @@ hold, on the gorilla's beat: you hear the next chord's arpeggio, then answer it 
 where the piano adds the root as the gorilla grabs it. It plays nothing that isn't on a
 branch, and nothing while the gorilla waits.
 
+### The song library
+
+**Browse…** on the Song row (or A or `Enter` on the row) opens the library over the board.
+Two filters sit at its top: **Category** (All songs, or one with songs in it: Children's
+songs, Folk songs, From other countries, Czech children's songs, Christmas, Classical,
+Czech classics, From films, and Your scores once you add some) and
+**Difficulty** (Any, or exactly ★ to ★★★★★). Under them, the songs that match both, easiest
+first, then by name, each with its stars; your own scores have none and come last. Ten show
+at once, the list scrolling so the selection is never on its edge; ▲ and ▼ say there is
+more. Where nothing matches, it says so. It opens on the song you have, with the filters it
+was picked with.
+
+| Key | On the library |
+| --- | --- |
+| C ▲ / D ▼ (the arrows) | Up and down: Category, Difficulty, the list, Back. In the list they move along it, and past its first or last song out of it |
+| E ◀ / F ▶ | On Category or Difficulty, the one before or after, round from the end; on the list, the category. The list then shows the song you have if it matches, else its first |
+| A ✓ (`Enter`, `Space`, a click) | On the list, picks the song: the board shows it and the level is laid out for it |
+| B ✕ (`Esc`, Back) | Closes it, the song as it was |
+
+The mouse selects what it points at and the wheel scrolls. When the selection rests on a
+song for 0.6 s, its first 10 seconds play on the [piano](#the-piano), tune and chords, at 80
+BPM, the last second fading out. Moving on, another filter, picking or closing stops it at
+once.
+
+Every song has a category and a difficulty from 1 to 5, for its tune alone: 1 a few
+neighbouring notes in an even rhythm, 2 mostly steps within five or six notes, 3 about an
+octave with some leaps and quick notes, 4 fast runs, wide leaps or many black keys, 5 fast
+and chromatic, or far wider than an octave. A song without both is an error at start-up.
+
 ### The chord grid
 
 A grid of every chord the drill offers: one row for each kind of chord, under its difficulty
@@ -185,7 +214,8 @@ practise reading the notes alone.
 ## Your own songs
 
 Put MusicXML scores in `songs/`, next to `project.godot`, and restart the game: they join
-the song list after the built-in songs, by file name. On musescore.com open the score and
+the songs after the built-in ones, by file name, in the library's Your scores category (and
+at the end of every list they are in, with no stars). On musescore.com open the score and
 choose Download → MusicXML; in MuseScore Studio, File → Export → MusicXML. Both `.mxl` and
 uncompressed `.musicxml` work. `songs/` is ignored by git, so the scores you are licensed
 to use stay on your machine.
@@ -241,6 +271,21 @@ A file the importer can't read is left out of the list, with a warning in the co
 
   A song is a list in `SONGS` in `song.gd`; scores need no code, see
   [Your own songs](#your-own-songs).
+- **The song book.** After those ten come 55 public-domain tunes from `song-ideas.md`,
+  in `scripts/songbook/`, a file for each category: children's songs (Hot Cross Buns,
+  London Bridge, Frère Jacques, Happy Birthday…), folk songs (Amazing Grace, Greensleeves,
+  Auld Lang Syne…), from other countries (Sakura, Korobeiniki, La Cucaracha), Christmas
+  (Silent Night, Joy to the World, Deck the Halls, Carol of the Bells…), classical themes (Beethoven's Fifth,
+  Eine kleine Nachtmusik, Minuet in G, Rondo alla Turca…), Czech classics (Vltava, the
+  Largo from the New World Symphony) and tunes films borrowed (the Can-can, The
+  Entertainer, Morning Mood…). Each is a verse or a famous theme, written in a key that
+  keeps it on the staff (mostly C4 to C5), with songbook triads and bananas. A song in
+  another time says so: `meter = 3` (3/4, or 6/8 in three beats), `meter = 2`, and
+  `pickup = <beats>` for one that starts before its first bar line. They were written
+  out from memory, except the two Czech children's songs and Carol of the Bells (the top
+  line of Leontovych's Shchedryk, in D minor), whose notes come from Wikipedia's scores;
+  a tune remembered only in part was left out, so 223 of the list
+  wait for a written source. Listen to them in the library and say which sound wrong.
 - **Key signatures.** The spike has no sharps or flats. A song in another key than C
   (`key = "D"` in `song.gd`) shows its key signature after the clef, as sheet music
   does: a sharp or flat on the line or space of each note it raises or lowers, and every
@@ -321,7 +366,7 @@ it fades in a quarter of a second, as without the pedal. Up to 32 notes sound at
 
 It never plays what you play: your own instrument does that. It plays a song for
 [Listen](#listen), and the part you don't play with [Backing](#backing), in the chord drill
-its tune. The beat tick stays
+its tune, and the first 10 seconds of a song in the [library](#the-song-library). The beat tick stays
 louder than the piano. A note due on a beat starts in whichever frame has it heard nearest to
 the beat, by the audio clock: within about 15 ms.
 
@@ -344,7 +389,7 @@ them around:
 | `scripts/level.gd` | Builds the level from the song: places branches, lianas, trees |
 | `scripts/staff.gd` | Where things sit: staff step, line heights, floor |
 | `scripts/branch.gd`, `liana.gd`, `chord_log.gd`, `gorilla.gd` | What each of those scenes can do |
-| `scripts/song.gd` | The songs and their chords and keys, their parsing into branches with the signs they carry, and the two clefs |
+| `scripts/song.gd` | The songs and their chords, keys, categories and difficulties, the library's order and filters, their parsing into branches with the signs they carry, and the two clefs |
 | `scripts/clef.gd` | The clef and key signature pinned at the left: their size (40%), and each clef placed on its line |
 | `scripts/key_signature.gd` | Puts the song's sharps or flats after the clef |
 | `scripts/drill.gd` | Deals the chord drill's chords and makes up its tune, each chord's arpeggio before its log; which chords the chord grid offers, and how they are spelled |
@@ -353,6 +398,7 @@ them around:
 | `scripts/menu_cursor.gd` | The selection on every menu: moves it, does what the six keys do on each kind of row, draws the frames, places the sign |
 | `scripts/menu_sign.gd` | Draws the sign beside the selection: one octave, the keys that do something lit |
 | `scripts/chord_menu.gd` | The chord drill's chord grid: builds it, and hands the menu cursor its rows |
+| `scripts/library.gd` | The song library: its two filters, the list and its scrolling, and the preview on its own piano |
 | `scripts/pause_menu.gd` | The pause menu: its buttons and toggles, the tempo's steps |
 | `scripts/progress_line.gd` | Draws the progress line along the top, gliding after the gorilla |
 | `scripts/piano.gd` | Draws the little keyboard |
@@ -363,7 +409,8 @@ them around:
 | `sounds/piano/*.ogg` | The piano's recordings; see `art/CREDITS.md` |
 | `scripts/note_input.gd` | MIDI and keyboard input |
 | `scripts/hud.gd` | The counters, the menus' wiring, messages, what the little keyboard lights |
-| `scripts/dev_autoplay.gd`, `dev_cursor_check.gd`, `dev_sign_check.gd`, `dev_sound_check.gd` | Dev checks only, see below |
+| `scripts/songbook/*.gd` | The song book: the tunes of `song-ideas.md`, a file for each category, in the format `song.gd` describes |
+| `scripts/dev_autoplay.gd`, `dev_cursor_check.gd`, `dev_sign_check.gd`, `dev_sound_check.gd`, `dev_library_check.gd`, `dev_songbook_check.gd` | Dev checks only, see below |
 
 Branches, lianas and logs only appear when the game runs, because `level.gd` lays them out
 from the song. To change how they look, open `scenes/branch.tscn`, `scenes/liana.tscn` or
@@ -454,6 +501,14 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   (`listen: a key stops it`, the piano silent at once) and by the note A, which must not
   also press Start (`listen: a note stops it`). With `--bass`, `--chords-only` or `--song=<n>`
   it listens to that part or song.
+- `--library` picks the song from the library before playing it: from the main page to the
+  Play song board, D to the Song row and A to open the library, on the list; F there to the
+  next category, C up past the list to Difficulty and F to one star, D into the list and D
+  again. Resting there it checks the song's preview plays (`library: preview Mary's Lamb`)
+  and that C stops it at once (`library: preview stopped`); then D back and A picks it:
+  `library: picked Mary's Lamb from Children's songs, ★☆☆☆☆`, the board on its Song row
+  with that filter and the level laid out for it. Then it starts it from Start and plays it
+  as usual.
 - `--bpm=<n>` plays at n BPM instead of 60, for a quicker check. Every result above is the
   same at 120.
 - `--perf` prints fps and draw calls once a second.
@@ -462,7 +517,8 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   pause menu), to judge by eye whether what is selected is plain to see.
 
 The menu cursor's rules (rows wrapping, values stopping at their ends, hidden rows skipped,
-the nearest cell below, what the sign lights, the selected plank's and yellow button's look,
+the nearest cell below, a value row A presses, a list that keeps its own selection and is
+left at its ends, what the sign lights, the selected plank's and yellow button's look,
 and the yellow button's text contrast at rest) have a check of their own, on throwaway
 buttons:
 
@@ -481,6 +537,35 @@ sharp or flat, and the name and every triad on the board they always had:
 ```
 
 It prints `sign: ok`.
+
+The songs and the library have one: every song's category and difficulty, the errors for a
+missing or wrong one, the order and the filters, then the library page worked by the six
+keys' acts on the real menus (opening from the Song row and from Browse…, the rows and the
+list's ends, both filters, a filter with no songs, picking, closing, the board's arrows
+within the filter, a long list's scrolling and marks, the wheel and the mouse) and the
+preview (not before 0.6 s, then tune and chords at 80 BPM on its own bus, stopped by a move,
+fading in its last second without a click, once per rest, stopped by closing or picking):
+
+```powershell
+& "C:/game-dev/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot-implementations/king-gong --script res://scripts/dev_library_check.gd
+```
+
+It prints `library: ok`. It checks the ten built-in songs alone, whatever the song book
+and `songs/` hold.
+
+The song book has its own: every song with a name no other has, its file's category, a
+difficulty of 1 to 5, a key the game knows, notes it can read of lengths it lays out,
+every note between A3 and F5 so the staff moves none, triad chords from the first bar,
+whole bars after its pickup, and two bananas at least. It warns, without failing, where
+few downbeats are notes of their chord, a key needs many signs, or a song is very short or
+long:
+
+```powershell
+& "C:/game-dev/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot-implementations/king-gong --script res://scripts/dev_songbook_check.gd
+```
+
+It prints `songbook: 55 songs, 0 warnings` and `songbook: ok` (add `-- --file=children` to
+check one file).
 
 The piano and the song player have a headless check too: every key of the keyboard within
 a semitone of a recording, 20 notes at once, more than 32 taking over the oldest, a let-go

@@ -2,9 +2,12 @@ extends Control
 ## The main menu: wooden planks hanging from the canopy (Play song, Learn song, Chord drill,
 ## Exit game, and Tutorial and Campaign still to come), and the boards they open, where a song
 ## or the drill's chords are chosen before Start. Play song and Learn song share one board. It
-## shows the choices and reports them; the game keeps them. The song boards' foot is Back,
-## Listen (the song played to you, the gorilla climbing it) and Start. Worked with the mouse, or through
-## the menu cursor (menu_cursor.gd), which hud.gd hands the rows of the page shown.
+## shows the choices and reports them; the game keeps them. The song boards' Song row names
+## the song with its stars; its arrows step along the songs of the library's filter it was
+## picked with, and Browse… (A or Enter on the row, or a click on the name) opens the library
+## (library.gd). Their foot is Back,
+## Listen (the song played to you, the gorilla climbing it) and Start. Worked with the mouse,
+## or through the menu cursor (menu_cursor.gd), which hud.gd hands the rows of the page shown.
 
 enum Page { MAIN, PLAY, LEARN, DRILL }
 
@@ -13,6 +16,7 @@ signal page_shown                # any page, the main one too
 signal start_pressed
 signal listen_pressed
 signal song_chosen(song: int)
+signal library_requested
 signal style_chosen(clef: Song.Clef, chords: bool, by_itself: bool)
 signal hint_chosen(hint: ChordLog.Hint)
 signal practice_toggled(on: bool)
@@ -31,16 +35,19 @@ const KINDS := {"Major": "", "Minor": "m", "Dom7": "7", "Maj7": "maj7", "Min7": 
 const PICKED_LETTERS := 24   # the chords picked are named up to this many letters, so the line keeps its width
 
 var page := Page.MAIN
+var song := 0    # the song on the song boards, its number in Song.library()
+var filter := {category = "", difficulty = 0}   # the library's filter it was picked with, whose songs the arrows step along
 var count: int = Drill.COUNT   # chords in a drill round
 var beats: int = Drill.BEATS   # beats from one drill chord to the next
 var _last_board := Page.PLAY    # the main page opens with its plank selected
+var _back_on_song := false      # the library was opened: the board comes back on the Song row
 
 @onready var _main: Control = $Main
 @onready var _songs: Control = $Songs
 @onready var _drill: Control = $Drill
 @onready var _song_rows: GridContainer = $Songs/Board/Rows/Grid
 @onready var _drill_rows: GridContainer = $Drill/Board/Rows/Grid
-@onready var _song: OptionButton = _song_rows.get_node("Song/Pick")
+@onready var _song_name: Button = _song_rows.get_node("Song/Name")
 @onready var _practice: Button = _song_rows.get_node("Practice/Toggle")
 @onready var _hints: Array[Button] = [_song_rows.get_node("Hint/Toggle"), _drill_rows.get_node("Hint/Toggle")]
 @onready var _backings: Array[Button] = [_song_rows.get_node("Backing/Toggle"), _drill_rows.get_node("Backing/Toggle")]
@@ -78,9 +85,9 @@ func _ready() -> void:
 
 
 func _ready_songs() -> void:
-	for song: Dictionary in Song.library():
-		_song.add_item(song.name)
-	_song.item_selected.connect(func(i: int) -> void: song_chosen.emit(i))
+	show_song(song)
+	_song_name.pressed.connect(_request_library)
+	_song_rows.get_node("Song/Browse").pressed.connect(_request_library)
 	_song_rows.get_node("Song/Previous").pressed.connect(_next_song.bind(-1))
 	_song_rows.get_node("Song/Next").pressed.connect(_next_song.bind(1))
 	_on_chosen(_song_rows.get_node("Part/Treble"), func() -> void: style_chosen.emit(Song.Clef.TREBLE, false, false))
@@ -154,7 +161,7 @@ func cursor_rows() -> Array:
 			]
 	var parts := ["Treble", "Bass", "Chords", "ChordsOnly"].map(func(b: String) -> Button: return _song_rows.get_node("Part/" + b))
 	return [
-		MenuCursor.value(_next_song, _can_step_song, _parts(_song_rows, "Song")),
+		MenuCursor.value(_next_song, _can_step_song, _parts(_song_rows, "Song"), _request_library),
 		MenuCursor.choice(parts, _parts(_song_rows, "Part")),
 		MenuCursor.choice(_signs[0], _parts(_song_rows, "Sign")),
 		MenuCursor.press(_backings[0], _parts(_song_rows, "Backing")),
@@ -165,10 +172,13 @@ func cursor_rows() -> Array:
 
 
 ## Where the cursor starts: on the main page the plank of the board last opened, on a board
-## Start.
+## Start, or the Song row back from the library.
 func cursor_start() -> int:
 	if page == Page.MAIN:
 		return [Page.PLAY, Page.LEARN, Page.DRILL].find(_last_board)
+	if _back_on_song:
+		_back_on_song = false
+		return 0
 	return -1
 
 
@@ -191,6 +201,19 @@ func _parts(rows: GridContainer, row: String) -> Array:
 func _foot(board: Control) -> MenuCursor.Row:
 	var buttons := board.get_node("Board/Rows/Foot").get_children().filter(func(c: Node) -> bool: return c is Button)
 	return MenuCursor.cells(buttons, buttons.size() - 1)
+
+
+## `s` on the song boards: its name and stars. From the library, `with` is the filter it was
+## picked with; otherwise the filter stays, or goes back to every song if it lacks this one.
+func show_song(s: int, with := {}) -> void:
+	song = s
+	if not with.is_empty():
+		filter = with.duplicate()
+	elif not s in _filtered():
+		filter = {category = "", difficulty = 0}
+	var picked: Dictionary = Song.library()[s]
+	var stars := Song.stars(picked.get("difficulty", 0))
+	_song_name.text = (stars + "  " if stars != "" else "") + picked.name
 
 
 ## The Chord sign row is for a part with chords only.
@@ -255,17 +278,28 @@ func _can_step_beats(by: int) -> bool:
 
 
 func _can_step_song(_by: int) -> bool:
-	return _song.item_count > 1   # round from the end to the start
+	return _filtered().size() > 1   # round from the end to the start
+
+
+func _filtered() -> Array:
+	return Song.matching(filter.category, filter.difficulty)
 
 
 func _show_beats() -> void:
 	_beats.text = "%d beat%s" % [beats, "" if beats == 1 else "s"]
 
 
-## The song `by` places down the list (up if negative), round from the end to the start.
+## The song `by` places along the filter's songs (back if negative), round from the end to
+## the start.
 func _next_song(by: int) -> void:
-	_song.select(posmod(_song.selected + by, _song.item_count))
-	song_chosen.emit(_song.selected)
+	var songs := _filtered()
+	show_song(songs[posmod(songs.find(song) + by, songs.size())])
+	song_chosen.emit(song)
+
+
+func _request_library() -> void:
+	_back_on_song = true
+	library_requested.emit()
 
 
 func _choose_hint(hint: ChordLog.Hint) -> void:

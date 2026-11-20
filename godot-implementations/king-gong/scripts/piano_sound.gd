@@ -23,6 +23,7 @@ const MAX_FRAME_MS := 20.0  # due_now(): the next frame is expected this soon at
 const MAX_BLOCK_MS := 12.0  # and a mix block lasts this long at most
 
 @export var volume_db := 0.0   # this piano's level, before each note's loudness
+@export var bus := &"Master"   # where its voices play: set before it enters the tree
 
 var started := 0   # voices started so far, for the dev checks
 
@@ -71,6 +72,7 @@ func _ready() -> void:
 	_load()
 	for k in VOICES:
 		var voice := AudioStreamPlayer.new()
+		voice.bus = bus
 		add_child(voice)
 		_voices.append(voice)
 		_ids.append(0)

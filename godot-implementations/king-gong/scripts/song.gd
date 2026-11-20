@@ -13,14 +13,19 @@ enum Sign { NONE, SHARP, FLAT, NATURAL }
 # [note, beats, chord]: 1 is a quarter note, 2 a half, 4 a whole, 0.5 an eighth. "r" is a rest.
 # A trailing "*" hangs a banana on that branch. A chord ("C", "Am", "F#") starts on that note
 # and lasts until the next one; only the treble clef with chords plays them.
+# Each song has a category, one of CATEGORIES, the library's filter, and a difficulty
+# from 1 to 5 for playing its tune alone (see DIFFICULTY).
 # A song in another key than C names it, key = "D" ("Bb", "Em"...), and its key signature
 # shows after the clef. Notes are written as they sound, "F#4" in D; one the key signature
 # doesn't give carries a sign on its branch (see Sign).
 # The songs here are one note at a time between C4 and C5: the keyboard fallback stops at C5,
 # and an octave down A3 is the bass staff's top line. All but Für Elise are in 4/4 and start
 # on the beat, which is where bar_lines() puts the bar lines without "bars". Two bars a line.
+# Another time is meter = 3 (beats a bar: 3/4, and 6/8 counted in dotted quarters' halves,
+# three beats a bar) or 2; a song starting before its first bar line says pickup = <beats>.
+# The song book (SONG_BOOK) holds the songs from song-ideas.md in the same format.
 const SONGS := [
-	{name = "Twinkle Twinkle", notes = [
+	{name = "Twinkle Twinkle", category = "Children's songs", difficulty = 2, notes = [
 		["C4", 1, "C"], ["C4", 1], ["G4", 1], ["G4", 1], ["A4", 1, "F"], ["A4", 1], ["G4*", 2, "C"],
 		["F4", 1, "F"], ["F4", 1], ["E4", 1, "C"], ["E4", 1], ["D4", 1, "G"], ["D4", 1], ["C4", 1, "C"], ["r", 1],
 		["G4", 1], ["G4", 1], ["F4", 1, "F"], ["F4", 1], ["E4", 1, "C"], ["E4", 1], ["D4*", 2, "G"],
@@ -28,14 +33,14 @@ const SONGS := [
 		["C4", 1, "C"], ["C4", 1], ["G4", 1], ["G4", 1], ["A4", 1, "F"], ["A4", 1], ["G4*", 2, "C"],
 		["F4", 1, "F"], ["F4", 1], ["E4", 1, "C"], ["E4", 1], ["D4", 1, "G"], ["D4", 1], ["C4", 2, "C"],
 	]},
-	{name = "Mary's Lamb", notes = [
+	{name = "Mary's Lamb", category = "Children's songs", difficulty = 1, notes = [
 		["E4", 1, "C"], ["D4", 1], ["C4", 1], ["D4", 1], ["E4", 1], ["E4", 1], ["E4*", 2],
 		["D4", 1, "G"], ["D4", 1], ["D4", 2], ["E4", 1, "C"], ["G4", 1], ["G4*", 2],
 		["E4", 1], ["D4", 1], ["C4", 1], ["D4", 1], ["E4", 1], ["E4", 1], ["E4", 1], ["E4*", 1],
 		["D4", 1, "G"], ["D4", 1], ["E4", 1], ["D4", 1], ["C4", 4, "C"],
 	]},
 	# Alle meine Entchen. Songbooks put G7 under the four Fs; Dm keeps them inside the triad.
-	{name = "Ducklings", notes = [
+	{name = "Ducklings", category = "Children's songs", difficulty = 1, notes = [
 		["C4", 1, "C"], ["D4", 1], ["E4", 1], ["F4", 1], ["G4", 2], ["G4*", 2],
 		["A4", 1, "F"], ["A4", 1], ["A4", 1], ["A4", 1], ["G4*", 4, "C"],
 		["A4", 1, "F"], ["A4", 1], ["A4", 1], ["A4", 1], ["G4", 4, "C"],
@@ -43,7 +48,7 @@ const SONGS := [
 		["D4", 1, "G"], ["D4", 1], ["D4", 1], ["D4", 1], ["C4", 4, "C"],
 	]},
 	# Hänschen klein
-	{name = "Lightly Row", notes = [
+	{name = "Lightly Row", category = "Children's songs", difficulty = 2, notes = [
 		["G4", 1, "C"], ["E4", 1], ["E4", 2], ["F4", 1, "G"], ["D4", 1], ["D4", 2],
 		["C4", 1, "C"], ["D4", 1], ["E4", 1], ["F4", 1], ["G4", 1], ["G4", 1], ["G4*", 2],
 		["G4", 1], ["E4", 1], ["E4", 2], ["F4", 1, "G"], ["D4", 1], ["D4", 2],
@@ -53,14 +58,14 @@ const SONGS := [
 		["G4", 1], ["E4", 1], ["E4", 2], ["F4", 1, "G"], ["D4", 1], ["D4", 2],
 		["C4", 1, "C"], ["E4", 1], ["G4", 1, "G"], ["G4", 1], ["C4", 4, "C"],
 	]},
-	{name = "Ode to Joy", notes = [
+	{name = "Ode to Joy", category = "Classical", difficulty = 2, notes = [
 		["E4", 1, "C"], ["E4", 1], ["F4", 1], ["G4", 1], ["G4", 1, "G"], ["F4", 1], ["E4", 1], ["D4*", 1],
 		["C4", 1, "C"], ["C4", 1], ["D4", 1], ["E4", 1], ["E4", 1.5, "G"], ["D4", 0.5], ["D4*", 2],
 		["E4", 1, "C"], ["E4", 1], ["F4", 1], ["G4", 1], ["G4", 1, "G"], ["F4", 1], ["E4", 1], ["D4*", 1],
 		["C4", 1, "C"], ["C4", 1], ["D4", 1], ["E4", 1], ["D4", 1.5, "G"], ["C4", 0.5], ["C4", 2, "C"],
 	]},
 	# The chorus. The songbooks' D7 is played as a D triad.
-	{name = "Jingle Bells", notes = [
+	{name = "Jingle Bells", category = "Christmas", difficulty = 2, notes = [
 		["E4", 1, "C"], ["E4", 1], ["E4", 2], ["E4", 1], ["E4", 1], ["E4", 2],
 		["E4", 1], ["G4", 1], ["C4", 1.5], ["D4", 0.5], ["E4*", 4],
 		["F4", 1, "F"], ["F4", 1], ["F4", 1.5], ["F4", 0.5], ["F4", 1, "C"], ["E4", 1], ["E4", 1], ["E4", 0.5], ["E4", 0.5],
@@ -72,13 +77,13 @@ const SONGS := [
 	]},
 	# The last four have a key signature. These two are earlier songs in keys with one: a sharp
 	# used, and a flat.
-	{name = "Mary's Lamb in D", key = "D", notes = [
+	{name = "Mary's Lamb in D", category = "Children's songs", difficulty = 2, key = "D", notes = [
 		["F#4", 1, "D"], ["E4", 1], ["D4", 1], ["E4", 1], ["F#4", 1], ["F#4", 1], ["F#4*", 2],
 		["E4", 1, "A"], ["E4", 1], ["E4", 2], ["F#4", 1, "D"], ["A4", 1], ["A4*", 2],
 		["F#4", 1], ["E4", 1], ["D4", 1], ["E4", 1], ["F#4", 1], ["F#4", 1], ["F#4", 1], ["F#4*", 1],
 		["E4", 1, "A"], ["E4", 1], ["F#4", 1], ["E4", 1], ["D4", 4, "D"],
 	]},
-	{name = "Ode to Joy in F", key = "F", notes = [
+	{name = "Ode to Joy in F", category = "Classical", difficulty = 2, key = "F", notes = [
 		["A4", 1, "F"], ["A4", 1], ["Bb4", 1], ["C5", 1], ["C5", 1, "C"], ["Bb4", 1], ["A4", 1], ["G4*", 1],
 		["F4", 1, "F"], ["F4", 1], ["G4", 1], ["A4", 1], ["A4", 1.5, "C"], ["G4", 0.5], ["G4*", 2],
 		["A4", 1, "F"], ["A4", 1], ["Bb4", 1], ["C5", 1], ["C5", 1, "C"], ["Bb4", 1], ["A4", 1], ["G4*", 1],
@@ -87,7 +92,7 @@ const SONGS := [
 	# These two have notes the key signature doesn't give, so signs on their branches.
 	# Grieg's theme, its first four bars twice, a semitone up from B minor: F# for E#, Db for
 	# C. No chords: songbooks give none for it.
-	{name = "Mountain King in C minor", key = "Cm", notes = [
+	{name = "Mountain King in C minor", category = "Classical", difficulty = 3, key = "Cm", notes = [
 		["C4", 0.5], ["D4", 0.5], ["Eb4", 0.5], ["F4", 0.5], ["G4", 0.5], ["Eb4", 0.5], ["G4*", 1],
 		["F#4", 0.5], ["D4", 0.5], ["F#4", 1], ["F4", 0.5], ["Db4", 0.5], ["F4", 1],
 		["C4", 0.5], ["D4", 0.5], ["Eb4", 0.5], ["F4", 0.5], ["G4", 0.5], ["Eb4", 0.5], ["G4", 0.5], ["C5", 0.5],
@@ -100,7 +105,7 @@ const SONGS := [
 	# The opening, in 3/4 with eighths for the score's 3/8 sixteenths, a major third down from
 	# A minor so that it fits the keyboard: B natural for D#, E natural for G#. The lowest note
 	# of each broken chord, Ab3, is left out. One bar a line, after the pickup.
-	{name = "Für Elise in F minor", key = "Fm", bars = [1, 4, 7, 10, 13, 16, 19, 22], notes = [
+	{name = "Für Elise in F minor", category = "Classical", difficulty = 4, key = "Fm", bars = [1, 4, 7, 10, 13, 16, 19, 22], notes = [
 		["C5", 0.5], ["B4", 0.5],
 		["C5", 0.5], ["B4", 0.5], ["C5", 0.5], ["G4", 0.5], ["Bb4", 0.5], ["Ab4", 0.5],
 		["F4*", 1, "Fm"], ["r", 1], ["C4", 0.5], ["F4", 0.5],
@@ -113,8 +118,37 @@ const SONGS := [
 	]},
 ]
 
-# Scores read at start-up, as songs after SONGS (see score_import.gd).
+# The song book: the songs from song-ideas.md, a file for each category, after SONGS.
+const SONG_BOOK := [
+	preload("res://scripts/songbook/children.gd"),
+	preload("res://scripts/songbook/folk.gd"),
+	preload("res://scripts/songbook/countries.gd"),
+	preload("res://scripts/songbook/czech_children.gd"),
+	preload("res://scripts/songbook/czech_folk.gd"),
+	preload("res://scripts/songbook/christmas.gd"),
+	preload("res://scripts/songbook/czech_carols.gd"),
+	preload("res://scripts/songbook/classical_a.gd"),
+	preload("res://scripts/songbook/classical_b.gd"),
+	preload("res://scripts/songbook/czech_classics.gd"),
+	preload("res://scripts/songbook/films.gd"),
+]
+
+# Scores read at start-up, as songs after SONGS and the song book (see score_import.gd).
 const SONGS_DIR := "res://songs"
+# The library's shelves after All songs, in order. Your scores holds the scores read from
+# SONGS_DIR, and no built-in song.
+const CATEGORIES: Array[String] = ["Children's songs", "Folk songs", "From other countries",
+	"Czech children's songs", "Czech folk songs", "Christmas", "Czech carols", "Classical",
+	"Czech classics", "From films", "Your scores"]
+const ALL_SONGS := "All songs"
+const YOUR_SCORES := "Your scores"
+# How hard a song's tune is to play alone, one note at a time:
+# 1 a few neighbouring notes, an even rhythm;
+# 2 easy: mostly steps within five or six notes, a plain rhythm;
+# 3 medium: about an octave, some leaps, dotted or quick notes, the odd black key;
+# 4 hard: fast runs, wide leaps, many black keys or off-beat rhythms;
+# 5 very hard: fast and chromatic, or far wider than an octave.
+const DIFFICULTY := [1, 5]
 # The note on the ledger line just below each staff. That line is step 0.
 const BELOW_STAFF := {Clef.TREBLE: "C4", Clef.BASS: "E2"}
 # A song moves by whole octaves to sit on the staff: the lowest move that keeps every note
@@ -137,6 +171,8 @@ const QUALITIES := {"": [0, 4, 7], "m": [0, 3, 7], "dim": [0, 3, 6], "aug": [0, 
 const SPELLED := {-2: "bb", -1: "b", 0: "", 1: "#", 2: "##"}   # how far off the white key, as written
 
 static var _library: Array = []
+static var _sorted: Array = []
+static var _matching := {}   # "category|difficulty" -> its songs, see matching()
 
 
 ## A chord for the left hand: a triad, "C", "Am", "F#", "Bbm", "Bdim", "Caug", or with its
@@ -184,11 +220,94 @@ static func beats_word(beats: float) -> String:
 	return "1 beat" if beats == 1.0 else "%s beats" % String.num(beats)
 
 
-## SONGS, then the scores in SONGS_DIR: the songs on the song boards, in their order.
+## SONGS, the song book, then the scores in SONGS_DIR: the songs on the song boards, in
+## their order. The scores go in Your scores, with no difficulty. A song without a known
+## category and difficulty is an error.
 static func library() -> Array:
 	if _library.is_empty():
-		_library = SONGS + ScoreImport.load_dir(SONGS_DIR)
+		_library = SONGS.duplicate()
+		for part: GDScript in SONG_BOOK:
+			_library.append_array(part.SONGS)
+		var built_in := _library.size()
+		for score: Dictionary in ScoreImport.load_dir(SONGS_DIR):
+			score.category = YOUR_SCORES
+			_library.append(score)
+		for k in _library.size():
+			for error in song_errors(_library[k], k >= built_in):
+				push_error("song %d, %s: %s" % [k, _library[k].get("name", "?"), error])
 	return _library
+
+
+## What is wrong with `song`'s category and difficulty, if anything. An `imported` score is in
+## Your scores, with no difficulty; a built-in song in another category, rated 1 to 5.
+static func song_errors(song: Dictionary, imported: bool) -> Array[String]:
+	var out: Array[String] = []
+	var category: Variant = song.get("category")
+	if not (category is String and category in CATEGORIES):
+		out.append("its category %s is none of Song.CATEGORIES" % [category])
+	elif (category == YOUR_SCORES) != imported:
+		out.append("Your scores is for the scores in songs/ alone")
+	var difficulty: Variant = song.get("difficulty")
+	if not imported and not (difficulty is int and difficulty >= DIFFICULTY[0] and difficulty <= DIFFICULTY[1]):
+		out.append("its difficulty %s is not a whole number from 1 to 5" % [difficulty])
+	return out
+
+
+## Every song's number in library(), in the library's order: by difficulty, then by name.
+static func sorted() -> Array:
+	if _sorted.is_empty():   # the library doesn't change once read: sorted once
+		_sorted = sorted_of(library())
+	return _sorted
+
+
+## The numbers of `songs` (a library) by difficulty, then by name; a score with no difficulty
+## after the rated songs.
+static func sorted_of(songs: Array) -> Array:
+	var order := range(songs.size())
+	order.sort_custom(func(a: int, b: int) -> bool:
+		var da: int = songs[a].get("difficulty", DIFFICULTY[1] + 1)
+		var db: int = songs[b].get("difficulty", DIFFICULTY[1] + 1)
+		if da != db:
+			return da < db
+		return (songs[a].name as String).naturalnocasecmp_to(songs[b].name) < 0)
+	return order
+
+
+## The songs in `category` ("" for every category) of exactly `difficulty` (0 for any), in
+## the library's order. Worked out once for each pair asked.
+static func matching(category: String, difficulty: int) -> Array:
+	var key := "%s|%d" % [category, difficulty]
+	if not _matching.has(key):
+		var songs := library()
+		_matching[key] = sorted().filter(func(i: int) -> bool:
+			return (category == "" or songs[i].get("category") == category) \
+				and (difficulty == 0 or songs[i].get("difficulty", 0) == difficulty))
+	return _matching[key]
+
+
+## The categories that have songs, in the order of CATEGORIES.
+static func categories_used() -> Array[String]:
+	var out: Array[String] = []
+	for category in CATEGORIES:
+		if not matching(category, 0).is_empty():
+			out.append(category)
+	return out
+
+
+## The difficulties that some song has, easiest first.
+static func levels_used() -> Array[int]:
+	var out: Array[int] = []
+	for level in range(DIFFICULTY[0], DIFFICULTY[1] + 1):
+		if not matching("", level).is_empty():
+			out.append(level)
+	return out
+
+
+## A difficulty as five stars, that many filled: "★★☆☆☆" for 2; "" for a score without one.
+static func stars(difficulty: int) -> String:
+	if difficulty < DIFFICULTY[0]:
+		return ""
+	return "★".repeat(difficulty) + "☆".repeat(DIFFICULTY[1] - difficulty)
 
 
 ## Song `song`'s key signature, as fifths() counts it.
@@ -262,9 +381,22 @@ static func parse_entries(entries: Array, clef: Clef, chords := false, key_fifth
 
 ## Where the bar lines go, in beats: the score's, or every four beats.
 static func bar_lines(song: int, notes: Array[Note]) -> Array:
-	var end := notes[-1].beat + notes[-1].beats
-	var bars: Array = library()[song].get("bars", range(4, ceili(end), 4))
-	return bars.filter(func(b) -> bool: return b < end)
+	return bars_of(library()[song], notes[-1].beat + notes[-1].beats)
+
+
+## Where the bar lines of `entry` (a song) go, in beats, before `end`: its own "bars", or one
+## every `meter` beats (4 unless it says), the first after its `pickup` if it has one.
+static func bars_of(entry: Dictionary, end: float) -> Array:
+	if entry.has("bars"):
+		return entry.bars.filter(func(b) -> bool: return b < end)
+	var meter := float(entry.get("meter", 4))
+	var pickup := float(entry.get("pickup", 0))
+	var out := []
+	var at := pickup if pickup > 0.0 else meter
+	while at < end:
+		out.append(at)
+		at += meter
+	return out
 
 
 ## Octaves to move the song by: see TOP_STEP. `below` is the ledger line below the staff.

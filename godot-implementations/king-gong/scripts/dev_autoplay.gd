@@ -43,6 +43,14 @@ extends Node
 ##                        (with --pause) Continue and Restart song; with --shots it saves each
 ##                        as look_<menu>_<selected>.png
 ##   -- --bpm=<n>         plays at n BPM instead of 60, for a quicker check
+##   -- --library         with --autoplay, picks the song from the library before playing it:
+##                        from the main page to the Play song board, D to the Song row, A opens
+##                        the library on the list, F there to the next category, C up past the
+##                        list to Difficulty, F to one star, D into the list and down to Mary's Lamb;
+##                        resting there, the song's preview plays ("library: preview <song>")
+##                        and C stops it ("library: preview stopped"); D back, A picks:
+##                        "library: picked <song> from <category>, <stars>", and it plays that
+##                        song from Start
 ##   -- --backing         turns Backing on (it is on by default): the game plays the part the
 ##                        bot doesn't. Every --autoplay run checks it at the end: the chords
 ##                        sounded, one per grab of a branch a chord starts on (Treble or Bass
@@ -126,6 +134,7 @@ var _paused_looked := false         # the first pause has had its looks checked
 var _menu := false
 var _menu_page := MainMenu.Page.PLAY  # the board it starts from
 var _menu_steps: Array[String] = ["main", "pick", "foot", "foot", "foot", "board", "again", "start", "started"]
+const LIBRARY_STEPS: Array[String] = ["pick", "library", "category", "difficulty", "into", "rest", "preview", "pick_song", "start_song", "started"]
 var _foot_seen := 0                 # the foot's buttons looked at so far, from Start leftwards
 var _menu_step := 0
 var _menu_next := 0.0
@@ -189,6 +198,9 @@ func _ready() -> void:
 			_listen = true
 		elif arg == "--backing":
 			game.set_backing.call_deferred(true)
+		elif arg == "--library":
+			_menu = true
+			_menu_steps = LIBRARY_STEPS.duplicate()
 	if _drill:
 		game.set_drill.call_deferred(Drill.all_chords(), Drill.COUNT, _beats)
 		game.set_mode.call_deferred(Hud.Mode.DRILL)
@@ -419,19 +431,80 @@ func _work_menu(now: float) -> bool:
 			_expect(menu.page == _menu_page and game.mode == MODES[_menu_page], "A on the plank opens its board, in its mode")
 			_expect(cursor.selected() == menu.get_node(songs + "Foot/Start") and _lit() == "CDEFAB", "the board opens on Start, all six lit: %s" % _lit())
 			_expect(menu.get_node(songs + "Grid/Sign").visible == _chords, "the chord sign row shows with a chords part only")
-			var pick: OptionButton = menu.get_node(songs + "Grid/Song/Pick")
-			var first := pick.selected
+			var shelf: Array = Song.matching(menu.filter.category, menu.filter.difficulty)
+			var first: int = menu.song
 			_note("D", 2)
-			_expect(cursor.selected() == menu.get_node(songs + "Grid/Song") and _lit() == "CDEFB", "D from Start wraps to the song, no A there: %s" % _lit())
+			_expect(cursor.selected() == menu.get_node(songs + "Grid/Song") and _lit() == "CDEFAB", "D from Start wraps to the song, A there opens the library: %s" % _lit())
 			_note("F", 4)
-			_expect(pick.selected == posmod(first + 1, pick.item_count) and game.song == pick.selected, "F steps to the next song")
+			var after: int = shelf[posmod(shelf.find(first) + 1, shelf.size())]
+			_expect(menu.song == after and game.song == after, "F steps to the next song of its filter: %d, not %d" % [game.song, after])
 			_note("E", 6)
-			_expect(pick.selected == first and game.song == first, "E steps back")
+			_expect(menu.song == first and game.song == first, "E steps back")
 			_note("D", 1)
 			_note("D", 5)
 			var below := "Sign" if _chords else ("Backing" if menu.get_node(songs + "Grid/Backing").visible else ("Practice" if _menu_page == MainMenu.Page.PLAY else "Hint"))
 			_expect(_row_name() == below, "D below the part lands on %s, not %s" % [below, _row_name()])
 			_note("B", 3)
+		"library":
+			_expect(menu.page == _menu_page and cursor.selected() == menu.get_node(songs + "Foot/Start"), "A on the plank opens the board, on Start")
+			_note("D", 3)
+			_note("A", 4)
+			var lib: Control = game.hud.get_node("Library")
+			_expect(lib.visible and not menu.visible and lib.filter() == {category = "", difficulty = 0} and lib.selected_song() == game.song
+				and cursor.selected() == lib.line(lib.at - lib.top), "D, then A on the Song row opens the library on every song, the cursor on the song picked")
+		"category":
+			var lib: Control = game.hud.get_node("Library")
+			_note("F", 2)
+			_expect(lib.filter().category == "Children's songs" and lib.selected_song() == game.song,
+				"F on the list: the next category, Children's songs, on the song picked")
+		"difficulty":
+			var lib: Control = game.hud.get_node("Library")
+			var row: Control = lib.get_node("Center/Board/Box/Filters/Difficulty")
+			for k in Song.library().size() + 2:   # up a list as long as the library at most, and past its top
+				if cursor.selected() == row:
+					break
+				_note("C", 4)
+			_expect(cursor.selected() == row, "C up the list and past its top: the Difficulty row")
+			_note("F", 3)
+			_expect(lib.filter() == {category = "Children's songs", difficulty = 1} and lib.selected_song() == Song.matching("Children's songs", 1)[0],
+				"F: one star, the list from its first: %s" % [lib.filter()])
+		"into":
+			var lib: Control = game.hud.get_node("Library")
+			_note("D", 5)   # into the list
+			for k in 40:
+				if lib.selected_song() == 1:
+					break
+				_note("D", 3)
+			_look("library")
+			_expect(lib.selected_song() == 1, "D into the list and down it to Mary's Lamb, not %s" % Song.library()[lib.selected_song()].name)
+		"pick_song":
+			var lib: Control = game.hud.get_node("Library")
+			var want: int = lib.selected_song()
+			var picked_with: Dictionary = lib.filter()
+			_note("A", 4)
+			var built := Song.parse(want, game.clef, game.chords)
+			_expect(not lib.visible and menu.visible and game.song == want and menu.song == want, "A picks it, the board back")
+			_expect(game.notes.size() == built.size() and game.notes[0].midi == built[0].midi, "the level was laid out for it")
+			_expect(cursor.selected() == menu.get_node(songs + "Grid/Song"), "the board back on the Song row")
+			_expect(menu.filter == picked_with, "the board keeps the filter it was picked with")
+			print("library: picked %s from %s, %s" % [Song.library()[game.song].name, picked_with.category, Song.stars(picked_with.difficulty)])
+		"rest":
+			pass   # the selection rests on the song
+		"preview":
+			var lib: Control = game.hud.get_node("Library")
+			var player: Node = lib.get_node("Preview")
+			var song: int = lib.selected_song()
+			_expect(lib.previewing() == song and not player.played.is_empty(), "resting on it, the song plays: %d sounds" % player.played.size())
+			if lib.previewing() == song:
+				print("library: preview %s" % Song.library()[song].name)
+			_note("C", 4)
+			_expect(lib.previewing() == -1 and player.sounding() == 0, "C moves, and the preview stops at once: %d sounding" % player.sounding())
+			if lib.previewing() == -1 and player.sounding() == 0:
+				print("library: preview stopped")
+			_note("D", 4)
+		"start_song":
+			_key(KEY_UP)
+			_key(KEY_SPACE)
 		"drill":
 			_expect(menu.page == MainMenu.Page.DRILL and game.mode == Hud.Mode.DRILL, "A on the plank opens the drill board")
 			_expect(cursor.selected() == menu.get_node(drill + "Foot/Start") and _lit() == "CDEFAB", "the drill board opens on Start: %s" % _lit())

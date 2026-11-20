@@ -10,7 +10,7 @@ extends Control
 signal back_requested
 
 enum Act { UP, DOWN, LEFT, RIGHT, PRESS, BACK }
-enum Kind { PRESS, CELLS, CHOICE, VALUE }
+enum Kind { PRESS, CELLS, CHOICE, VALUE, LIST }
 
 const MenuSign := preload("res://scripts/menu_sign.gd")
 const NOTE_ACTS := {0: Act.UP, 2: Act.DOWN, 4: Act.LEFT, 5: Act.RIGHT, 9: Act.PRESS, 11: Act.BACK}   # by pitch class
@@ -25,8 +25,13 @@ class Row:
 	var kind := 0
 	var cells: Array[Button] = []   # what A presses (a press row's one, a cell row's), or a choice's options
 	var cell := 0                   # the cell under the cursor
-	var step: Callable              # a value row's step(by)
+	var step: Callable              # a value row's step(by), or a list's E and F
 	var can_step: Callable          # and whether it can step by `by`
+	var press: Callable             # what A does on a value row, if anything
+	var move: Callable              # a list's C and D: move(by) its selection, false at its end
+	var can_move: Callable          # and whether that does anything
+	var line: Callable              # a list's selected line, a Button
+	var point: Callable             # the mouse on one of a list's lines: point(button)
 	var parts: Array[Control] = []  # framed together; the first is the row itself, hidden with it
 
 	## Its own `visible` and every parent's, read directly: while a menu's visibility_changed
@@ -65,9 +70,28 @@ static func choice(buttons: Array, parts: Array) -> Row:
 	return _row(Kind.CHOICE, buttons, 0, parts)
 
 
-## A value E and F step down and up: `step(by)`, as long as `can_step(by)`.
-static func value(step: Callable, can_step: Callable, parts: Array) -> Row:
+## A value E and F step down and up: `step(by)`, as long as `can_step(by)`. With `press`, A
+## runs it.
+static func value(step: Callable, can_step: Callable, parts: Array, press := Callable()) -> Row:
 	var row := _row(Kind.VALUE, [], 0, parts)
+	row.step = step
+	row.can_step = can_step
+	row.press = press
+	return row
+
+
+## A list longer than it shows, kept by its page: C and D `move(by)` its selection and stay on
+## the row, or, where it says false (the list's end), go on to the next row; `can_move(by)`
+## says whether it can. E and F `step(by)` (while `can_step(by)`), A presses `line()`, the
+## line selected, one of `lines`; the mouse on a line calls `point(button)`. The frame and the
+## sign follow the selected line.
+static func list(lines: Array, move: Callable, can_move: Callable, line: Callable, point: Callable,
+		step: Callable, can_step: Callable, parts: Array) -> Row:
+	var row := _row(Kind.LIST, lines, 0, parts)
+	row.move = move
+	row.can_move = can_move
+	row.line = line
+	row.point = point
 	row.step = step
 	row.can_step = can_step
 	return row
@@ -124,11 +148,18 @@ func act(a: Act) -> void:
 	var row: Row = _rows[_at]
 	match a:
 		Act.UP, Act.DOWN:
-			_move(-1 if a == Act.UP else 1)
+			var by := -1 if a == Act.UP else 1
+			if row.kind == Kind.LIST and row.move.call(by):
+				_select(_at)
+			else:
+				_move(by)
 		Act.LEFT, Act.RIGHT:
 			_side(row, -1 if a == Act.LEFT else 1)
 		Act.PRESS:
-			_press(selected())
+			if row.kind == Kind.VALUE:
+				row.press.call()
+			else:
+				_press(selected())
 		Act.BACK:
 			back_requested.emit()
 
@@ -139,20 +170,21 @@ func lit() -> Array[int]:
 	if _at < 0:
 		return out
 	var row: Row = _rows[_at]
-	if _rows.filter(func(r: Row) -> bool: return r.shown()).size() > 1:
+	if (row.kind == Kind.LIST and row.can_move.call(1)) or _rows.filter(func(r: Row) -> bool: return r.shown()).size() > 1:
 		out.append_array([Act.UP, Act.DOWN])
 	if _can_side(row, -1):
 		out.append(Act.LEFT)
 	if _can_side(row, 1):
 		out.append(Act.RIGHT)
-	if (row.kind == Kind.PRESS or row.kind == Kind.CELLS) and not (selected() as Button).disabled:
+	if (row.kind in [Kind.PRESS, Kind.CELLS, Kind.LIST] and not (selected() as Button).disabled) 			or (row.kind == Kind.VALUE and row.press.is_valid()):
 		out.append(Act.PRESS)
 	if _back:
 		out.append(Act.BACK)
 	return out
 
 
-## The button under the cursor; on a choice or a value, its row (its first part).
+## The button under the cursor, a list's selected line; on a choice or a value, its row (its
+## first part).
 func selected() -> Control:
 	if _at < 0:
 		return null
@@ -162,6 +194,8 @@ func selected() -> Control:
 			return row.cells[0]
 		Kind.CELLS:
 			return row.cells[row.cell]
+		Kind.LIST:
+			return row.line.call()
 	return row.parts[0]
 
 
@@ -183,6 +217,9 @@ func _draw() -> void:
 	if _at < 0 or _lit_button:
 		return
 	var row: Row = _rows[_at]
+	if row.kind == Kind.LIST:   # the line, as a row is framed
+		_frame(_global_rect(selected()).grow(3.0), 2.0, 0.08)
+		return
 	_frame(_rect_of(row.parts).grow(4.0), 1.0, 0.08)
 	if row.kind == Kind.CELLS:
 		_frame(_global_rect(selected()).grow(2.0), 2.0, 0.0)
@@ -199,7 +236,7 @@ func _frame(rect: Rect2, width: float, fill: float) -> void:
 ## button without one; inside the screen, but never over the row.
 func _place_sign() -> void:
 	var row: Row = _rows[_at]
-	var rect := _rect_of(row.parts)
+	var rect := _global_rect(selected()) if row.kind == Kind.LIST else _rect_of(row.parts)
 	var x := (_anchor.get_global_rect().end.x if _anchor else _global_rect(selected()).end.x) + SIGN_GAP
 	x = minf(x, get_viewport_rect().size.x - _sign.size.x - 4.0)
 	x = maxf(x, rect.end.x + 4.0)
@@ -226,7 +263,7 @@ func _can_side(row: Row, by: int) -> bool:
 		Kind.CHOICE:
 			var i := _chosen(row)
 			return i < 0 or (i + by >= 0 and i + by < row.cells.size())
-		Kind.VALUE:
+		Kind.VALUE, Kind.LIST:
 			return row.can_step.call(by)
 	return false
 
@@ -243,6 +280,13 @@ func _side(row: Row, by: int) -> void:
 			_press(row.cells[i + by if i >= 0 else (0 if by > 0 else row.cells.size() - 1)])
 		Kind.VALUE:
 			row.step.call(by)
+		Kind.LIST:
+			row.step.call(by)
+			if not row.shown():   # stepped to nothing: on to the row that steps the same, so E and F go on
+				var same := _rows.find_custom(func(r: Row) -> bool: return r.kind == Kind.VALUE and r.step == row.step and r.shown())
+				_select(same if same >= 0 else _shown_from(_at, 1))
+			else:
+				_select(_at)
 
 
 ## As a click would: a button is pressed, one of a group chosen, an on/off flipped.
@@ -336,6 +380,8 @@ func _pointed(button: BaseButton) -> void:
 			continue
 		if row.kind == Kind.CELLS:
 			row.cell = row.cells.find(button)
+		elif row.kind == Kind.LIST and button in row.cells:
+			row.point.call(button)
 		_select(i)
 		return
 

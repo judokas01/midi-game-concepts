@@ -138,6 +138,7 @@ func _ready() -> void:
 	hud.tick_toggled.connect(_on_tick_toggled)
 	hud.mode_chosen.connect(set_mode)
 	hud.song_chosen.connect(set_song)
+	hud.library_requested.connect(func() -> void: hud.open_library(song))
 	hud.style_chosen.connect(set_style)
 	hud.hint_chosen.connect(set_hint)
 	hud.drill_chosen.connect(set_drill)
@@ -274,9 +275,10 @@ func set_mode(m: Hud.Mode) -> void:
 	hud.show_style(_style.chords)
 
 
-## Lays song `i` out behind the main menu.
+## Lays song `i` out behind the main menu, and the song boards name it.
 func set_song(i: int) -> void:
 	song = i
+	hud.show_song(i)
 	restart()
 
 
@@ -890,10 +892,12 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-## Back, from B or Esc on a menu: the chord grid closes, the pause menu continues, the end panel
-## goes to the main menu, a board back to the main page.
+## Back, from B or Esc on a menu: the library or the chord grid closes, the pause menu
+## continues, the end panel goes to the main menu, a board back to the main page.
 func _back() -> void:
-	if hud.chords_open():
+	if hud.library_open():
+		hud.close_library()
+	elif hud.chords_open():
 		hud.close_chords()
 	elif get_tree().paused:
 		resume()
