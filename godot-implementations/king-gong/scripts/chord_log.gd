@@ -17,6 +17,7 @@ const BREAKS_BELOW := 1.9                          # steps below its branch: whe
 const SIGN_STEP := 5.5                             # half a line spacing of the sign's bass staff, in pixels
 const BOARD := preload("res://art/chord_sign.svg")
 const TALL_BOARD := preload("res://art/chord_sign_tall.svg")   # for a seventh in the bass clef
+const NAME_FITS := 88.0   # how wide a name may be, in pixels: inside the board's 90 px face
 
 var _shake: Tween
 var _tall := false   # four notes: in the bass clef, the taller board
@@ -29,6 +30,7 @@ var _tall := false   # four notes: in the bass clef, the taller board
 @onready var _sign: Node2D = $Top/Sign
 @onready var _board: Sprite2D = $Top/Sign/Board
 @onready var _name: Label = $Top/Sign/Name
+@onready var _name_size := _name.label_settings.font_size   # a name's size, if it fits
 @onready var _staff: Node2D = $Top/Sign/Staff
 @onready var _key: Label = $Top/Sign/Key
 @onready var _key_y := _key.position.y   # under the board
@@ -50,9 +52,7 @@ func setup(note: Song.Note) -> void:
 	_splinters.self_modulate = colour
 	_chips.color = colour
 	_name.text = chord.name
-	var wide := _name.label_settings.font.get_string_size(chord.name, HORIZONTAL_ALIGNMENT_LEFT, -1, _name.label_settings.font_size).x
-	_name.pivot_offset = _name.size / 2.0
-	_name.scale = Vector2.ONE * minf(1.0, (_name.size.x - 4.0) / wide)   # "Cmaj7" shrinks to fit the board
+	_name.label_settings.font_size = _fitting_size(chord.name)
 	_tall = chord.steps.size() > 3
 	for k in 4:
 		var head: Sprite2D = _staff.get_node("Head%d" % (k + 1))
@@ -68,6 +68,16 @@ func setup(note: Song.Note) -> void:
 	# past the spaces just off the staff (F2 below, B3 above): only a seventh, on E2 or up to C4
 	_staff.get_node("LedgerBelow").visible = chord.steps.min() <= -2
 	_staff.get_node("LedgerAbove").visible = chord.steps.max() >= 10
+
+
+## The largest font size, up to the scene's, at which `text` fits the board: "Ebmaj7" is
+## written smaller, not scaled down, so it stays sharp and its label never grows off centre.
+func _fitting_size(text: String) -> int:
+	var font := _name.label_settings.font
+	var size := _name_size
+	while size > 1 and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > NAME_FITS:
+		size -= 1
+	return size
 
 
 ## By its root, darker for a minor chord.

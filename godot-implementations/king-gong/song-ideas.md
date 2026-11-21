@@ -4,6 +4,8 @@ Simple tunes known worldwide and in the Czech Republic that the game could add, 
 rating for how hard each is to play. Tick the ones you want. "(in game)" marks songs King
 Gong already has: the first ten in scripts/song.gd, the rest in its song book,
 scripts/songbook/. "(written out)" marks songs whose notes are at the end of this file.
+"(tune unknown)" marks songs no writer could find a written score for or recall: play them in
+or name their notes to add them. song-checklist.md tracks listening to the songs in the game.
 
 **Public domain** here means a traditional song, or music whose composer died more than 70
 years ago (and, for the US, that was published in 1930 or earlier). This is a rule of thumb,
@@ -32,7 +34,7 @@ Within each section, the songs run from easiest to hardest.
 - [x] ★☆☆☆☆ Mary Had a Little Lamb (in game)
 - [x] ★☆☆☆☆ Alle meine Entchen (in game, as "Ducklings")
 - [x] ★☆☆☆☆ Hot Cross Buns (in game)
-- [ ] ★☆☆☆☆ Ring Around the Rosie
+- [x] ★☆☆☆☆ Ring Around the Rosie (in game)
 - [x] ★☆☆☆☆ Go Tell Aunt Rhody (in game)
 - [x] ★★☆☆☆ Twinkle Twinkle Little Star (in game)
 - [x] ★★☆☆☆ Hänschen klein (in game, as "Lightly Row")
@@ -42,271 +44,271 @@ Within each section, the songs run from easiest to hardest.
 - [x] ★★☆☆☆ Bratře Kubo (Frère Jacques) (over an octave) (in game)
 - [x] ★★☆☆☆ Old MacDonald (in game)
 - [x] ★★☆☆☆ This Old Man (in game)
-- [ ] ★★☆☆☆ The Farmer in the Dell
-- [ ] ★★☆☆☆ Here We Go Round the Mulberry Bush
+- [x] ★★☆☆☆ The Farmer in the Dell (in game)
+- [x] ★★☆☆☆ Here We Go Round the Mulberry Bush (in game)
 - [x] ★★☆☆☆ Itsy Bitsy Spider (in game)
-- [ ] ★★☆☆☆ Humpty Dumpty
-- [ ] ★★☆☆☆ Polly Put the Kettle On
-- [ ] ★★☆☆☆ Oranges and Lemons
-- [ ] ★★☆☆☆ Bingo
-- [ ] ★★☆☆☆ Skip to My Lou
-- [ ] ★★☆☆☆ Lavender's Blue
-- [ ] ★★☆☆☆ Hush Little Baby
-- [ ] ★★☆☆☆ Sur le Pont d'Avignon
-- [ ] ★★☆☆☆ Alouette
-- [ ] ★★☆☆☆ O du lieber Augustin
+- [x] ★★☆☆☆ Humpty Dumpty (in game)
+- [x] ★★☆☆☆ Polly Put the Kettle On (in game)
+- [x] ★★☆☆☆ Oranges and Lemons (in game)
+- [x] ★★☆☆☆ Bingo (in game)
+- [x] ★★☆☆☆ Skip to My Lou (in game)
+- [x] ★★☆☆☆ Lavender's Blue (in game)
+- [ ] ★★☆☆☆ Hush Little Baby (tune unknown: no written score found)
+- [x] ★★☆☆☆ Sur le Pont d'Avignon (in game)
+- [x] ★★☆☆☆ Alouette (in game)
+- [x] ★★☆☆☆ O du lieber Augustin (in game)
 - [x] ★★★☆☆ Hodně štěstí, zdraví (Happy Birthday) (in game)
-- [ ] ★★★☆☆ Hickory Dickory Dock
+- [x] ★★★☆☆ Hickory Dickory Dock (in game)
 - [x] ★★★☆☆ Pop Goes the Weasel (in game)
 - [x] ★★★☆☆ Three Blind Mice (in game)
-- [ ] ★★★☆☆ Rock-a-bye Baby
-- [ ] ★★★☆☆ Oh Where Has My Little Dog Gone
-- [ ] ★★★☆☆ Sing a Song of Sixpence
+- [x] ★★★☆☆ Rock-a-bye Baby (in game)
+- [x] ★★★☆☆ Oh Where Has My Little Dog Gone (in game)
+- [x] ★★★☆☆ Sing a Song of Sixpence (in game)
 
 ## Folk songs known worldwide
 
 - [x] ★★☆☆☆ Yankee Doodle (in game)
 - [x] ★★☆☆☆ Oh When the Saints (in game)
-- [ ] ★★☆☆☆ Michael, Row the Boat Ashore
-- [ ] ★★☆☆☆ Swing Low, Sweet Chariot
-- [ ] ★★☆☆☆ Go Down Moses
+- [x] ★★☆☆☆ Michael, Row the Boat Ashore (in game)
+- [x] ★★☆☆☆ Swing Low, Sweet Chariot (in game)
+- [x] ★★☆☆☆ Go Down Moses (in game)
 - [x] ★★☆☆☆ Aura Lee (the tune Elvis sang as Love Me Tender, in the 1956 film) (in game)
-- [ ] ★★☆☆☆ Long, Long Ago
-- [ ] ★★☆☆☆ Bella Ciao (heard again in the TV series Money Heist)
+- [x] ★★☆☆☆ Long, Long Ago (in game)
+- [x] ★★☆☆☆ Bella Ciao (heard again in the TV series Money Heist) (in game)
 - [x] ★★☆☆☆ Drunken Sailor (in game)
-- [ ] ★★☆☆☆ Wellerman
-- [ ] ★★☆☆☆ Wild Rover
+- [x] ★★☆☆☆ Wellerman (in game)
+- [x] ★★☆☆☆ Wild Rover (in game)
 - [x] ★★☆☆☆ Clementine (in game)
-- [ ] ★★☆☆☆ Red River Valley (known in Czech as Zelené pláně)
+- [x] ★★☆☆☆ Red River Valley (known in Czech as Zelené pláně) (in game)
 - [x] ★★☆☆☆ Amazing Grace (in game)
-- [ ] ★★☆☆☆ For He's a Jolly Good Fellow
-- [ ] ★★☆☆☆ Gaudeamus igitur (the graduation song)
+- [x] ★★☆☆☆ For He's a Jolly Good Fellow (in game)
+- [x] ★★☆☆☆ Gaudeamus igitur (the graduation song) (in game)
 - [x] ★★★☆☆ Oh! Susanna (in game)
-- [ ] ★★★☆☆ Camptown Races
-- [ ] ★★★☆☆ Buffalo Gals (It's a Wonderful Life)
-- [ ] ★★★☆☆ Polly Wolly Doodle
-- [ ] ★★★☆☆ Jimmy Crack Corn
-- [ ] ★★★☆☆ She'll Be Coming 'Round the Mountain
-- [ ] ★★★☆☆ Down by the Riverside
-- [ ] ★★★☆☆ Battle Hymn of the Republic (Glory, Glory, Hallelujah)
-- [ ] ★★★☆☆ My Bonnie Lies over the Ocean
-- [ ] ★★★☆☆ Home on the Range
-- [ ] ★★★☆☆ Cotton Eye Joe (the old fiddle tune, not the 1994 dance hit)
+- [x] ★★★☆☆ Camptown Races (in game)
+- [x] ★★★☆☆ Buffalo Gals (It's a Wonderful Life) (in game)
+- [x] ★★★☆☆ Polly Wolly Doodle (in game)
+- [x] ★★★☆☆ Jimmy Crack Corn (in game)
+- [x] ★★★☆☆ She'll Be Coming 'Round the Mountain (in game)
+- [x] ★★★☆☆ Down by the Riverside (in game)
+- [x] ★★★☆☆ Battle Hymn of the Republic (Glory, Glory, Hallelujah) (in game)
+- [x] ★★★☆☆ My Bonnie Lies over the Ocean (in game)
+- [x] ★★★☆☆ Home on the Range (in game)
+- [x] ★★★☆☆ Cotton Eye Joe (the old fiddle tune, not the 1994 dance hit) (in game)
 - [x] ★★★☆☆ Greensleeves (in game)
-- [ ] ★★★☆☆ Scarborough Fair (the traditional tune)
-- [ ] ★★★☆☆ The Water Is Wide
-- [ ] ★★★☆☆ Molly Malone
-- [ ] ★★★☆☆ Loch Lomond
-- [ ] ★★★☆☆ Skye Boat Song
-- [ ] ★★★☆☆ Shenandoah
+- [x] ★★★☆☆ Scarborough Fair (the traditional tune) (in game)
+- [x] ★★★☆☆ The Water Is Wide (in game)
+- [x] ★★★☆☆ Molly Malone (in game)
+- [x] ★★★☆☆ Loch Lomond (in game)
+- [x] ★★★☆☆ Skye Boat Song (in game)
+- [x] ★★★☆☆ Shenandoah (in game)
 - [x] ★★★☆☆ Auld Lang Syne (It's a Wonderful Life, When Harry Met Sally) (in game)
-- [ ] ★★★★☆ Turkey in the Straw
-- [ ] ★★★★☆ Danny Boy (over an octave)
+- [ ] ★★★★☆ Turkey in the Straw (tune unknown: no written score found)
+- [x] ★★★★☆ Danny Boy (over an octave) (in game)
 
 ## From other countries, known worldwide
 
-- [ ] ★★☆☆☆ Volga Boatmen
+- [x] ★★☆☆☆ Volga Boatmen (in game)
 - [x] ★★☆☆☆ Sakura Sakura (in game)
-- [ ] ★★☆☆☆ Arirang
-- [ ] ★★☆☆☆ Tumbalalaika
-- [ ] ★★☆☆☆ Muss i denn (Elvis sang it as Wooden Heart, in G.I. Blues)
-- [ ] ★★☆☆☆ Lorelei
+- [x] ★★☆☆☆ Arirang (in game)
+- [x] ★★☆☆☆ Tumbalalaika (in game)
+- [x] ★★☆☆☆ Muss i denn (Elvis sang it as Wooden Heart, in G.I. Blues) (in game)
+- [x] ★★☆☆☆ Lorelei (in game)
 - [x] ★★★☆☆ Korobeiniki (the Tetris tune: the old Russian folk tune is free, Tetris's arrangement isn't) (in game)
-- [ ] ★★★☆☆ Kalinka
+- [x] ★★★☆☆ Kalinka (in game)
 - [x] ★★★☆☆ La Cucaracha (in game)
-- [ ] ★★★☆☆ Jasmine Flower (Mo Li Hua)
-- [ ] ★★★☆☆ Santa Lucia
-- [ ] ★★★☆☆ Hava Nagila
-- [ ] ★★★☆☆ Waltzing Matilda
-- [ ] ★★★☆☆ La Paloma
-- [ ] ★★★☆☆ Aloha ʻOe
-- [ ] ★★★★☆ Funiculì, Funiculà
-- [ ] ★★★★☆ Torna a Surriento
-- [ ] ★★★★☆ Ochi chyornye (Dark Eyes)
-- [ ] ★★★★☆ O sole mio
+- [x] ★★★☆☆ Jasmine Flower (Mo Li Hua) (in game)
+- [x] ★★★☆☆ Santa Lucia (in game)
+- [x] ★★★☆☆ Hava Nagila (in game)
+- [x] ★★★☆☆ Waltzing Matilda (in game)
+- [x] ★★★☆☆ La Paloma (in game)
+- [x] ★★★☆☆ Aloha ʻOe (in game)
+- [x] ★★★★☆ Funiculì, Funiculà (in game)
+- [x] ★★★★☆ Torna a Surriento (in game)
+- [x] ★★★★☆ Ochi chyornye (Dark Eyes) (in game)
+- [ ] ★★★★☆ O sole mio (not public domain after all: a 2002 court ruling made Alfredo Mazzucchi, who died in 1972, its co-composer)
 
 ## Czech children's songs
 
 The simplest, and the best fit.
 
-- [ ] ★☆☆☆☆ Prší, prší
+- [ ] ★☆☆☆☆ Prší, prší (tune unknown: no written score found)
 - [x] ★☆☆☆☆ Skákal pes přes oves (in game)
-- [ ] ★☆☆☆☆ Pec nám spadla
-- [ ] ★☆☆☆☆ Běží liška k Táboru
-- [ ] ★☆☆☆☆ Hody, hody, doprovody
-- [ ] ★☆☆☆☆ Kolo, kolo mlýnský
-- [ ] ★☆☆☆☆ Zlatá brána
-- [ ] ★☆☆☆☆ Jede, jede poštovský panáček
-- [ ] ★☆☆☆☆ Paci, paci, pacičky
-- [ ] ★☆☆☆☆ Halí, belí
-- [ ] ★☆☆☆☆ Hajej, dadej
-- [ ] ★★☆☆☆ Kočka leze dírou
-- [ ] ★★☆☆☆ Kalamajka
-- [ ] ★★☆☆☆ Měla babka čtyři jabka
-- [ ] ★★☆☆☆ Šel tudy, měl dudy
-- [ ] ★★☆☆☆ Komáři se ženili
-- [ ] ★★☆☆☆ Strejček Nimra
+- [ ] ★☆☆☆☆ Pec nám spadla (tune unknown: no written score found)
+- [ ] ★☆☆☆☆ Běží liška k Táboru (tune unknown: no written score found)
+- [ ] ★☆☆☆☆ Hody, hody, doprovody (tune unknown: no written score found)
+- [ ] ★☆☆☆☆ Kolo, kolo mlýnský (tune unknown: no written score found)
+- [ ] ★☆☆☆☆ Zlatá brána (tune unknown: no written score found)
+- [ ] ★☆☆☆☆ Jede, jede poštovský panáček (tune unknown: no written score found)
+- [ ] ★☆☆☆☆ Paci, paci, pacičky (tune unknown: no written score found)
+- [ ] ★☆☆☆☆ Halí, belí (tune unknown: no written score found)
+- [ ] ★☆☆☆☆ Hajej, dadej (tune unknown: no written score found)
+- [x] ★★☆☆☆ Kočka leze dírou (in game)
+- [ ] ★★☆☆☆ Kalamajka (tune unknown: no written score found)
+- [ ] ★★☆☆☆ Měla babka čtyři jabka (tune unknown: no written score found)
+- [ ] ★★☆☆☆ Šel tudy, měl dudy (tune unknown: no written score found)
+- [ ] ★★☆☆☆ Komáři se ženili (tune unknown: no written score found)
+- [ ] ★★☆☆☆ Strejček Nimra (tune unknown: no written score found)
 - [x] ★★☆☆☆ Zajíček ve své jamce (in game)
-- [ ] ★★☆☆☆ Bude zima, bude mráz
-- [ ] ★★☆☆☆ Čížečku, čížečku
-- [ ] ★★☆☆☆ Já jsem muzikant
+- [ ] ★★☆☆☆ Bude zima, bude mráz (tune unknown: no written score found)
+- [x] ★★☆☆☆ Čížečku, čížečku (in game)
+- [x] ★★☆☆☆ Já jsem muzikant (in game)
 
 ## Czech folk songs everyone knows
 
-- [ ] ★★☆☆☆ Holka modrooká
-- [ ] ★★☆☆☆ Ovčáci, čtveráci
-- [ ] ★★☆☆☆ Já do lesa nepojedu
-- [ ] ★★☆☆☆ Na tý louce zelený
-- [ ] ★★☆☆☆ Okolo Hradce
-- [ ] ★★☆☆☆ Červený šátečku
-- [ ] ★★☆☆☆ Vyletěla holubička
-- [ ] ★★☆☆☆ Kdyby byl Bavorov
-- [ ] ★★☆☆☆ Pod naším okénkem
-- [ ] ★★☆☆☆ Pásla ovečky v zeleném háječku
-- [ ] ★★☆☆☆ Šly panenky silnicí
-- [ ] ★★☆☆☆ Andulka Šafářova
-- [ ] ★★☆☆☆ Šla Nanynka do zelí
-- [ ] ★★☆☆☆ Pekla vdolky
-- [ ] ★★☆☆☆ Kdybys měla, má panenko
-- [ ] ★★★☆☆ Když jsem já sloužil
-- [ ] ★★★☆☆ Teče voda, teče
-- [ ] ★★★☆☆ Já mám koně, vraný koně
-- [ ] ★★★☆☆ Černé oči, jděte spát
-- [ ] ★★★☆☆ Travička zelená
-- [ ] ★★★☆☆ Zahučaly hory
-- [ ] ★★★☆☆ Ej, padá, padá rosička
-- [ ] ★★★☆☆ Ach synku, synku
-- [ ] ★★★☆☆ Bejvávalo
-- [ ] ★★★☆☆ Vínečko bílé
-- [ ] ★★★☆☆ Žádnej neví, co jsou Domažlice
-- [ ] ★★★☆☆ Hořela lípa, hořela
-- [ ] ★★★☆☆ Dobrú noc, má milá
-- [ ] ★★★☆☆ Kopala studienku (Slovak)
-- [ ] ★★★☆☆ Tancuj, tancuj, vykrúcaj (Slovak, but known in Czech)
+- [ ] ★★☆☆☆ Holka modrooká (tune unknown: no written score found)
+- [x] ★★☆☆☆ Ovčáci, čtveráci (in game)
+- [ ] ★★☆☆☆ Já do lesa nepojedu (tune unknown: no written score found)
+- [x] ★★☆☆☆ Na tý louce zelený (in game)
+- [ ] ★★☆☆☆ Okolo Hradce (tune unknown: no written score found)
+- [ ] ★★☆☆☆ Červený šátečku (tune unknown: no written score found)
+- [x] ★★☆☆☆ Vyletěla holubička (in game)
+- [x] ★★☆☆☆ Kdyby byl Bavorov (in game)
+- [ ] ★★☆☆☆ Pod naším okénkem (tune unknown: no written score found)
+- [x] ★★☆☆☆ Pásla ovečky v zeleném háječku (in game)
+- [x] ★★☆☆☆ Šly panenky silnicí (in game)
+- [x] ★★☆☆☆ Andulka Šafářova (in game)
+- [ ] ★★☆☆☆ Šla Nanynka do zelí (tune unknown: no written score found)
+- [ ] ★★☆☆☆ Pekla vdolky (tune unknown: no written score found)
+- [x] ★★☆☆☆ Kdybys měla, má panenko (in game)
+- [ ] ★★★☆☆ Když jsem já sloužil (tune unknown: no written score found)
+- [x] ★★★☆☆ Teče voda, teče (in game)
+- [x] ★★★☆☆ Já mám koně, vraný koně (in game)
+- [x] ★★★☆☆ Černé oči, jděte spát (in game)
+- [ ] ★★★☆☆ Travička zelená (tune unknown: no written score found)
+- [x] ★★★☆☆ Zahučaly hory (in game)
+- [x] ★★★☆☆ Ej, padá, padá rosička (in game)
+- [x] ★★★☆☆ Ach synku, synku (in game)
+- [ ] ★★★☆☆ Bejvávalo (tune unknown: no written score found)
+- [ ] ★★★☆☆ Vínečko bílé (tune unknown: no written score found)
+- [ ] ★★★☆☆ Žádnej neví, co jsou Domažlice (tune unknown: no written score found)
+- [x] ★★★☆☆ Hořela lípa, hořela (in game)
+- [ ] ★★★☆☆ Dobrú noc, má milá (tune unknown: no written score found)
+- [x] ★★★☆☆ Kopala studienku (Slovak) (in game)
+- [ ] ★★★☆☆ Tancuj, tancuj, vykrúcaj (Slovak, but known in Czech) (tune unknown: no written score found)
 
 ## Christmas, known worldwide
 
 - [x] ★★☆☆☆ Rolničky (Jingle Bells, in game)
-- [ ] ★★☆☆☆ Jolly Old St Nicholas
-- [ ] ★★☆☆☆ Up on the Housetop
-- [ ] ★★☆☆☆ Away in a Manger
+- [x] ★★☆☆☆ Jolly Old St Nicholas (in game)
+- [x] ★★☆☆☆ Up on the Housetop (in game)
+- [x] ★★☆☆☆ Away in a Manger (in game)
 - [x] ★★☆☆☆ Good King Wenceslas (the song is about svatý Václav) (in game)
 - [x] ★★★☆☆ Joy to the World (in game)
-- [ ] ★★☆☆☆ In the Bleak Midwinter
+- [x] ★★☆☆☆ In the Bleak Midwinter (in game)
 - [x] ★★☆☆☆ Carol of the Bells (Home Alone; the Ukrainian tune is free, the 1936 English
   words aren't, and the game doesn't use words) (in game)
 - [x] ★★★☆☆ We Wish You a Merry Christmas (in game)
 - [x] ★★★☆☆ O Christmas Tree (O Tannenbaum) (in game)
 - [x] ★★★☆☆ O Come All Ye Faithful (Adeste fideles) (in game)
-- [ ] ★★★☆☆ The First Noel
+- [x] ★★★☆☆ The First Noel (in game)
 - [x] ★★★☆☆ Hark! The Herald Angels Sing (in game)
 - [x] ★★★☆☆ Angels We Have Heard on High (in game)
 - [x] ★★★☆☆ God Rest Ye Merry Gentlemen (in game)
-- [ ] ★★★☆☆ We Three Kings
-- [ ] ★★★☆☆ O Little Town of Bethlehem
+- [x] ★★★☆☆ We Three Kings (in game)
+- [x] ★★★☆☆ O Little Town of Bethlehem (in game)
 - [x] ★★★☆☆ What Child Is This (the Greensleeves tune) (in game)
 - [x] ★★★☆☆ Tichá noc (Silent Night) (over an octave) (in game)
 - [x] ★★★☆☆ Deck the Halls (over an octave) (in game)
-- [ ] ★★★★☆ Ding Dong Merrily on High
-- [ ] ★★★★☆ O Holy Night (over an octave)
+- [x] ★★★★☆ Ding Dong Merrily on High (in game)
+- [x] ★★★★☆ O Holy Night (over an octave) (in game)
 
 ## Czech Christmas carols
 
-- [ ] ★☆☆☆☆ Koleda, koleda, Štěpáne
-- [ ] ★★☆☆☆ Narodil se Kristus Pán
-- [ ] ★★☆☆☆ Nesem vám noviny
-- [ ] ★★☆☆☆ Pásli ovce Valaši
-- [ ] ★★☆☆☆ Půjdem spolu do Betléma
-- [ ] ★★☆☆☆ Štěstí, zdraví, pokoj svatý
-- [ ] ★★☆☆☆ Den přeslavný
-- [ ] ★★☆☆☆ Veselé vánoční hody
-- [ ] ★★☆☆☆ Daleko, široko
-- [ ] ★★☆☆☆ Hajej, nynej, Ježíšku
-- [ ] ★★★☆☆ Chtíc, aby spal
-- [ ] ★★★☆☆ Jak jsi krásné, neviňátko
-- [ ] ★★★☆☆ Byla cesta, byla ušlapaná
-- [ ] ★★★★☆ Ryba: Hej, mistře (from the Czech Christmas Mass)
+- [ ] ★☆☆☆☆ Koleda, koleda, Štěpáne (tune unknown: no written score found)
+- [x] ★★☆☆☆ Narodil se Kristus Pán (in game)
+- [x] ★★☆☆☆ Nesem vám noviny (in game)
+- [ ] ★★☆☆☆ Pásli ovce Valaši (tune unknown: no written score found)
+- [ ] ★★☆☆☆ Půjdem spolu do Betléma (tune unknown: no written score found)
+- [ ] ★★☆☆☆ Štěstí, zdraví, pokoj svatý (tune unknown: no written score found)
+- [x] ★★☆☆☆ Den přeslavný (in game)
+- [ ] ★★☆☆☆ Veselé vánoční hody (tune unknown: no written score found)
+- [x] ★★☆☆☆ Daleko, široko (in game, among the Czech folk songs: it is a harvest song, not a carol)
+- [x] ★★☆☆☆ Hajej, nynej, Ježíšku (in game)
+- [x] ★★★☆☆ Chtíc, aby spal (in game)
+- [ ] ★★★☆☆ Jak jsi krásné, neviňátko (tune unknown: no written score found)
+- [ ] ★★★☆☆ Byla cesta, byla ušlapaná (tune unknown: no written score found)
+- [ ] ★★★★☆ Ryba: Hej, mistře (from the Czech Christmas Mass) (tune unknown: IMSLP has a score, behind a check that blocks automated reading)
 
 ## Classical themes known worldwide
 
 - [x] ★★☆☆☆ Óda na radost (Ode to Joy, in game; also in Die Hard)
 - [x] ★★☆☆☆ Beethoven: Symphony No. 5, the opening (in game)
-- [ ] ★★☆☆☆ Beethoven: Moonlight Sonata, the slow tune (without the triplets underneath)
+- [x] ★★☆☆☆ Beethoven: Moonlight Sonata, the slow tune (without the triplets underneath) (in game)
 - [x] ★★☆☆☆ Haydn: the Surprise Symphony theme (in game)
-- [ ] ★★☆☆☆ Haydn: the Emperor Hymn (the tune of the German anthem)
-- [ ] ★★☆☆☆ Handel: Largo (Ombra mai fu)
-- [ ] ★★☆☆☆ Verdi: Va, pensiero
-- [ ] ★★☆☆☆ Wagner: Bridal Chorus (Here Comes the Bride)
-- [ ] ★★☆☆☆ Elgar: Pomp and Circumstance No. 1, the big tune (graduations)
+- [x] ★★☆☆☆ Haydn: the Emperor Hymn (the tune of the German anthem) (in game)
+- [x] ★★☆☆☆ Handel: Largo (Ombra mai fu) (in game)
+- [x] ★★☆☆☆ Verdi: Va, pensiero (in game)
+- [x] ★★☆☆☆ Wagner: Bridal Chorus (Here Comes the Bride) (in game)
+- [x] ★★☆☆☆ Elgar: Pomp and Circumstance No. 1, the big tune (graduations) (in game)
 - [x] ★★☆☆☆ Chopin: Funeral March (in game)
-- [ ] ★★☆☆☆ Chopin: Prelude in E minor
-- [ ] ★★☆☆☆ Schumann: The Happy Farmer
-- [ ] ★★☆☆☆ Mussorgsky: The Great Gate of Kiev
+- [x] ★★☆☆☆ Chopin: Prelude in E minor (in game)
+- [x] ★★☆☆☆ Schumann: The Happy Farmer (in game)
+- [x] ★★☆☆☆ Mussorgsky: The Great Gate of Kiev (in game)
 - [x] ★★★☆☆ In the Hall of the Mountain King (in game; also in The Social Network)
-- [ ] ★★★☆☆ Brahms: Lullaby (Brahmsova ukolébavka)
+- [x] ★★★☆☆ Brahms: Lullaby (Brahmsova ukolébavka) (in game)
 - [x] ★★★☆☆ Mozart: Eine kleine Nachtmusik (in game)
 - [x] ★★★☆☆ Mozart: Symphony No. 40 (in game)
-- [ ] ★★★☆☆ Mozart: Sonata facile (K. 545)
+- [x] ★★★☆☆ Mozart: Sonata facile (K. 545) (in game)
 - [x] ★★★☆☆ Minuet in G (from Bach's Anna Magdalena notebook) (in game)
-- [ ] ★★★☆☆ Bach: Musette in D
-- [ ] ★★★☆☆ Handel: Water Music, the Hornpipe
-- [ ] ★★★☆☆ Tchaikovsky: Nutcracker March
-- [ ] ★★★☆☆ Tchaikovsky: Sleeping Beauty Waltz
-- [ ] ★★★☆☆ Strauss senior: Radetzky March (Radeckého pochod)
-- [ ] ★★★☆☆ Strauss: Pizzicato Polka
-- [ ] ★★★☆☆ Lehár: Merry Widow Waltz (Veselá vdova)
-- [ ] ★★★☆☆ Mendelssohn: Wedding March
-- [ ] ★★★☆☆ Bizet: Toreador Song
-- [ ] ★★★☆☆ Bizet: Habanera
-- [ ] ★★★☆☆ Verdi: La donna è mobile
-- [ ] ★★★☆☆ Verdi: Brindisi (Libiamo)
-- [ ] ★★★☆☆ Verdi: Triumphal March from Aida
-- [ ] ★★★☆☆ Handel: Hallelujah
-- [ ] ★★★☆☆ Vivaldi: Spring
-- [ ] ★★★☆☆ Schubert: Ave Maria (also in Fantasia)
-- [ ] ★★★☆☆ Schubert: Serenade (Ständchen)
-- [ ] ★★★☆☆ Schubert: Marche militaire
-- [ ] ★★★☆☆ Schumann: Träumerei
-- [ ] ★★★☆☆ Grieg: Solveig's Song
-- [ ] ★★★☆☆ Grieg: Anitra's Dance
-- [ ] ★★★☆☆ Elgar: Salut d'amour
-- [ ] ★★★☆☆ Elgar: Nimrod
-- [ ] ★★★☆☆ Holst: Jupiter, the hymn tune
-- [ ] ★★★☆☆ Mussorgsky: Promenade (the beat switches between five and six)
+- [x] ★★★☆☆ Bach: Musette in D (in game)
+- [x] ★★★☆☆ Handel: Water Music, the Hornpipe (in game)
+- [ ] ★★★☆☆ Tchaikovsky: Nutcracker March (tune unknown: no written score found)
+- [ ] ★★★☆☆ Tchaikovsky: Sleeping Beauty Waltz (tune unknown: no written score found)
+- [x] ★★★☆☆ Strauss senior: Radetzky March (Radeckého pochod) (in game)
+- [x] ★★★☆☆ Strauss: Pizzicato Polka (in game)
+- [x] ★★★☆☆ Lehár: Merry Widow Waltz (Veselá vdova) (in game)
+- [x] ★★★☆☆ Mendelssohn: Wedding March (in game)
+- [x] ★★★☆☆ Bizet: Toreador Song (in game)
+- [x] ★★★☆☆ Bizet: Habanera (in game)
+- [x] ★★★☆☆ Verdi: La donna è mobile (in game)
+- [x] ★★★☆☆ Verdi: Brindisi (Libiamo) (in game)
+- [x] ★★★☆☆ Verdi: Triumphal March from Aida (in game)
+- [ ] ★★★☆☆ Handel: Hallelujah (tune unknown: no written score found)
+- [x] ★★★☆☆ Vivaldi: Spring (in game)
+- [x] ★★★☆☆ Schubert: Ave Maria (also in Fantasia) (in game)
+- [x] ★★★☆☆ Schubert: Serenade (Ständchen) (in game)
+- [x] ★★★☆☆ Schubert: Marche militaire (in game)
+- [x] ★★★☆☆ Schumann: Träumerei (in game)
+- [x] ★★★☆☆ Grieg: Solveig's Song (in game)
+- [x] ★★★☆☆ Grieg: Anitra's Dance (in game)
+- [x] ★★★☆☆ Elgar: Salut d'amour (in game)
+- [ ] ★★★☆☆ Elgar: Nimrod (tune unknown: no written score found)
+- [x] ★★★☆☆ Holst: Jupiter, the hymn tune (in game)
+- [x] ★★★☆☆ Mussorgsky: Promenade (the beat switches between five and six) (in game)
 - [x] ★★★☆☆ Satie: Gymnopédie No. 1 (in game)
-- [ ] ★★★☆☆ Debussy: The Girl with the Flaxen Hair
-- [ ] ★★★☆☆ Delibes: Flower Duet (the British Airways adverts)
-- [ ] ★★★☆☆ Saint-Saëns: The Swan (over an octave)
+- [x] ★★★☆☆ Debussy: The Girl with the Flaxen Hair (in game)
+- [x] ★★★☆☆ Delibes: Flower Duet (the British Airways adverts) (in game)
+- [x] ★★★☆☆ Saint-Saëns: The Swan (over an octave) (in game)
 - [x] ★★★★☆ Pro Elišku (Für Elise, in game)
-- [ ] ★★★★☆ Bach: Jesu, Joy of Man's Desiring
-- [ ] ★★★★☆ Saint-Saëns: Danse macabre
-- [ ] ★★★★☆ Sousa: The Stars and Stripes Forever
-- [ ] ★★★★☆ Rimsky-Korsakov: Scheherazade, the theme
-- [ ] ★★★★☆ Puccini: Nessun dorma (over an octave)
-- [ ] ★★★★☆ Brahms: Hungarian Dance No. 5
-- [ ] ★★★★☆ Chopin: Nocturne Op. 9 No. 2
+- [x] ★★★★☆ Bach: Jesu, Joy of Man's Desiring (in game)
+- [ ] ★★★★☆ Saint-Saëns: Danse macabre (tune unknown: no written score found)
+- [x] ★★★★☆ Sousa: The Stars and Stripes Forever (in game)
+- [x] ★★★★☆ Rimsky-Korsakov: Scheherazade, the theme (in game: the third movement's theme)
+- [ ] ★★★★☆ Puccini: Nessun dorma (over an octave) (tune unknown: no written score found)
+- [ ] ★★★★☆ Brahms: Hungarian Dance No. 5 (tune unknown: no written score found)
+- [x] ★★★★☆ Chopin: Nocturne Op. 9 No. 2 (in game)
 - [x] ★★★★★ Mozart: Rondo alla Turca (in game)
-- [ ] ★★★★★ Mozart: the Queen of the Night aria
-- [ ] ★★★★★ Monti: Csárdás
-- [ ] ★★★★★ Rimsky-Korsakov: Flight of the Bumblebee
-- [ ] ★★★★★ Chopin: Minute Waltz
-- [ ] ★★★★★ Joplin: Maple Leaf Rag
+- [x] ★★★★★ Mozart: the Queen of the Night aria (in game)
+- [x] ★★★★★ Monti: Csárdás (in game)
+- [x] ★★★★★ Rimsky-Korsakov: Flight of the Bumblebee (in game)
+- [x] ★★★★★ Chopin: Minute Waltz (in game)
+- [x] ★★★★★ Joplin: Maple Leaf Rag (in game)
 
 ## Czech classics
 
 - [x] ★★☆☆☆ Smetana: Vltava, the main theme (it is close to Kočka leze dírou) (in game)
 - [x] ★★☆☆☆ Dvořák: Largo from the New World Symphony (in game)
-- [ ] ★★★☆☆ Škroup: Kde domov můj
-- [ ] ★★★☆☆ Dvořák: Humoreska
-- [ ] ★★★☆☆ Dvořák: Když mne stará matka (Songs My Mother Taught Me)
-- [ ] ★★★☆☆ Dvořák: New World Symphony, the finale's main theme
-- [ ] ★★★☆☆ Fibich: Poème
-- [ ] ★★★☆☆ Suk: Píseň lásky (Love Song)
-- [ ] ★★★★☆ Dvořák: Měsíčku na nebi hlubokém (Song to the Moon, from Rusalka)
-- [ ] ★★★★☆ Dvořák: Slavonic Dance
-- [ ] ★★★★☆ Smetana: Prodaná nevěsta, "Proč bychom se netěšili"
-- [ ] ★★★★☆ Janáček: Sinfonietta, the fanfare
-- [ ] ★★★★★ Fučík: Vjezd gladiátorů (Entry of the Gladiators, the circus march)
+- [x] ★★★☆☆ Škroup: Kde domov můj (in game)
+- [x] ★★★☆☆ Dvořák: Humoreska (in game)
+- [x] ★★★☆☆ Dvořák: Když mne stará matka (Songs My Mother Taught Me) (in game)
+- [x] ★★★☆☆ Dvořák: New World Symphony, the finale's main theme (in game)
+- [ ] ★★★☆☆ Fibich: Poème (tune unknown: no written score found)
+- [ ] ★★★☆☆ Suk: Píseň lásky (Love Song) (tune unknown: no written score found)
+- [x] ★★★★☆ Dvořák: Měsíčku na nebi hlubokém (Song to the Moon, from Rusalka) (in game)
+- [x] ★★★★☆ Dvořák: Slavonic Dance (in game)
+- [x] ★★★★☆ Smetana: Prodaná nevěsta, "Proč bychom se netěšili" (in game)
+- [x] ★★★★☆ Janáček: Sinfonietta, the fanfare (in game: the opening motif only)
+- [x] ★★★★★ Fučík: Vjezd gladiátorů (Entry of the Gladiators, the circus march) (in game)
 
 ## From films, cartoons and games
 
@@ -318,39 +320,39 @@ Auld Lang Syne, Carol of the Bells and Schubert's Ave Maria.
 
 - [x] ★☆☆☆☆ Dies irae (the old chant behind The Shining's opening) (in game)
 - [x] ★★☆☆☆ R. Strauss: Also sprach Zarathustra, the opening (2001: A Space Odyssey) (over an octave) (in game)
-- [ ] ★★☆☆☆ Strauss: The Blue Danube (2001: A Space Odyssey)
+- [x] ★★☆☆☆ Strauss: The Blue Danube (2001: A Space Odyssey) (in game)
 - [x] ★★☆☆☆ Grieg: Morning Mood (the sunrise in countless cartoons) (in game)
-- [ ] ★★☆☆☆ Handel: Sarabande (Barry Lyndon)
-- [ ] ★★☆☆☆ Saint-Saëns: Organ Symphony, the finale (Babe)
-- [ ] ★★☆☆☆ Nearer, My God, to Thee (Titanic)
-- [ ] ★★☆☆☆ Offenbach: Barcarolle (Life Is Beautiful)
+- [x] ★★☆☆☆ Handel: Sarabande (Barry Lyndon) (in game)
+- [x] ★★☆☆☆ Saint-Saëns: Organ Symphony, the finale (Babe) (in game)
+- [x] ★★☆☆☆ Nearer, My God, to Thee (Titanic) (in game)
+- [x] ★★☆☆☆ Offenbach: Barcarolle (Life Is Beautiful) (in game)
 - [x] ★★★☆☆ Pachelbel: Canon (Ordinary People) (in game)
-- [ ] ★★★☆☆ Bach: Air on the G String (Se7en)
-- [ ] ★★★☆☆ Boccherini: Minuet (The Ladykillers)
-- [ ] ★★★☆☆ Mascagni: Intermezzo from Cavalleria rusticana (Raging Bull, The Godfather Part III)
-- [ ] ★★★☆☆ Puccini: O mio babbino caro (A Room with a View)
-- [ ] ★★★☆☆ Mozart: Sull'aria (The Shawshank Redemption)
-- [ ] ★★★☆☆ Mozart: Lacrimosa (Amadeus)
-- [ ] ★★★☆☆ Mozart: Piano Concerto No. 21, the Andante (Elvira Madigan)
+- [x] ★★★☆☆ Bach: Air on the G String (Se7en) (in game)
+- [x] ★★★☆☆ Boccherini: Minuet (The Ladykillers) (in game)
+- [ ] ★★★☆☆ Mascagni: Intermezzo from Cavalleria rusticana (Raging Bull, The Godfather Part III) (tune unknown: no written score found)
+- [x] ★★★☆☆ Puccini: O mio babbino caro (A Room with a View) (in game)
+- [x] ★★★☆☆ Mozart: Sull'aria (The Shawshank Redemption) (in game)
+- [ ] ★★★☆☆ Mozart: Lacrimosa (Amadeus) (tune unknown: no written score found)
+- [x] ★★★☆☆ Mozart: Piano Concerto No. 21, the Andante (Elvira Madigan) (in game)
 - [x] ★★★☆☆ Tchaikovsky: Swan Lake (Black Swan) (in game)
-- [ ] ★★★☆☆ Tchaikovsky: Dance of the Sugar Plum Fairy (Fantasia)
-- [ ] ★★★☆☆ Tchaikovsky: Waltz of the Flowers (Fantasia)
-- [ ] ★★★☆☆ Ponchielli: Dance of the Hours (Fantasia)
-- [ ] ★★★☆☆ Gounod: Funeral March of a Marionette (Alfred Hitchcock Presents)
-- [ ] ★★★☆☆ Sousa: The Liberty Bell (Monty Python's Flying Circus)
+- [ ] ★★★☆☆ Tchaikovsky: Dance of the Sugar Plum Fairy (Fantasia) (tune unknown: no written score found)
+- [ ] ★★★☆☆ Tchaikovsky: Waltz of the Flowers (Fantasia) (tune unknown: no written score found)
+- [ ] ★★★☆☆ Ponchielli: Dance of the Hours (Fantasia) (tune unknown: no written score found)
+- [x] ★★★☆☆ Gounod: Funeral March of a Marionette (Alfred Hitchcock Presents) (in game)
+- [x] ★★★☆☆ Sousa: The Liberty Bell (Monty Python's Flying Circus) (in game)
 - [x] ★★★★☆ Offenbach: Can-can (Moulin Rouge!) (in game)
-- [ ] ★★★★☆ Rossini: William Tell, the finale (The Lone Ranger, A Clockwork Orange)
-- [ ] ★★★★☆ Wagner: Ride of the Valkyries (Apocalypse Now, What's Opera, Doc?)
+- [x] ★★★★☆ Rossini: William Tell, the finale (The Lone Ranger, A Clockwork Orange) (in game)
+- [x] ★★★★☆ Wagner: Ride of the Valkyries (Apocalypse Now, What's Opera, Doc?) (in game)
 - [x] ★★★★☆ Joplin: The Entertainer (The Sting) (in game)
-- [ ] ★★★★☆ Debussy: Clair de Lune (Ocean's Eleven)
-- [ ] ★★★★☆ Dukas: The Sorcerer's Apprentice (Fantasia)
-- [ ] ★★★★☆ Bach: Toccata and Fugue in D minor (Fantasia)
-- [ ] ★★★★☆ Rossini: The Barber of Seville overture (The Rabbit of Seville)
-- [ ] ★★★★☆ Rachmaninoff: Piano Concerto No. 2 (Brief Encounter)
-- [ ] ★★★★★ Mussorgsky: Night on Bald Mountain (Fantasia)
-- [ ] ★★★★★ Liszt: Hungarian Rhapsody No. 2 (Tom and Jerry's The Cat Concerto)
-- [ ] ★★★★★ Rossini: Largo al factotum (Mrs. Doubtfire)
-- [ ] ★★★★★ Gershwin: Rhapsody in Blue (Manhattan, Fantasia 2000)
+- [x] ★★★★☆ Debussy: Clair de Lune (Ocean's Eleven) (in game)
+- [x] ★★★★☆ Dukas: The Sorcerer's Apprentice (Fantasia) (in game)
+- [x] ★★★★☆ Bach: Toccata and Fugue in D minor (Fantasia) (in game)
+- [x] ★★★★☆ Rossini: The Barber of Seville overture (The Rabbit of Seville) (in game)
+- [x] ★★★★☆ Rachmaninoff: Piano Concerto No. 2 (Brief Encounter) (in game)
+- [x] ★★★★★ Mussorgsky: Night on Bald Mountain (Fantasia) (in game)
+- [x] ★★★★★ Liszt: Hungarian Rhapsody No. 2 (Tom and Jerry's The Cat Concerto) (in game)
+- [x] ★★★★★ Rossini: Largo al factotum (Mrs. Doubtfire) (in game)
+- [x] ★★★★★ Gershwin: Rhapsody in Blue (Manhattan, Fantasia 2000) (in game: its Andantino love theme)
 
 ## Not public domain, though they sound like it
 

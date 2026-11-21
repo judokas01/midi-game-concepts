@@ -14,6 +14,7 @@ font_names = PackedStringArray("Segoe UI", "Arial", "sans-serif")
 font_weight = 700
 
 [sub_resource type="LabelSettings" id="LabelSettings_name"]
+resource_local_to_scene = true
 font = SubResource("SystemFont_bold")
 font_size = 40
 font_color = Color(0.227451, 0.141176, 0.0705882, 1)

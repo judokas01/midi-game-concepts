@@ -147,7 +147,7 @@ or off: the drill is about the chords. A banana hangs at every
 fourth chord. Restart or Play again deals a new round. **Chord sign** puts each chord's
 name on its log, or its notes in the bass clef. A seventh's four notes reach a ledger line
 off the staff, E2 below (E7, Eb7, Em7…) or C4 above (D7, Db7…), so its sign is a taller
-board than a triad's.
+board than a triad's. A long name, such as Ebmaj7, is written smaller so it fits its board.
 
 With **Backing** on (the default; a row on the drill board and in the pause menu), the
 [piano](#the-piano) plays the tune as the gorilla climbs it, each branch's note as it takes
@@ -217,6 +217,22 @@ are on the keys. With Chords only and in the drill the next chord lights up as s
 last one is played, however far ahead its log is. Turn **Keyboard hint** off on the board to
 practise reading the notes alone.
 
+## Listening to a song
+
+`play-song.cmd`, in the project folder, plays one song on the game's piano, its tune and
+chords, at 80 BPM, with no game window. Each bar prints as it starts, chords in brackets
+(`bar 3:  [C] E4 D4 C4  [G] D4 -`, a rest is `-`), so a wrong note can be named by its bar.
+Ctrl+C stops it.
+
+```powershell
+cd godot-implementations/king-gong
+.\play-song list            # every song: number, difficulty, category, name
+.\play-song 57              # song 57
+.\play-song "skakal pes"    # by part of its name, accents optional
+.\play-song 57 60           # at 60 BPM
+.\play-song 57 80 tune      # the tune alone, no chords
+```
+
 ## Your own songs
 
 Put MusicXML scores in `songs/`, next to `project.godot`, and restart the game: they join
@@ -277,21 +293,26 @@ A file the importer can't read is left out of the list, with a warning in the co
 
   A song is a list in `SONGS` in `song.gd`; scores need no code, see
   [Your own songs](#your-own-songs).
-- **The song book.** After those ten come 55 public-domain tunes from `song-ideas.md`,
+- **The song book.** After those ten come 223 public-domain tunes from `song-ideas.md`,
   in `scripts/songbook/`, a file for each category: children's songs (Hot Cross Buns,
-  London Bridge, Frère Jacques, Happy Birthday…), folk songs (Amazing Grace, Greensleeves,
-  Auld Lang Syne…), from other countries (Sakura, Korobeiniki, La Cucaracha), Christmas
-  (Silent Night, Joy to the World, Deck the Halls, Carol of the Bells…), classical themes (Beethoven's Fifth,
-  Eine kleine Nachtmusik, Minuet in G, Rondo alla Turca…), Czech classics (Vltava, the
-  Largo from the New World Symphony) and tunes films borrowed (the Can-can, The
-  Entertainer, Morning Mood…). Each is a verse or a famous theme, written in a key that
-  keeps it on the staff (mostly C4 to C5), with songbook triads and bananas. A song in
-  another time says so: `meter = 3` (3/4, or 6/8 in three beats), `meter = 2`, and
-  `pickup = <beats>` for one that starts before its first bar line. They were written
-  out from memory, except the two Czech children's songs and Carol of the Bells (the top
-  line of Leontovych's Shchedryk, in D minor), whose notes come from Wikipedia's scores;
-  a tune remembered only in part was left out, so 223 of the list
-  wait for a written source. Listen to them in the library and say which sound wrong.
+  Frère Jacques, Bingo, Humpty Dumpty…), folk songs (Amazing Grace, Bella Ciao, Wellerman,
+  Danny Boy…), from other countries (Sakura, Kalinka, Hava Nagila, Waltzing Matilda…), Czech
+  children's songs (Skákal pes, Čížečku…), Czech folk songs (Ovčáci, čtveráci, Černé oči…),
+  Christmas (Silent Night, The First Noel, Carol of the Bells…), Czech carols (Narodil se
+  Kristus Pán, Nesem vám noviny…), classical themes (Brahms' Lullaby, Va, pensiero, The
+  Swan, the Minute Waltz…), Czech classics (Vltava, Kde domov můj, Humoreska…) and tunes
+  films borrowed (The Blue Danube, Clair de Lune, Rhapsody in Blue…). Each is a verse or a
+  famous theme, written in a key that keeps it on the staff (mostly C4 to C5), with
+  songbook triads and bananas. A song in another time says so: `meter = 3` (3/4, or 6/8 in
+  three beats), `meter = 2`, `pickup = <beats>` for one that starts before its first bar
+  line, and `bars` for bar lines of its own (The Water Is Wide's 3/2, the Promenade's 5/4
+  and 6/4). Most are copied from written public-domain scores (abcnotation.com, Mutopia,
+  Wikipedia, Wikisource's old Czech songbooks, Wikimedia Commons); the rest were written
+  from memory. The comment above each song names its source and what is in doubt, and
+  `song-checklist.md` lists them all for checking by ear (see
+  [Listening to a song](#listening-to-a-song)). A tune no writer could find a score for or
+  recall was left out rather than made up: 55 of the list, marked "(tune unknown)" there,
+  wait for your notes.
 - **Key signatures.** The spike has no sharps or flats. A song in another key than C
   (`key = "D"` in `song.gd`) shows its key signature after the clef, as sheet music
   does: a sharp or flat on the line or space of each note it raises or lowers, and every
@@ -416,6 +437,7 @@ them around:
 | `scripts/note_input.gd` | MIDI and keyboard input |
 | `scripts/hud.gd` | The counters, the menus' wiring, messages, what the little keyboard lights |
 | `scripts/songbook/*.gd` | The song book: the tunes of `song-ideas.md`, a file for each category, in the format `song.gd` describes |
+| `play-song.cmd`, `scripts/play_song.gd` | Plays one song from the console, for checking it by ear; see [Listening to a song](#listening-to-a-song) |
 | `scripts/dev_autoplay.gd`, `dev_cursor_check.gd`, `dev_sign_check.gd`, `dev_sound_check.gd`, `dev_library_check.gd`, `dev_songbook_check.gd` | Dev checks only, see below |
 
 Branches, lianas and logs only appear when the game runs, because `level.gd` lays them out
@@ -539,7 +561,9 @@ It prints `cursor: ok`.
 
 The signs on the logs have one too: every chord the drill offers, sevenths included, in the
 bass clef, each note on the staff or one ledger line off it and inside its board, with its
-sharp or flat, and the name and every triad on the board they always had:
+sharp or flat, and the name and every triad on the board they always had. Every chord's name,
+the songs' chords too, fits inside its board, centred, written smaller only if it is long, and
+only on its own log:
 
 ```powershell
 & "C:/game-dev/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot-implementations/king-gong --script res://scripts/dev_sign_check.gd
@@ -573,8 +597,11 @@ long:
 & "C:/game-dev/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot-implementations/king-gong --script res://scripts/dev_songbook_check.gd
 ```
 
-It prints `songbook: 55 songs, 0 warnings` and `songbook: ok` (add `-- --file=children` to
-check one file).
+It prints `songbook: 223 songs, 9 warnings` and `songbook: ok` (add `-- --file=children` to
+check one file). Each of the 9 warnings is the music's own: downbeats on
+leaning notes (Dark Eyes, the Minute Waltz, the Hungarian Rhapsody), a chromatic tune (the
+Moonlight Sonata, the Bumblebee, The Sorcerer's Apprentice), its own bar lines (The Water Is
+Wide, the Promenade) and a four-bar excerpt (the Flower Duet).
 
 The piano and the song player have a headless check too: every key of the keyboard within
 a semitone of a recording, 20 notes at once, more than 32 taking over the oldest, a let-go

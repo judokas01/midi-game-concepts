@@ -169,4 +169,149 @@ const SONGS := [
 		["F4", 1, "Dm"], ["E4", 0.5], ["F4", 0.5], ["D4", 1], ["F4", 1], ["E4", 0.5], ["F4", 0.5], ["D4", 1],
 		["F4", 1], ["E4", 0.5], ["F4", 0.5], ["D4", 1], ["D4*", 3],
 	]},
+	# After "The Everyday Song Book" (1927) as John Chambers wrote it out
+	# (https://trillian.mit.edu/~jc/music/book/EverydaySongBook/021-Jolly_Old_St_Nicholas-V1.abc):
+	# its top line, a tone down in G, its 2/4 eighths written as 4/4 quarters. Chords after
+	# its bass; the E sharp under its "way" makes bar 4 a B major chord.
+	{name = "Jolly Old St Nicholas", category = "Christmas", difficulty = 2, key = "G", notes = [
+		["B4", 1, "G"], ["B4", 1], ["B4", 1], ["B4", 1], ["A4", 1, "D"], ["A4", 1], ["A4", 2],
+		["G4", 1, "Em"], ["G4", 1], ["G4", 1], ["G4", 1], ["B4*", 4, "B"],
+		["E4", 1, "C"], ["E4", 1], ["E4", 1], ["E4", 1], ["D4", 1, "G"], ["D4", 1], ["G4", 2],
+		["A4", 1, "D"], ["G4", 1], ["A4", 1], ["B4", 1], ["A4*", 4],
+		["B4", 1, "G"], ["B4", 1], ["B4", 1], ["B4", 1], ["A4", 1, "D"], ["A4", 1], ["A4", 2],
+		["G4", 1, "Em"], ["G4", 1], ["G4", 1], ["G4", 1], ["B4*", 4, "B"],
+		["E4", 1, "C"], ["E4", 1], ["E4", 1], ["E4", 1], ["D4", 1, "G"], ["D4", 1], ["G4", 2],
+		["A4", 1, "C"], ["G4", 1], ["A4", 1, "D"], ["B4", 1], ["G4", 4, "G"],
+	]},
+	# After Thornton Rose's ABC (https://abcnotation.com/tunePage?a=trillian.mit.edu/~jc/music/abc/xmas/tune/Up_On_The_Housetop-F-16-2/0000),
+	# Hanby's 1864 tune, a fourth down in C: C4 to A4. The verse, then "Ho, ho, ho! Who
+	# wouldn't go?". Its sevenths played as triads; its last rest dropped.
+	{name = "Up on the Housetop", category = "Christmas", difficulty = 2, notes = [
+		["G4", 1, "C"], ["G4", 0.5], ["A4", 0.5], ["G4", 1], ["E4", 0.5], ["D4", 0.5], ["C4", 1], ["E4", 1], ["G4", 2],
+		["A4", 1, "F"], ["A4", 1], ["G4", 1, "C"], ["E4", 1], ["D4", 1, "G"], ["G4", 1], ["G4*", 2],
+		["G4", 1, "C"], ["G4", 0.5], ["A4", 0.5], ["G4", 1], ["E4", 0.5], ["D4", 0.5], ["C4", 1], ["E4", 1], ["G4", 2],
+		["A4", 1, "F"], ["A4", 0.5], ["A4", 0.5], ["G4", 0.5, "C"], ["G4", 0.5], ["E4", 1], ["D4", 1, "G"], ["G4", 1], ["C4*", 2, "C"],
+		["F4", 1, "F"], ["F4", 1], ["A4", 2], ["G4", 1, "Em"], ["G4", 0.5], ["G4", 0.5], ["E4", 2],
+		["D4", 1, "Dm"], ["F4", 1], ["F4", 2], ["E4", 1, "C"], ["G4", 0.5], ["G4", 0.5], ["C4*", 1], ["E4", 1],
+		["G4", 1], ["G4", 0.5], ["A4", 0.5], ["G4", 1], ["E4", 1], ["F4", 1, "F"], ["G4", 1, "C"], ["A4", 1, "F#dim"], ["r", 1],
+		["G4", 1, "C"], ["G4", 0.5], ["A4", 0.5], ["G4", 0.5], ["G4", 0.5], ["E4", 1], ["D4", 1, "Dm"], ["G4", 1, "G"], ["C4*", 2, "C"],
+	]},
+	# After the second score in English Wikipedia's "Away in a Manger" (LilyPond, F): Murray's
+	# 1887 tune "Mueller", the one sung in the US; Britain sings Kirkpatrick's "Cradle Song"
+	# instead. 3/4, from "A-" before the first bar line.
+	{name = "Away in a Manger", category = "Christmas", difficulty = 2, key = "F", meter = 3, pickup = 1, notes = [
+		["C4", 1],
+		["F4", 1, "F"], ["F4", 1], ["G4", 0.5], ["A4", 0.5], ["F4", 1], ["F4", 1], ["A4", 0.5], ["Bb4", 0.5],
+		["C5", 1], ["C5", 1], ["D5", 1, "Bb"], ["Bb4*", 2], ["G4", 0.5, "C"], ["A4", 0.5],
+		["Bb4", 1], ["Bb4", 1], ["C5", 1], ["A4", 1, "F"], ["A4", 1], ["F4", 0.5], ["A4", 0.5],
+		["G4", 1, "Gm"], ["D4", 1], ["F4", 1], ["E4*", 2, "C"], ["C4", 1],
+		["F4", 1, "F"], ["F4", 1], ["G4", 0.5], ["A4", 0.5], ["F4", 1], ["F4", 1], ["A4", 0.5], ["Bb4", 0.5],
+		["C5", 1], ["C5", 1], ["D5", 1, "Bb"], ["Bb4*", 2], ["G4", 0.5, "C"], ["A4", 0.5],
+		["Bb4", 1], ["Bb4", 1], ["C5", 1], ["A4", 1, "F"], ["A4", 1], ["F4", 0.5], ["A4", 0.5],
+		["G4", 1, "C"], ["D4", 1], ["E4", 1], ["F4", 2, "F"],
+	]},
+	# Holst's "Cranham" (1906; Holst died in 1934), in F as he wrote it: the first two lines
+	# after English Wikipedia's score, the rest after Paul Hardy's Xmas Tunebook
+	# (https://pghardy.net/tunebooks/pgh_xmas_tunebook.abc, in G). Less sure of bar 12's note:
+	# Hardy has E ("snow on snow"), another ABC (John Chambers') G.
+	{name = "In the Bleak Midwinter", category = "Christmas", difficulty = 2, key = "F", notes = [
+		["A4", 1.5, "F"], ["Bb4", 0.5], ["C5", 1], ["A4", 1], ["G4", 2, "Dm"], ["F4", 1], ["r", 1],
+		["G4", 1.5, "Gm"], ["A4", 0.5], ["G4", 1], ["D4", 1], ["G4*", 3, "C"], ["r", 1],
+		["A4", 1.5, "F"], ["Bb4", 0.5], ["C5", 1], ["A4", 1], ["G4", 2, "Dm"], ["F4", 1], ["r", 1],
+		["G4", 1, "Gm"], ["A4", 1], ["G4", 1.5, "C"], ["F4", 0.5], ["F4*", 4, "F"],
+		["Bb4", 1.5, "Bb"], ["A4", 0.5], ["Bb4", 1], ["C5", 1], ["D5", 2, "Gm"], ["A4", 2, "Dm"],
+		["C5", 1, "F"], ["A4", 1], ["G4", 1], ["F4", 1], ["E4*", 3, "C"], ["r", 1],
+		["A4", 1.5, "F"], ["Bb4", 0.5], ["C5", 1], ["A4", 1], ["G4", 2, "Dm"], ["F4", 1], ["r", 1],
+		["G4", 1, "Gm"], ["A4", 1], ["G4", 1.5, "C"], ["F4", 0.5], ["F4", 4, "F"],
+	]},
+	# After Paul Hardy's Xmas Tunebook (https://pghardy.net/tunebooks/pgh_xmas_tunebook.abc,
+	# "The First Nowell", D), a tone down in C: C4 to C5. 3/4, from "The" before the first bar
+	# line. The verse's tune twice, then the "Noel" refrain.
+	{name = "The First Noel", category = "Christmas", difficulty = 3, meter = 3, pickup = 1, notes = [
+		["E4", 0.5], ["D4", 0.5],
+		["C4", 1.5, "C"], ["D4", 0.5], ["E4", 0.5], ["F4", 0.5], ["G4", 2, "G"], ["A4", 0.5], ["B4", 0.5],
+		["C5", 1, "F"], ["B4", 1], ["A4", 1], ["G4*", 2, "C"], ["A4", 0.5], ["B4", 0.5],
+		["C5", 1, "F"], ["B4", 1], ["A4", 1], ["G4", 1, "G"], ["A4", 1], ["B4", 1],
+		["C5", 1, "C"], ["G4", 1], ["F4", 1, "G"], ["E4*", 2, "C"], ["E4", 0.5], ["D4", 0.5],
+		["C4", 1.5], ["D4", 0.5], ["E4", 0.5], ["F4", 0.5], ["G4", 2, "G"], ["A4", 0.5], ["B4", 0.5],
+		["C5", 1, "F"], ["B4", 1], ["A4", 1], ["G4*", 2, "C"], ["A4", 0.5], ["B4", 0.5],
+		["C5", 1, "F"], ["B4", 1], ["A4", 1], ["G4", 1, "G"], ["A4", 1], ["B4", 1],
+		["C5", 1, "C"], ["G4", 1], ["F4", 1, "G"], ["E4*", 2, "C"], ["E4", 0.5], ["D4", 0.5],
+		["C4", 1.5], ["D4", 0.5], ["E4", 0.5], ["F4", 0.5], ["G4", 2, "Em"], ["C5", 0.5], ["B4", 0.5],
+		["A4", 2, "F"], ["A4", 1], ["G4*", 3, "C"],
+		["C5", 1, "F"], ["B4", 1], ["A4", 1], ["G4", 1, "G"], ["A4", 1], ["B4", 1],
+		["C5", 1, "C"], ["G4", 1], ["F4", 1, "G"], ["E4", 2, "C"],
+	]},
+	# After the score in English Wikipedia's "We Three Kings" (LilyPond, E minor, 3/8, with
+	# chords), in 3/4 with its eighths as quarters. The verse, then "O star of wonder".
+	{name = "We Three Kings", category = "Christmas", difficulty = 3, key = "Em", meter = 3, notes = [
+		["B4", 2, "Em"], ["A4", 1], ["G4", 2], ["E4", 1], ["F#4", 1, "B"], ["G4", 1], ["F#4", 1], ["E4*", 2, "Em"], ["r", 1],
+		["B4", 2], ["A4", 1], ["G4", 2], ["E4", 1], ["F#4", 1, "B"], ["G4", 1], ["F#4", 1], ["E4*", 2, "Em"], ["r", 1],
+		["G4", 2], ["G4", 1], ["A4", 2, "D"], ["A4", 1], ["B4", 2, "G"], ["B4", 1], ["D5", 1], ["C5", 1], ["B4", 1],
+		["A4", 1, "Am"], ["B4", 1], ["A4", 1], ["G4", 2, "Em"], ["F#4", 1, "B"], ["E4*", 2, "Em"], ["r", 1],
+		["F#4", 2, "D"], ["A4", 1],
+		["G4", 2, "G"], ["G4", 1], ["G4", 2], ["D4", 1], ["G4", 2, "C"], ["E4", 1], ["G4*", 2, "G"], ["r", 1],
+		["G4", 2], ["G4", 1], ["G4", 2], ["D4", 1], ["G4", 2, "C"], ["E4", 1], ["G4*", 2, "G"], ["r", 1],
+		["G4", 2, "Em"], ["G4", 1], ["A4", 2, "D"], ["B4", 1, "G"], ["C5", 2, "C"], ["B4", 1, "G"], ["A4", 2, "D"], ["B4", 1, "G"],
+		["G4", 2], ["G4", 1, "C"], ["G4", 2, "G"], ["D4", 1], ["G4", 2, "C"], ["E4", 1], ["G4", 3, "G"],
+	]},
+	# After the first score in English Wikipedia's "O Little Town of Bethlehem": Redner's 1868
+	# tune "St. Louis", the one sung in the US (Britain sings "Forest Green"), in F as the score
+	# sounds. From "O" before the first bar line. The score has no chords: these are mine, and
+	# the third line's D minor and A the least sure.
+	{name = "O Little Town of Bethlehem", category = "Christmas", difficulty = 3, key = "F", pickup = 1, notes = [
+		["A4", 1],
+		["A4", 1, "F"], ["A4", 1], ["G#4", 1], ["A4", 1], ["C5", 1, "C"], ["Bb4", 1], ["D4", 1, "Gm"], ["G4", 1],
+		["F4", 1, "F"], ["E4", 0.5], ["F4", 0.5], ["G4", 1, "C"], ["C4", 1], ["A4*", 3, "F"], ["A4", 1],
+		["A4", 1], ["A4", 1], ["D5", 1, "Bb"], ["C5", 1], ["C5", 1, "C"], ["Bb4", 1], ["D4", 1, "Gm"], ["G4", 1],
+		["F4", 1, "F"], ["E4", 0.5], ["F4", 0.5], ["A4", 1], ["G4", 1, "C"], ["F4*", 3, "F"], ["A4", 1],
+		["A4", 1, "Dm"], ["A4", 1], ["G4", 1], ["F4", 1], ["E4", 2, "A"], ["E4", 1], ["E4", 1],
+		["D4", 1, "Dm"], ["E4", 1], ["F4", 1], ["G4", 1, "C"], ["A4*", 3, "F"], ["A4", 1],
+		["A4", 1], ["A4", 1], ["G#4", 1], ["A4", 1], ["C5", 1, "C"], ["Bb4", 1], ["D4", 1, "Bb"], ["D5", 1],
+		["C5", 1, "F"], ["F4", 1], ["A4", 1.5], ["G4", 0.5, "C"], ["F4", 3, "F"],
+	]},
+	# After the score in English Wikipedia's "Ding Dong Merrily on High" (Charles Wood's setting
+	# of a 1589 dance tune; Wood died in 1926), a fourth down from B flat to F: C4 to C5. The
+	# verse's two lines, then the Gloria. Chords simplified from Wood's harmony.
+	{name = "Ding Dong Merrily on High", category = "Christmas", difficulty = 4, key = "F", notes = [
+		["F4", 1, "F"], ["F4", 1], ["G4", 0.5, "Gm"], ["F4", 0.5], ["E4", 0.5, "C"], ["D4", 0.5], ["C4", 3], ["C4", 1, "F"],
+		["D4", 1, "Bb"], ["F4", 1], ["F4", 1, "C"], ["E4", 1], ["F4", 2, "F"], ["F4*", 2],
+		["F4", 1], ["F4", 1], ["G4", 0.5, "Gm"], ["F4", 0.5], ["E4", 0.5, "C"], ["D4", 0.5], ["C4", 3], ["C4", 1, "F"],
+		["D4", 1, "Bb"], ["F4", 1], ["F4", 1, "C"], ["E4", 1], ["F4", 2, "F"], ["F4*", 2],
+		["C5", 1.5], ["Bb4", 0.5], ["A4", 0.5], ["Bb4", 0.5], ["C5", 0.5], ["A4", 0.5],
+		["Bb4", 1.5, "Gm"], ["A4", 0.5], ["G4", 0.5], ["A4", 0.5], ["Bb4", 0.5], ["G4", 0.5],
+		["A4", 1.5, "F"], ["G4", 0.5], ["F4", 0.5], ["G4", 0.5], ["A4", 0.5], ["F4", 0.5],
+		["G4", 1.5, "C"], ["F4", 0.5], ["E4", 0.5], ["F4", 0.5], ["G4", 0.5], ["E4", 0.5],
+		["F4", 1.5, "Dm"], ["E4", 0.5], ["D4", 0.5], ["E4", 0.5], ["F4", 0.5], ["D4", 0.5],
+		["E4", 1.5, "C"], ["D4", 0.5], ["C4*", 1], ["C4", 1, "F"],
+		["D4", 1, "Bb"], ["F4", 1], ["F4", 1, "C"], ["E4", 1], ["F4", 2, "F"], ["F4*", 2],
+	]},
+	# After Paul Hardy's Xmas Tunebook (https://pghardy.net/tunebooks/pgh_xmas_tunebook.abc,
+	# Adam's 1847 tune as a 6/8 jig, D), a tone down in C: C4 to E5. Three beats a bar. The
+	# first line, "A thrill of hope" and the refrain; the second line ("Long lay the world")
+	# left out for length. Notes held two and a half or four and a half beats, lengths the
+	# game lacks, are cut half a beat short. Hardy's is an instrumental version: the words
+	# may sit loosely on it.
+	{name = "O Holy Night", category = "Christmas", difficulty = 4, meter = 3, notes = [
+		["E4", 1.5, "C"], ["E4", 1], ["E4", 0.5], ["G4", 2], ["r", 0.5], ["G4", 0.5],
+		["A4", 1, "F"], ["A4", 0.5], ["F4", 1], ["A4", 0.5], ["C5*", 3, "C"],
+		["G4", 1], ["G4", 0.5], ["E4", 1], ["D4", 0.5], ["C4", 1.5], ["E4", 1], ["F4", 0.5],
+		["G4", 1.5, "G"], ["F4", 1], ["D4", 0.5], ["C4*", 2, "C"], ["r", 0.5], ["G4", 0.5],
+		["G4", 1.5, "G"], ["A4", 1.5], ["D4", 1.5], ["G4", 1.5],
+		["A4", 1, "C"], ["G4", 0.5], ["C5", 1], ["E4", 0.5], ["A4", 1.5], ["G4*", 1], ["G4", 0.5],
+		["G4", 1.5, "G"], ["A4", 1.5], ["D4", 1.5], ["G4", 1.5],
+		["A4", 1, "C"], ["G4", 0.5], ["C5", 1], ["E4", 0.5], ["G4*", 2], ["r", 1],
+		["C5", 4, "Am"], ["r", 0.5], ["B4", 1], ["A4", 0.5],
+		["B4*", 4, "Em"], ["r", 0.5], ["B4", 1.5],
+		["D5", 3, "Dm"], ["r", 1], ["A4", 0.5], ["A4", 1], ["A4", 0.5],
+		["C5*", 4, "Am"], ["r", 1.5], ["C5", 0.5],
+		["E5", 3, "C"], ["D5*", 2, "G"], ["r", 0.5], ["G4", 0.5],
+		["C5", 4, "C"], ["r", 0.5], ["B4", 1], ["A4", 0.5],
+		["G4*", 3], ["r", 1], ["G4", 0.5, "G"], ["A4", 1], ["G4", 0.5],
+		["G4", 4, "C"], ["r", 0.5], ["C5", 1.5],
+		["D5*", 4, "G"], ["r", 0.5], ["G4", 1.5],
+		["E5", 4, "C"], ["r", 0.5], ["D5", 1.5, "G"],
+		["C5*", 2, "C"], ["r", 1], ["B4", 1.5, "G"], ["C5", 1], ["D5", 0.5],
+		["C5", 6, "C"],
+	]},
 ]
