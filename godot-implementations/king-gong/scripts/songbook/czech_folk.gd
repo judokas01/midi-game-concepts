@@ -28,16 +28,16 @@ const SONGS := [
 		["C5", 2], ["B4", 1], ["C5", 2, "F"], ["A4", 1], ["G4", 2, "C"], ["C5", 1], ["E4", 2], ["G4", 1],
 		["F4", 2, "F"], ["E4", 1], ["F4", 2, "G"], ["D4", 1], ["E4", 1, "C"], ["F4", 1], ["G4", 1], ["E4*", 3],
 	]},
-	# After https://cs.wikisource.org/wiki/České_nápěvy (Wünsch, 1922), "Vyletěla holubička";
-	# down a fourth from F. One B3, in the last bar. Rated 3, not 2: it spans a ninth and has
-	# an F sharp.
-	{name = "Vyletěla holubička", category = "Czech folk songs", difficulty = 3, meter = 2, notes = [
-		["C4", 0.5, "C"], ["D4", 0.5], ["E4", 0.5], ["F4", 0.5], ["G4", 0.5], ["F#4", 0.5], ["G4", 0.5], ["E4", 0.5],
-		["C5", 1, "F"], ["C5", 0.5], ["A4", 0.5], ["G4*", 2, "C"], ["C5", 1, "F"], ["C5", 0.5], ["A4", 0.5], ["G4", 2, "C"],
-		["F4", 0.5, "Dm"], ["A4", 0.5], ["F4", 0.5], ["D4", 0.5], ["E4", 0.5, "C"], ["G4", 0.5], ["E4", 0.5], ["C4", 0.5],
-		["D4", 1, "G"], ["D4", 1], ["G4*", 2],
-		["F4", 0.5, "Dm"], ["A4", 0.5], ["F4", 0.5], ["D4", 0.5], ["E4", 0.5, "C"], ["G4", 0.5], ["E4", 0.5], ["C4", 0.5],
-		["D4", 1, "G"], ["D4", 0.5], ["B3", 0.5], ["C4*", 2, "C"],
+	# After the score the user sent (in C, 4/4, with its chords: the G7 as G). Its lower staff,
+	# a second voice, is left out.
+	{name = "Vyletěla holubička", category = "Czech folk songs", difficulty = 2, notes = [
+		["C4", 1, "C"], ["D4", 1], ["E4", 1], ["F4", 1], ["G4", 1, "G"], ["A4", 1], ["B4", 1], ["G4", 1],
+		["C5", 2, "Am"], ["C5", 2], ["B4*", 4, "Em"],
+		["A4", 2, "F"], ["A4", 2], ["G4*", 4, "C"],
+		["F4", 1, "Dm"], ["A4", 1], ["F4", 1], ["D4", 1], ["E4", 1, "C"], ["G4", 1], ["E4", 1], ["C4", 1],
+		["D4", 2, "G"], ["D4", 2], ["G4*", 4, "C"],
+		["F4", 1, "Dm"], ["A4", 1], ["F4", 1], ["D4", 1], ["E4", 1, "C"], ["G4", 1], ["E4", 1], ["C4", 1],
+		["D4", 2, "G"], ["D4", 2], ["C4*", 4, "C"],
 	]},
 	# After https://cs.wikisource.org/wiki/Prácheňský_zpěvník/Zafoukej,_větříčku: the tune of
 	# "Zafoukej, větříčku", whose third verse is "Kdyby byl Bavorov, co jsou Vodňany". A South
@@ -98,18 +98,23 @@ const SONGS := [
 		["F#4", 0.5, "D"], ["A4", 0.5], ["A4", 0.5], ["A4", 0.5], ["A4", 0.5], ["F#4", 0.5], ["G4", 0.5], ["A4", 0.5],
 		["B4", 0.5, "Em"], ["G4", 0.5], ["E4", 0.5, "A"], ["C#4", 0.5], ["D4*", 2, "D"],
 	]},
-	# After https://cs.wikisource.org/wiki/Prácheňský_zpěvník/Teče_voda,_teče: a South Bohemian
-	# version, which may not be the one sung most today. A minor third down, so that it needs
-	# no flats; its phrases end on E, as the score's do on G.
-	{name = "Teče voda, teče", category = "Czech folk songs", difficulty = 3, key = "Am", meter = 2, notes = [
-		["E4", 1, "C"], ["G4", 0.5], ["G4", 0.5], ["A4", 0.5, "F"], ["A4", 0.5], ["G4", 1],
-		["F4", 0.5, "Dm"], ["E4", 0.5], ["D4", 1], ["E4*", 1, "Am"], ["r", 1],
-		["E4", 1, "C"], ["G4", 0.5], ["G4", 0.5], ["A4", 0.5, "F"], ["A4", 0.5], ["G4", 1],
-		["F4", 0.5, "Dm"], ["E4", 0.5], ["D4", 1], ["E4*", 1, "Am"], ["r", 1],
-		["G4", 1, "C"], ["C5", 0.5], ["C5", 0.5], ["B4", 0.5, "G"], ["A4", 0.5], ["G4", 1],
-		["F4", 1, "F"], ["A4", 0.5], ["A4", 0.5], ["G4", 0.5, "C"], ["F4", 0.5], ["E4*", 1],
-		["E4", 1], ["G4", 0.5], ["G4", 0.5], ["A4", 0.5, "F"], ["A4", 0.5], ["G4", 1],
-		["F4", 0.5, "Dm"], ["E4", 0.5], ["D4", 1], ["E4*", 2, "Am"],
+	# After the score the user sent (in D, 6/8, three beats a bar): its treble clef and chords,
+	# the A7 as A, the H7 as B. The repeat written out, its second ending's last bar filled with
+	# a rest. The two A3 pickups ("Te-", "od") are below the computer keys.
+	{name = "Teče voda, teče", category = "Czech folk songs", difficulty = 3, key = "D", meter = 3, pickup = 0.5, notes = [
+		["A3", 0.5],
+		["F#4", 1, "D"], ["F#4", 0.5], ["E4", 0.5, "A"], ["D4", 0.5], ["E4", 0.5],
+		["D4*", 2, "D"], ["r", 0.5], ["A3", 0.5],
+		["G4", 1, "G"], ["G4", 0.5], ["F#4", 0.5, "D"], ["E4", 0.5], ["F#4", 0.5],
+		["E4*", 2, "A"], ["r", 1],
+		["F#4", 0.5, "D"], ["G4", 0.5], ["A4", 0.5], ["A4", 0.5, "B"], ["B4", 0.5], ["A4", 0.5],
+		["A4", 0.5, "Em"], ["G4", 0.5], ["F#4", 0.5], ["E4", 1, "A"], ["A4", 0.25], ["G4", 0.25],
+		["F#4", 1, "D"], ["F#4", 0.5], ["E4", 0.5, "A"], ["D4", 0.5], ["E4", 0.5],
+		["D4*", 3, "D"],
+		["F#4", 0.5], ["G4", 0.5], ["A4", 0.5], ["A4", 0.5, "B"], ["B4", 0.5], ["A4", 0.5],
+		["A4", 0.5, "Em"], ["G4", 0.5], ["F#4", 0.5], ["E4", 1, "A"], ["A4", 0.25], ["G4", 0.25],
+		["F#4", 1, "D"], ["F#4", 0.5], ["E4", 0.5, "A"], ["D4", 0.5], ["E4", 0.5],
+		["D4*", 2, "D"], ["r", 1],
 	]},
 	# After https://cs.wikisource.org/wiki/Náš_poklad/Já_mám_koně,_vrany_koně (the same tune in
 	# Naše písně); down a tone from G.

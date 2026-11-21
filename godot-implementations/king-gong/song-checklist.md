@@ -15,8 +15,8 @@ memory, so check every bar. The line under a song says what its writer was unsur
 
 ## Children's songs (33)
 
-- [ ] **0** Twinkle Twinkle · ★★☆☆☆ · built in
-- [ ] **1** Mary's Lamb · ★☆☆☆☆ · built in
+- [x] **0** Twinkle Twinkle · ★★☆☆☆ · built in
+- [x] **1** Mary's Lamb · ★☆☆☆☆ · built in
 - [ ] **2** Ducklings · ★☆☆☆☆ · built in
 - [ ] **3** Lightly Row · ★★☆☆☆ · built in
 - [ ] **6** Mary's Lamb in D · ★★☆☆☆ · built in
@@ -134,34 +134,35 @@ memory, so check every bar. The line under a song says what its writer was unsur
 
 ## Czech children's songs (5)
 
-- [ ] **92** Skákal pes přes oves · ★☆☆☆☆ · score
-- [ ] **93** Zajíček ve své jamce · ★★☆☆☆ · score
-- [ ] **94** Kočka leze dírou · ★★☆☆☆ · score · **new**
+- [x] **92** Skákal pes přes oves · ★☆☆☆☆ · score
+- [x] **93** Zajíček ve své jamce · ★★☆☆☆ · score
+- [x] **94** Kočka leze dírou · ★★☆☆☆ · score · **new**
   - The chords are mine
-- [ ] **95** Já jsem muzikant · ★★★☆☆ · score · **new**
-  - The chorus's echo of the first line is left out
-- [ ] **96** Čížečku, čížečku · ★★☆☆☆ · score · **new**
+- [x] **95** Já jsem muzikant · ★★★☆☆ · score · **new**
+  - Rewritten from your score: both repeats written out, a minor third up in F
+- [x] **96** Čížečku, čížečku · ★★☆☆☆ · score · **new**
   - The chords are mine
 
 ## Czech folk songs (17)
 
-- [ ] **97** Ovčáci, čtveráci · ★★☆☆☆ · score · **new**
-- [ ] **98** Na tý louce zelený · ★★☆☆☆ · score · **new**
+- [x] **97** Ovčáci, čtveráci · ★★☆☆☆ · score · **new**
+- [x] **98** Na tý louce zelený · ★★☆☆☆ · score · **new**
   - Erben's tune ends on E, the third: the version sung today may end differently
-- [ ] **99** Vyletěla holubička · ★★★☆☆ · score · **new**
-  - Rated 3, not 2: it spans a ninth and has an F sharp
-- [ ] **100** Kdyby byl Bavorov · ★★☆☆☆ · score · **new**
-- [ ] **101** Pásla ovečky v zeleném háječku · ★★☆☆☆ · score · **new**
-- [ ] **102** Šly panenky silnicí · ★★☆☆☆ · score · **new**
-- [ ] **103** Andulka Šafářova · ★★★☆☆ · score · **new**
+- [ ] **99** Vyletěla holubička · ★★☆☆☆ · score · **new**
+  - Rewritten from your score: the top staff, the G7 as G
+- [x] **100** Kdyby byl Bavorov · ★★☆☆☆ · score · **new**
+- [x] **101** Pásla ovečky v zeleném háječku · ★★☆☆☆ · score · **new**
+- [x] **102** Šly panenky silnicí · ★★☆☆☆ · score · **new**
+- [x] **103** Andulka Šafářova · ★★★☆☆ · score · **new**
   - The singer's empty bars between phrases are left out. Rated 3, not 2: an octave, with leaps of a sixth and an octave
-- [ ] **104** Kdybys měla, má panenko · ★★☆☆☆ · score · **new**
-- [ ] **105** Teče voda, teče · ★★★☆☆ · score · **new**
-- [ ] **106** Já mám koně, vraný koně · ★★★☆☆ · score · **new**
-- [ ] **107** Černé oči, jděte spát · ★★★☆☆ · score · **new**
+- [x] **104** Kdybys měla, má panenko · ★★☆☆☆ · score · **new**
+- [x] **105** Teče voda, teče · ★★★☆☆ · score · **new**
+  - Rewritten from your score: the treble clef and chords, in D, the repeat written out
+- [x] **106** Já mám koně, vraný koně · ★★★☆☆ · score · **new**
+- [x] **107** Černé oči, jděte spát · ★★★☆☆ · score · **new**
 - [ ] **108** Zahučaly hory · ★★★☆☆ · score · **new**
 - [ ] **109** Ej, padá, padá rosička · ★★★☆☆ · score · **new**
-- [ ] **110** Ach synku, synku · ★★☆☆☆ · score · **new**
+- [x] **110** Ach synku, synku · ★★☆☆☆ · score · **new**
   - Rated 2, not 3: steps within six notes
 - [ ] **111** Hořela lípa, hořela · ★★★☆☆ · score · **new**
 - [ ] **112** Kopala studienku · ★★☆☆☆ · score · **new**
@@ -200,14 +201,14 @@ memory, so check every bar. The line under a song says what its writer was unsur
 
 ## Czech carols (5)
 
-- [ ] **135** Narodil se Kristus Pán · ★★☆☆☆ · score · **new**
-- [ ] **136** Nesem vám noviny · ★★★☆☆ · score · **new**
+- [x] **135** Narodil se Kristus Pán · ★★☆☆☆ · score · **new**
+- [x] **136** Nesem vám noviny · ★★★☆☆ · score · **new**
   - Chords simplified from its left hand
-- [ ] **137** Den přeslavný · ★★☆☆☆ · score · **new**
-  - Chords from its figured bass, simplified. Today's hymnbook tune may differ
+-x[ ] **137** Den přeslavný · ★★☆☆☆ · score · **new**
+  - Rewritten from your score: in E minor, 3/4, the H7 as B
 - [ ] **138** Hajej, nynej, Ježíšku · ★★★☆☆ · score · **new**
   - Chords simplified from its four parts
-- [ ] **139** Chtíc, aby spal · ★★☆☆☆ · score · **new**
+- [x] **139** Chtíc, aby spal · ★★☆☆☆ · score · **new**
 
 ## Classical (56)
 

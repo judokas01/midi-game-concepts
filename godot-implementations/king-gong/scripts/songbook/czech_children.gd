@@ -35,23 +35,27 @@ const SONGS := [
 		["F4", 0.5, "Dm"], ["F4", 0.5], ["F4", 0.5], ["F4", 0.5], ["E4", 1, "C"], ["E4", 1],
 		["D4", 1, "G"], ["D4", 1], ["C4*", 2, "C"],
 	]},
-	# After Erk & Irmer, Die deutschen Volkslieder mit ihren Singweisen 2 (1838), No. 22
-	# "Musikantenlied" (Ich bin ein Musikante), the tune the Czech words go to:
-	# https://digitale-sammlungen.de/view/bsb11160859?page=20,21. A whole step down from G, onto
-	# C4 to C5. The chorus's echo of the first line is left out; one instrument, the trumpet's
-	# "tengtereng". The Czech "Na co hrát?" middle may go otherwise.
-	{name = "Já jsem muzikant", category = "Czech children's songs", difficulty = 3, key = "F", meter = 2, pickup = 0.5, notes = [
-		["C4", 0.5],
-		["F4", 0.75, "F"], ["F4", 0.25], ["A4", 0.75], ["A4", 0.25], ["C5", 1], ["A4", 0.5], ["A4", 0.5],
-		["Bb4", 0.5, "C"], ["Bb4", 0.5], ["G4", 0.5], ["G4", 0.5], ["F4*", 1, "F"], ["r", 0.5], ["Bb4", 0.5],
-		["Bb4", 1, "C"], ["G4", 1], ["A4", 1, "F"], ["F4", 0.5], ["A4", 0.5],
-		["Bb4", 0.75, "C"], ["Bb4", 0.25], ["G4", 1], ["A4", 1, "F"], ["F4*", 0.5], ["r", 0.5],
-		["Bb4", 1, "C"], ["G4", 1], ["A4", 1, "F"], ["F4", 0.5], ["r", 0.5],
-		["Bb4", 1, "C"], ["G4", 1], ["A4", 1, "F"], ["F4*", 0.5], ["C4", 0.5],
-		["F4", 0.75], ["F4", 0.25], ["F4", 0.5], ["A4", 0.5], ["C5", 0.75], ["C5", 0.25], ["C5", 0.5], ["A4", 0.5],
-		["Bb4", 0.75, "C"], ["Bb4", 0.25], ["Bb4", 0.5], ["G4", 0.5], ["Bb4", 0.75], ["Bb4", 0.25], ["Bb4", 0.5], ["C4", 0.5],
-		["F4", 0.75, "F"], ["F4", 0.25], ["F4", 0.5], ["A4", 0.5], ["C5", 0.75], ["C5", 0.25], ["C5", 0.5], ["A4", 0.5],
-		["Bb4", 0.75, "C"], ["Bb4", 0.25], ["Bb4", 0.5], ["G4", 0.5], ["F4*", 1, "F"], ["r", 0.5],
+	# After the score the user sent (in D, 2/4, with its chords: the A7 as A, bar 6's "D#" as D),
+	# both repeats written out: "Já umím hráti" twice, then "Fidli, fidli" to its first ending
+	# and again to its second. A minor third up, into F, so that its low A3 lands on C4 and it
+	# sits on the computer keys.
+	{name = "Já jsem muzikant", category = "Czech children's songs", difficulty = 3, key = "F", meter = 2, notes = [
+		["F4", 1, "F"], ["G4", 1, "C"],
+		["A4", 0.5, "F"], ["A4", 0.5], ["A4", 0.5], ["Bb4", 0.5],
+		["G4", 0.5, "C"], ["G4", 0.5], ["G4", 0.5], ["A4", 0.5],
+		["F4", 0.5, "F"], ["E4", 0.5], ["D4", 0.5], ["C4*", 0.5],
+		["F4", 1], ["G4", 1, "C"],
+		["A4", 0.5, "F"], ["A4", 0.5], ["A4", 0.5], ["Bb4", 0.5],
+		["G4", 0.5, "C"], ["G4", 0.5], ["G4", 0.5], ["A4", 0.5],
+		["F4*", 2, "F"],
+		["C5", 1], ["A4", 0.5], ["F4", 0.5], ["G4", 1, "C"], ["C4", 1],
+		["C5", 0.5, "F"], ["C5", 0.5], ["A4", 0.5], ["F4", 0.5], ["G4", 1, "C"], ["C4*", 1],
+		["C5", 1, "F"], ["A4", 0.5], ["F4", 0.5], ["G4", 1, "C"], ["C4", 1],
+		["C5", 0.5, "F"], ["C5", 0.5], ["A4", 0.5], ["F4", 0.5], ["G4", 1, "C"], ["C4*", 1],
+		["F4", 0.5, "F"], ["F4", 0.5], ["F4", 0.5], ["G4", 0.5], ["A4", 0.5], ["A4", 0.5], ["A4", 0.5], ["Bb4", 0.5],
+		["G4", 0.5, "C"], ["G4", 0.5], ["G4", 0.5], ["A4", 0.5], ["F4", 0.5, "F"], ["A4", 0.5], ["C5*", 1],
+		["F4", 0.5], ["F4", 0.5], ["F4", 0.5], ["G4", 0.5], ["A4", 0.5], ["A4", 0.5], ["A4", 0.5], ["Bb4", 0.5],
+		["G4", 0.5, "C"], ["G4", 0.5], ["G4", 0.5], ["A4", 0.5], ["F4", 0.5, "F"], ["F4", 0.5], ["F4*", 1],
 	]},
 	# After the CC0 LilyPond score on Wikimedia Commons (in D, 2/4):
 	# https://commons.wikimedia.org/wiki/File:Cizecku-cizecku.svg. A fourth up, into G, so that

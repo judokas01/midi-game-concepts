@@ -34,16 +34,20 @@ const SONGS := [
 		["F4", 1], ["A4", 0.5], ["F4", 0.5], ["G4", 0.5, "C"], ["C4*", 0.5],
 		["C5", 1, "F"], ["A4", 0.5], ["C5", 0.5], ["G4", 0.5, "C"], ["A4", 0.5], ["F4*", 3, "F"],
 	]},
-	# After Czech Wikisource, "Capella regia musicalis/Den přeslavný jest k nám přišel", its
-	# LilyPond score (Holan Rovenský, 1693; G dorian, 2/2): up a fifth to D dorian, all white keys,
-	# in 4/4. Chords from its figured bass, simplified. Today's hymnbook tune may differ.
-	{name = "Den přeslavný", category = "Czech carols", difficulty = 2, key = "Dm", pickup = 1, notes = [
-		["D4", 1, "Dm"],
-		["F4", 1], ["F4", 1], ["E4", 1, "A"], ["E4", 1], ["F4", 2, "Dm"], ["G4", 2, "C"],
-		["A4*", 2, "F"], ["r", 1], ["D4", 1, "Dm"], ["F4", 1], ["F4", 1], ["E4", 1, "A"], ["E4", 1],
-		["F4", 1, "Dm"], ["F4", 1], ["G4", 1, "C"], ["G4", 1], ["A4", 1.5, "F"], ["A4", 0.5], ["G4", 1, "C"], ["G4", 1],
-		["F4", 1, "Dm"], ["F4", 1], ["E4", 1, "A"], ["E4*", 1], ["A4", 1, "F"], ["G4", 2, "C"], ["F4", 1, "Dm"],
-		["E4", 2, "A"], ["D4*", 2, "Dm"],
+	# After the score the user sent (in E minor, 3/4, with its chords: the H7 as B).
+	{name = "Den přeslavný", category = "Czech carols", difficulty = 2, key = "Em", meter = 3, notes = [
+		["E4", 1, "Em"], ["E4", 1], ["E4", 1], ["F#4", 2, "B"], ["F#4", 1],
+		["G4", 2, "Em"], ["A4", 1, "D"], ["B4*", 3, "G"],
+		["E4", 1, "Em"], ["E4", 1], ["E4", 1], ["F#4", 2, "B"], ["F#4", 1],
+		["G4", 2, "Em"], ["A4", 1, "D"], ["B4*", 2, "G"], ["A4", 1, "D"],
+		["B4", 2, "G"], ["B4", 1], ["A4", 2, "D"], ["A4", 1],
+		["G4", 2, "Em"], ["G4", 1], ["F#4*", 3, "B"],
+		["E4", 2, "Em"], ["B4", 1], ["A4", 1, "Am"], ["G4", 2],
+		["F#4", 3, "B"], ["E4*", 2, "Em"], ["A4", 1, "D"],
+		["B4", 2, "G"], ["B4", 1], ["A4", 2, "D"], ["A4", 1],
+		["G4", 2, "Em"], ["G4", 1], ["F#4*", 3, "B"],
+		["E4", 2, "Em"], ["B4", 1, "G"], ["A4", 1, "D"], ["G4", 2, "Em"],
+		["F#4", 3, "B"], ["E4*", 3, "Em"],
 	]},
 	# After English Wikipedia, "The Rocking Carol", its LilyPond score (Oxford Book of Carols;
 	# in F, 2/4, which fits the Czech words): note values doubled, so 4/4. The B naturals are
