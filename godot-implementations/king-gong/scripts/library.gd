@@ -295,7 +295,7 @@ func _start_preview(now: float) -> void:
 	_preview_from = now + LEAD_MS
 	_restore_at = 0.0
 	AudioServer.set_bus_volume_db(_bus, 0.0)
-	_player.load_song(notes)
+	_player.load_song(notes, true, true, Song.bar_lines(_preview, notes))
 	_player.play(beat_ms, _preview_from)
 
 

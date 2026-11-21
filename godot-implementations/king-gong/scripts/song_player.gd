@@ -1,7 +1,8 @@
 extends Node
-## Plays a song on the piano: its tune, its chords (each voiced below the note it starts on,
-## ringing until the next chord comes in), or both. Each sound starts so that it is heard when
-## it is due, by the audio clock (PianoSound.due_now()).
+## Plays a song on the piano: its tune, its chords (each voiced below the note it sounds on,
+## ringing until the next comes in, and sounding again at each bar line it stays over), or
+## both. Each sound starts so that it is heard when it is due, by the audio clock
+## (PianoSound.due_now()).
 ##
 ## Inside a level the gorilla's grabs drive it: grab() sounds a branch's part as the gorilla
 ## takes hold of it, so backing follows the player the way the beat tick does; expect()
@@ -16,11 +17,12 @@ const TUNE_VELOCITY := 96
 const CHORD_VELOCITY := 60   # each of its notes: three of them under the tune, which stays on top
 
 
-## One thing the piano plays: a branch's note, or the chord that starts on it.
+## One thing the piano plays: a branch's note, or a chord on it: where the chord changes, or
+## again at a bar line in its note or the rest after it.
 class Sound:
 	var branch: int
 	var beat: float          # when it starts, in the song's beats
-	var beats: float         # how long a tune note rings; for a chord, to the next chord
+	var beats: float         # how long a tune note rings; for a chord, to the next one
 	var midi: Array[int] = []
 	var chord := false
 
@@ -34,10 +36,10 @@ class Sound:
 
 var bus := &"Master"                  # where its piano plays: set before it enters the tree
 var sounds: Array[Sound] = []         # in the order they come
-var played: Array[Dictionary] = []    # {branch, chord, heard_ms} per sound started, for the dev checks
+var played: Array[Dictionary] = []    # {branch, beat, chord, heard_ms} per sound started, for the dev checks
 
 var _branch_beat: Array[float] = []   # each branch's beat
-var _chord_on: Array = []             # each branch's chord sound: the one it starts, or the one it is under (null: none)
+var _chord_on: Array = []             # each branch's chord sound: the one on its beat, or the one it is under (null: none)
 var _beat_ms := 1000.0
 var _pending: Array[Dictionary] = []  # {sound, due}: to start once due, in the order they come
 var _started_at := {}                 # sound -> the due time it was last started for
@@ -52,9 +54,11 @@ func _ready() -> void:
 	add_child(_piano)
 
 
-## The song's branches, `notes`, as sounds: on each, the chord that starts there (with
-## `chords`) and its note (with `tune`).
-func load_song(notes: Array[Song.Note], tune := true, chords := true) -> void:
+## The song's branches, `notes`, as sounds: on each, its note (with `tune`) and (with
+## `chords`) the chord that starts there. A chord that stays sounds again at each of `bars`
+## (the bar lines, in beats) after it: on the branch that starts the bar, or, where the bar
+## line falls in a held note or the rest after it, at its beat on that note's branch.
+func load_song(notes: Array[Song.Note], tune := true, chords := true, bars := []) -> void:
 	stop()
 	sounds.clear()
 	played.clear()
@@ -62,22 +66,35 @@ func load_song(notes: Array[Song.Note], tune := true, chords := true) -> void:
 	_branch_beat.clear()
 	_chord_on.clear()
 	var end := notes[-1].beat + notes[-1].beats
-	var under: Sound = null
+	var chord: Song.Chord = null   # the chord so far
 	for j in notes.size():
 		var n := notes[j]
+		var next := notes[j + 1].beat if j + 1 < notes.size() else end
 		_branch_beat.append(n.beat)
-		if n.chord and chords:
-			var until := end
-			for k in range(j + 1, notes.size()):
-				if notes[k].chord:
-					until = notes[k].beat
-					break
-			under = Sound.new(j, n.beat, until - n.beat, voiced(n.chord, n.midi), true)
-			sounds.append(under)
-		_chord_on.append(under)
 		if tune:
 			var note: Array[int] = [n.midi]
 			sounds.append(Sound.new(j, n.beat, n.beats, note, false))
+		if not chords:
+			continue
+		if n.chord:
+			chord = n.chord
+			sounds.append(Sound.new(j, n.beat, 0.0, voiced(chord, n.midi), true))
+		var from := n.beat + (0.001 if n.chord else -0.001)   # a bar line where it changes has its chord
+		for b in bars:
+			if chord and b > from and b < next - 0.001:
+				sounds.append(Sound.new(j, float(b), 0.0, voiced(chord, n.midi), true))
+	# in the order they come, a chord before the note on its beat
+	sounds.sort_custom(func(a: Sound, b: Sound) -> bool: return a.beat < b.beat or (a.beat == b.beat and a.chord and not b.chord))
+	var rung := sounds.filter(func(s: Sound) -> bool: return s.chord)
+	for i in rung.size():
+		rung[i].beats = (rung[i + 1].beat if i + 1 < rung.size() else end) - rung[i].beat
+	var under: Sound = null
+	var i := 0
+	for n in notes:
+		while i < rung.size() and rung[i].beat < n.beat + 0.001:
+			under = rung[i]
+			i += 1
+		_chord_on.append(under)
 
 
 ## `chord` as the bass clef writes it (root position), moved down by octaves until no note of
@@ -94,26 +111,35 @@ static func voiced(chord: Song.Chord, under: int) -> Array[int]:
 
 ## The gorilla took hold of `branch` at `grab_ms` (Time.get_ticks_usec's clock, in ms), at a
 ## beat of `beat_ms`: its sounds are heard from then, unless they were already started for
-## that very moment (expected). Nothing else waits to start: the gorilla has gone its own way.
+## that very moment (expected); a chord at a bar line in its note or rest, that many beats
+## later. Nothing else waits to start: the gorilla has gone its own way.
 ## With no chord ringing (let go at a fall, stopped at a pause), the chord it is under comes
 ## back too, though it started on an earlier branch.
 func grab(branch: int, grab_ms: float, beat_ms: float) -> void:
 	_beat_ms = beat_ms
 	_pending.clear()
 	for s in sounds:
-		if s.branch == branch and not is_equal_approx(_started_at.get(s, -INF), grab_ms):
-			_pending.append({sound = s, due = grab_ms})
+		if s.branch != branch:
+			continue
+		var due := _due(s, grab_ms)
+		if not is_equal_approx(_started_at.get(s, -INF), due):
+			_pending.append({sound = s, due = due})
 	var under: Sound = _chord_on[branch] if branch < _chord_on.size() else null
 	if under and under.branch != branch and not _ringing.any(func(r: Dictionary) -> bool: return r.chord):
 		_pending.push_front({sound = under, due = grab_ms})
 
 
-## `branch` will be grabbed at `at_ms`, for certain: its sounds are heard then.
+## `branch` will be grabbed at `at_ms`, for certain: its sounds are heard from then.
 func expect(branch: int, at_ms: float) -> void:
 	for s in sounds:
 		if s.branch == branch and not _pending.any(func(p: Dictionary) -> bool: return p.sound == s):
-			_pending.append({sound = s, due = at_ms})
+			_pending.append({sound = s, due = _due(s, at_ms)})
 	_pending.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.due < b.due)
+
+
+## When `s` is heard, its branch grabbed at `grab_ms`: then, or a bar line's beats after.
+func _due(s: Sound, grab_ms: float) -> float:
+	return grab_ms + (s.beat - _branch_beat[s.branch]) * _beat_ms
 
 
 ## Outside a level: the whole song from its start, its first beat heard at `at_ms`.
@@ -164,7 +190,7 @@ func _start(s: Sound, due: float) -> void:
 		ids.append(_piano.strike(m, CHORD_VELOCITY if s.chord else TUNE_VELOCITY))
 	_started_at[s] = due
 	_ringing.append({ids = ids, off_ms = INF if s.chord else due + s.beats * _beat_ms, chord = s.chord})
-	played.append({branch = s.branch, chord = s.chord, heard_ms = heard})
+	played.append({branch = s.branch, beat = s.beat, chord = s.chord, heard_ms = heard})
 
 
 func _let_go(r: Dictionary) -> void:

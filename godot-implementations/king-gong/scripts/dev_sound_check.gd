@@ -170,6 +170,40 @@ func _run() -> void:
 	await process_frame
 	_expect(player.played.size() == 3, "after a pause too: %d sounds" % player.played.size())
 	player.stop()
+	# a chord that stays sounds again at each bar line: on the branch that starts the bar, or,
+	# where the bar line falls in a held note or a rest, at its beat from the branch before;
+	# not where the chord changes, nor before the first chord
+	var bars := [4.0, 8.0, 12.0, 16.0]
+	var held := Song.parse_entries([["C4", 1, "C"], ["E4", 1], ["G4", 2], ["E4", 2], ["r", 4], ["D4", 2, "G"], ["B3", 4], ["C4", 4, "C"]], Song.Clef.TREBLE, true)
+	player.load_song(held, false, true)
+	_expect(_chords(player) == [[0.0, 0], [10.0, 4], [16.0, 6]], "with no bar lines, a chord only where it changes: %s" % [_chords(player)])
+	player.load_song(held, false, true, bars)
+	_expect(_chords(player) == [[0.0, 0], [4.0, 3], [8.0, 3], [10.0, 4], [12.0, 5], [16.0, 6]], "the chord again at each bar line it stays over: %s" % [_chords(player)])
+	_expect(player.sounds[2].midi == SongPlayer.voiced(Song.parse_chord("C"), held[3].midi) and player.sounds[4].midi == SongPlayer.voiced(Song.parse_chord("G"), held[5].midi),
+		"each voiced below the note of its branch: %s, %s" % [player.sounds[2].midi, player.sounds[4].midi])
+	var rings := player.sounds.map(func(x: SongPlayer.Sound) -> float: return x.beats)
+	_expect(rings == [4.0, 4.0, 2.0, 2.0, 4.0, 4.0], "each rings to the next: %s" % [rings])
+	player.load_song(Song.parse_entries([["G4", 1], ["E4", 4], ["C4", 4, "C"], ["E4", 4]], Song.Clef.TREBLE, true), false, true, [1.0, 5.0, 9.0])
+	_expect(_chords(player) == [[5.0, 2], [9.0, 3]], "no chord again before the first chord: %s" % [_chords(player)])
+	player.load_song(held, true, true, bars)
+	player.play(500.0, Time.get_ticks_usec() / 1000.0 - 60000.0)
+	await process_frame
+	var heard := player.played.filter(func(p: Dictionary) -> bool: return p.chord).map(func(p: Dictionary) -> float: return p.get("beat", -1.0))
+	_expect(heard == [0.0, 4.0, 8.0, 10.0, 12.0, 16.0], "played from its start, each chord in its turn: %s" % [heard])
+	player.stop()
+	player.load_song(held, false, true, bars)
+	now = Time.get_ticks_usec() / 1000.0
+	player.grab(3, now - 100.0, 500.0)
+	await process_frame
+	var waiting := player._pending.map(func(p: Dictionary) -> float: return p.due - now)
+	_expect(player.played.size() == 1 and player.played[0].get("beat", -1.0) == 4.0, "a grab of the bar's first branch sounds its chord at once: %s" % [player.played])
+	_expect(waiting.size() == 1 and is_equal_approx(waiting[0], 1900.0), "and the one in its rest four beats after the grab: due in %s ms" % [waiting])
+	player.stop()
+	player.load_song(held, false, true, bars)
+	player.expect(3, now + 1000.0)
+	waiting = player._pending.map(func(p: Dictionary) -> float: return p.due - now)
+	_expect(waiting.size() == 2 and is_equal_approx(waiting[0], 1000.0) and is_equal_approx(waiting[1], 3000.0), "expected, both wait for their beats: due in %s ms" % [waiting])
+	player.stop()
 
 	# the drill's tune, which backing plays: the branches before each log are its chord, low to
 	# high, all as long; each log's own branch is its chord's root
@@ -209,6 +243,11 @@ func _run() -> void:
 ## Whether the song board's row `name` shows.
 func _row(game: Node, name: String) -> bool:
 	return game.hud.get_node("MainMenu/Songs/Board/Rows/Grid/" + name).visible
+
+
+## The player's chord sounds, each as [beat, branch].
+func _chords(player: SongPlayer) -> Array:
+	return player.sounds.filter(func(x: SongPlayer.Sound) -> bool: return x.chord).map(func(x: SongPlayer.Sound) -> Array: return [x.beat, x.branch])
 
 
 ## The branches whose sounds have started, in order.

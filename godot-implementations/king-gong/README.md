@@ -69,8 +69,8 @@ Three ways to get ready for a level, and a drill for the chords.
 Pick a song and a part on the Play song or Learn song board, then **Listen** (Back · Listen ·
 Start at the foot). The level is laid out as for playing it, and the gorilla climbs it by
 itself on the beat, as in Chords only, while the [piano](#the-piano) plays the tune and its
-chords: the chords below the tune, each ringing until the next. A song without chords plays
-its tune. It plays at the tempo set in the pause menu, and in the part's octave: in the
+chords: the chords below the tune, each ringing until the next, and a chord that stays
+sounding again at the start of each bar. A song without chords plays its tune. It plays at the tempo set in the pause menu, and in the part's octave: in the
 bass clef, where the bass clef puts the tune. The beat tick is silent, as the music carries
 the beat, and nothing counts: no falls, no wrong notes, no bananas taken, no end panel. At
 the nest, or as soon as you press any key, play any note, or click, it stops and the board
@@ -104,14 +104,20 @@ the beat tick does:
 
 | Part | You play | Backing plays |
 | --- | --- | --- |
-| Treble clef, Bass clef | the tune | the song's chords, below the tune: each chord as your note grabs the branch it starts on, ringing until the next chord comes in |
+| Treble clef, Bass clef | the tune | the song's chords, below the tune: each chord as your note grabs the branch it starts on, ringing until the next chord comes in; a chord that stays sounds again at the start of each bar |
 | Chords only | the chords | the tune, the gorilla's own notes: each as it grabs that note's branch, for the note's length |
 | Treble + chords | both | nothing (the Backing row hides) |
 
 A song without chords (Mountain King) has nothing to back in the tune parts, so the row hides
 there too. In Play mode with Treble or Bass, a chord comes in with your note, like a left hand
 following the right; with Chords only the tune is on the beat. In Learn mode nothing is timed:
-a chord comes when you play its note, a tune note when the gorilla moves on. When the gorilla
+a chord comes when you play its note, a tune note when the gorilla moves on.
+
+A chord that doesn't change sounds again at each bar line, so a song that keeps one chord
+for bars (Skákal pes) is never left without one. On the branch that starts the bar it comes
+with that branch's note; where the bar line falls in a held note or the rest after it, it
+comes that many beats after the grab of the note's branch, unless you play the next note
+first (as you may in Learn mode), and then it is left out. When the gorilla
 falls, what is sounding is let go, and the next grab brings the backing back: the chord the
 branch is under too, though it started earlier. The pause menu silences it, and Continue
 picks it up the same way at the next grab. In the chord drill Backing plays its tune, as for
@@ -487,16 +493,19 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   flats in either clef: `key: 4 flats, clear of the gorilla` (song 9), or `key: none`.
 - `--backing` turns Backing on (it is on by default, so this makes it plain). Every
   `--autoplay` run counts the gorilla's grabs and at the end checks the backing against them:
-  with Treble or Bass clef a chord per grab of a branch a chord starts on, and one at the
-  first grab after a fall or a pause (`backing: 23 chords sounded` for song 0 in Play
-  mode: its 21, and one after each of its 2 falls); with Chords only, and in the drill, a tune note per grab (`backing: 42 tune notes sounded`); with Treble + chords nothing, and the Backing row
+  with Treble or Bass clef each chord on a grabbed branch, where it changes or again at a
+  bar line (one in a held note or rest only if it came due before the next grab, fall or
+  pause), and one at the first grab after a fall or a pause (`backing: 24 chords sounded`
+  for song 0 in Play mode: its 21 changes, one again at a bar line, and one after each of
+  its 2 falls); with Chords only, and in the drill, a tune note per grab (`backing: 42 tune notes sounded`); with Treble + chords nothing, and the Backing row
   hidden (`backing: none for this part`). With `--pause`, halfway through the first pause it
   checks no backing voice sounds: `backing: silent while paused`.
 - `--listen` doesn't play: it opens the board (Play song, or Learn song with `--learn`),
   moves to Listen with E and presses A, and lets it play to the nest. Meanwhile it checks
   that nothing counts and no tick is queued; then that the piano played the song's notes and
-  chords, each heard (by the audio clock) within 20 ms of the gorilla's grab of its branch:
-  `listen: 42 notes, 21 chords, worst 4.0 ms off the beat` for song 0. It checks the board
+  chords (where they change, and again at each bar line a chord stays over), each heard (by
+  the audio clock) within 20 ms of its beat, from the gorilla's grab of its branch:
+  `listen: 42 notes, 22 chords, worst 4.0 ms off the beat` for song 0. It checks the board
   is back on Start, then listens twice more, stopped after a moment by the `Q` key
   (`listen: a key stops it`, the piano silent at once) and by the note A, which must not
   also press Start (`listen: a note stops it`). With `--bass`, `--chords-only` or `--song=<n>`
@@ -570,7 +579,9 @@ check one file).
 The piano and the song player have a headless check too: every key of the keyboard within
 a semitone of a recording, 20 notes at once, more than 32 taking over the oldest, a let-go
 fading out, no piano for the player's own notes, the keys that stop Listen, chords voiced
-below the tune, and a song's sounds as grabs and expected grabs start them:
+below the tune, a chord that stays sounding again at each bar line (in a held note or a
+rest too, never before the first chord), and a song's sounds as grabs and expected grabs
+start them:
 
 ```powershell
 & "C:/game-dev/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot-implementations/king-gong --script res://scripts/dev_sound_check.gd

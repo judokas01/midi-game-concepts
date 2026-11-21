@@ -192,7 +192,8 @@ func listen() -> void:
 	hud.hide_main_menu()
 	restart()
 	_listen_from = now_ms() + LISTEN_LEAD_MS
-	song_player.load_song(Song.parse(song, clef, true))
+	var tune := Song.parse(song, clef, true)
+	song_player.load_song(tune, true, true, Song.bar_lines(song, tune))
 	song_player.expect(0, _listen_from)
 	hud.show_banner("Listening · any key stops")
 
@@ -236,7 +237,7 @@ func restart() -> void:
 	done_up_to = 0
 	metronome.cancel_ticks()
 	var part := backing_part()   # the song player gets the part backing plays
-	song_player.load_song(notes if chords else Song.parse(song, clef, true), part == "tune", part == "chords")
+	song_player.load_song(notes if chords else Song.parse(song, clef, true), part == "tune", part == "chords", bars)
 	hud.show_backing(part != "")
 	state = State.WAIT
 	cur = 0

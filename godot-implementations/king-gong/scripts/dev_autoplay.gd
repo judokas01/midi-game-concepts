@@ -53,8 +53,9 @@ extends Node
 ##                        song from Start
 ##   -- --backing         turns Backing on (it is on by default): the game plays the part the
 ##                        bot doesn't. Every --autoplay run checks it at the end: the chords
-##                        sounded, one per grab of a branch a chord starts on (Treble or Bass
-##                        clef: "backing: <n> chords sounded"), the tune, one note per grab
+##                        sounded, each one on a grabbed branch, where it changes or again at a
+##                        bar line (Treble or Bass clef: "backing: <n> chords sounded"), the
+##                        tune, one note per grab
 ##                        (Chords only: "backing: <n> tune notes sounded"), or nothing and the
 ##                        Backing row hidden (Treble + chords: "backing: none for this part");
 ##                        with --pause, no backing voice while paused ("backing: silent while
@@ -63,9 +64,10 @@ extends Node
 ##                        on its branches and each log's root
 ##   -- --listen          instead of playing: Listen from the board (Play song, or Learn song
 ##                        with --learn), to the nest, checking that nothing counts and no tick
-##                        sounds, then that the piano played the song's notes and chords each
-##                        within 20 ms of the gorilla's grab: "listen: <n> notes, <m> chords,
-##                        worst <x> ms off the beat". Then Listen twice more, stopped by a key
+##                        sounds, then that the piano played the song's notes and chords (one
+##                        where it changes, and again at each bar line it stays over) each
+##                        within 20 ms of its beat, from the gorilla's grab of its branch:
+##                        "listen: <n> notes, <m> chords, worst <x> ms off the beat". Then Listen twice more, stopped by a key
 ##                        ("listen: a key stops it") and by a note ("listen: a note stops it")
 ##   -- --perf            prints fps and draw calls once a second
 ##   -- --shots=<dir>     saves a screenshot every second into <dir>
@@ -143,7 +145,8 @@ var _board_width := 0.0             # the drill board's, before a long line of c
 var _chords := false                # a part with chords was asked for
 var _listen := false                # --listen
 var _grabs_n := 0                   # the gorilla's grabs in the song, for backing
-var _chord_grabs := 0               # of them, grabs of a branch a chord starts on, or under a chord let go
+var _chord_grabs := 0               # the chords those grabs sounded: their own, and the one they are under after a chord let go
+var _bar_chords: Array[float] = []  # when the chords at bar lines in the held note or rest of the branch it hangs from are due
 var _chord_gone := true             # no chord rings: none yet, or let go at a fall, or stopped at a pause
 var _falls_seen := 0
 var _was_hanging := false
@@ -659,11 +662,15 @@ func _watch_listening() -> void:
 			% [game.falls, game.misses, game.bananas, _bananas_at, ticking, panel])
 
 
-## Listened to the nest: the piano played the song's own notes and chords, each heard within
-## 20 ms of the gorilla's grab of its branch.
+## Listened to the nest: the piano played the song's own notes and chords, a chord where it
+## changes and again at each bar line it stays over, each heard within 20 ms of its beat:
+## the gorilla's grab of its branch, or a bar line's beats after it.
 func _check_heard() -> void:
 	var notes := Song.parse(game.song, game.clef, true)
-	var chords := notes.filter(func(n: Song.Note) -> bool: return n.chord != null).size()
+	var changes := notes.filter(func(n: Song.Note) -> bool: return n.chord != null).map(func(n: Song.Note) -> float: return n.beat)
+	var again := Song.bar_lines(game.song, notes).filter(func(b) -> bool:
+		return not changes.is_empty() and b > changes[0] and not changes.any(func(c: float) -> bool: return is_equal_approx(c, b)))
+	var chords := changes.size() + again.size()
 	var played := _heard
 	var heard_chords := played.filter(func(p: Dictionary) -> bool: return p.chord).size()
 	var worst := 0.0
@@ -671,7 +678,8 @@ func _check_heard() -> void:
 		if not _grabs.has(p.branch):
 			push_error("listen: not so: branch %d sounded but was never grabbed" % p.branch)
 			continue
-		worst = maxf(worst, absf(p.heard_ms - _grabs[p.branch]))
+		var due: float = _grabs[p.branch] + (p.beat - notes[p.branch].beat) * game.beat_ms()
+		worst = maxf(worst, absf(p.heard_ms - due))
 	_expect(played.size() - heard_chords == notes.size() and heard_chords == chords,
 		"the piano played the song's %d notes and %d chords, not %d and %d" % [notes.size(), chords, played.size() - heard_chords, heard_chords])
 	_expect(worst <= 20.0, "every sound within 20 ms of its beat, not %.1f ms" % worst)
@@ -774,32 +782,47 @@ func _count_grabs() -> void:
 	if _resumed or game.falls != _falls_seen:
 		_chord_gone = true
 		_falls_seen = game.falls
+		_bar_chords_by(Game.now_ms())
 	var hanging := game.started and not game.listening and game.state == Game.State.HANG
 	var key := "%d@%.3f" % [game.cur, game.grab_t]
 	var again := _was_hanging and game.cur == _last_cur and not _resumed
 	if hanging and not _counted.has(key) and not again:
 		_counted[key] = true
 		_grabs_n += 1
+		_bar_chords_by(game.grab_t)
 		var cur: int = game.cur
-		var starts: bool = game.song_player.sounds.any(func(x) -> bool: return x.chord and x.branch == cur)
-		var under: bool = game.song_player.sounds.any(func(x) -> bool: return x.chord and x.branch < cur)
-		if starts or (_chord_gone and under):
-			_chord_grabs += 1
+		var at: float = game.notes[cur].beat
+		var own: Array = game.song_player.sounds.filter(func(x) -> bool: return x.chord and x.branch == cur)
+		var later := own.filter(func(x) -> bool: return x.beat > at + 0.001)
+		var on_beat := own.size() > later.size()
+		var under: bool = game.song_player.sounds.any(func(x) -> bool: return x.chord and x.beat < at)
+		_chord_grabs += own.size() - later.size() + (1 if _chord_gone and under and not on_beat else 0)
+		_bar_chords.assign(later.map(func(x) -> float: return game.grab_t + (x.beat - at) * game.beat_ms()))
+		if not own.is_empty() or (_chord_gone and under):
 			_chord_gone = false
 	_was_hanging = hanging
 	_last_cur = game.cur
 	_resumed = false
 
 
-## Backing played the part the bot didn't, at the gorilla's grabs: the chords of the branches
-## they start on, or the tune, or for Treble + chords nothing.
+## The chords at bar lines in the held note or rest of the branch it hangs from, those due by
+## `cutoff` sounded; the rest never will, a grab, a fall or a pause stopped them first.
+func _bar_chords_by(cutoff: float) -> void:
+	_chord_grabs += _bar_chords.filter(func(due: float) -> bool: return due <= cutoff).size()
+	_bar_chords.clear()
+
+
+## Backing played the part the bot didn't, at the gorilla's grabs: the chords on the branches
+## (where a chord changes, and again at a bar line it stays over), or the tune, or for Treble +
+## chords nothing.
 func _check_backing() -> void:
+	_bar_chords_by(Game.now_ms())
 	var played: Array = game.song_player.played
 	var chord_sounds := played.filter(func(p: Dictionary) -> bool: return p.chord).size()
 	match game.backing_part():
 		"chords":
 			_expect(chord_sounds == played.size() and chord_sounds == _chord_grabs and _chord_grabs > 0,
-				"a chord sounded at each of the %d grabs a chord starts on, or after a fall or a pause: %d chords, %d sounds" % [_chord_grabs, chord_sounds, played.size()])
+				"the %d chords of the grabbed branches sounded, and the one they were under after a fall or a pause: %d chords, %d sounds" % [_chord_grabs, chord_sounds, played.size()])
 			print("backing: %d chords sounded" % chord_sounds)
 		"tune":
 			_expect(chord_sounds == 0 and played.size() == _grabs_n and _grabs_n > 0,
@@ -966,6 +989,7 @@ func _start_pause(now: float) -> bool:
 		return false
 	_paused_in[s] = true
 	_counts_at_pause = [game.falls, game.misses]
+	_bar_chords_by(Game.now_ms())   # the pause stops those not yet due
 	print("paused state=%s cur=%d" % [Game.State.keys()[s], game.cur])
 	_key(KEY_ESCAPE)
 	_pausing_since = now
