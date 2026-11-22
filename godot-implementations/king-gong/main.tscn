@@ -24,6 +24,7 @@
 [ext_resource type="Script" path="res://scripts/song_player.gd" id="23_song_player"]
 [ext_resource type="Script" path="res://scripts/clef.gd" id="25_clef"]
 [ext_resource type="Script" path="res://scripts/library.gd" id="26_library"]
+[ext_resource type="Script" path="res://scripts/scroll_bar.gd" id="27_scroll_bar"]
 
 [sub_resource type="Gradient" id="Gradient_sky"]
 offsets = PackedFloat32Array(0.0611, 0.5804, 0.9267)
@@ -1425,6 +1426,20 @@ theme_type_variation = &"BoardCaption"
 text = "No songs of this difficulty here"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="Bar" type="Control" parent="Hud/Library/Center/Board/Box/Songs"]
+visible = false
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 9.0
+offset_right = 17.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("27_scroll_bar")
 
 [node name="Below" type="Control" parent="Hud/Library/Center/Board/Box"]
 custom_minimum_size = Vector2(0, 16)

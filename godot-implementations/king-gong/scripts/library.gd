@@ -2,7 +2,8 @@ extends ColorRect
 ## The song library, over a song board (A or Enter on its Song row, or Browse…): two filters,
 ## a category (All songs, or one with songs in it) and a difficulty (Any, or exactly one to
 ## five stars), and under them the songs that match both, easiest first, then by name, each
-## with its stars. Through the menu cursor (menu_cursor.gd) the rows are Category,
+## with its stars; beside a list longer than the page, a scroll bar (scroll_bar.gd) shows
+## where in it the view is. Through the menu cursor (menu_cursor.gd) the rows are Category,
 ## Difficulty, the list, and Back: E and F change a filter, and on the list the category; C
 ## and D move along the list and out of it at its ends; A picks the song; B and Esc close it,
 ## as Back does. With the mouse, pointing selects, a click picks, the wheel scrolls.
@@ -16,6 +17,7 @@ signal picked(song: int, filter: Dictionary)
 const Song := preload("res://scripts/song.gd")
 const MenuCursor := preload("res://scripts/menu_cursor.gd")
 const SongPlayer := preload("res://scripts/song_player.gd")
+const ListBar := preload("res://scripts/scroll_bar.gd")
 const LINES := 10        # songs in view at once
 const LINE_SIZE := Vector2(460, 34)
 const STARS_W := 96      # the stars' column, so the names line up
@@ -55,6 +57,7 @@ var _restore_at := 0.0        # ms, when the bus goes back to 0 dB after a stop 
 @onready var _empty: Label = $Center/Board/Box/Songs/Empty
 @onready var _above: Label = $Center/Board/Box/Above/Mark
 @onready var _below: Label = $Center/Board/Box/Below/Mark
+@onready var _bar: ListBar = $Center/Board/Box/Songs/Bar
 @onready var _back: Button = $Center/Board/Box/Foot/Back
 
 
@@ -202,6 +205,7 @@ func _show() -> void:
 			b.get_node("Row/Title").text = song.name
 	_above.visible = top > 0
 	_below.visible = top + LINES < _songs.size()
+	_bar.show_view(top, LINES, _songs.size())
 
 
 ## A line of the list: the stars, then the name. A click picks its song.

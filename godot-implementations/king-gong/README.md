@@ -164,7 +164,9 @@ Czech classics, From films, and Your scores once you add some) and
 **Difficulty** (Any, or exactly ★ to ★★★★★). Under them, the songs that match both, easiest
 first, then by name, each with its stars; your own scores have none and come last. Ten show
 at once, the list scrolling so the selection is never on its edge; ▲ and ▼ say there is
-more. Where nothing matches, it says so. It opens on the song you have, with the filters it
+more, and a scroll bar beside a longer list shows where in it you are, its cream thumb as
+long against the bar as the ten songs shown are against the list. It only shows; the keys
+and the wheel scroll. Where nothing matches, it says so. It opens on the song you have, with the filters it
 was picked with.
 
 | Key | On the library |
@@ -426,6 +428,7 @@ them around:
 | `scripts/menu_sign.gd` | Draws the sign beside the selection: one octave, the keys that do something lit |
 | `scripts/chord_menu.gd` | The chord drill's chord grid: builds it, and hands the menu cursor its rows |
 | `scripts/library.gd` | The song library: its two filters, the list and its scrolling, and the preview on its own piano |
+| `scripts/scroll_bar.gd` | Draws the library's scroll bar: a groove beside the list, and a thumb for the part of it in view |
 | `scripts/pause_menu.gd` | The pause menu: its buttons and toggles, the tempo's steps |
 | `scripts/progress_line.gd` | Draws the progress line along the top, gliding after the gorilla |
 | `scripts/piano.gd` | Draws the little keyboard |
@@ -575,7 +578,7 @@ The songs and the library have one: every song's category and difficulty, the er
 missing or wrong one, the order and the filters, then the library page worked by the six
 keys' acts on the real menus (opening from the Song row and from Browse…, the rows and the
 list's ends, both filters, a filter with no songs, picking, closing, the board's arrows
-within the filter, a long list's scrolling and marks, the wheel and the mouse) and the
+within the filter, a long list's scrolling, marks and scroll bar, the wheel and the mouse) and the
 preview (not before 0.6 s, then tune and chords at 80 BPM on its own bus, stopped by a move,
 fading in its last second without a click, once per rest, stopped by closing or picking):
 

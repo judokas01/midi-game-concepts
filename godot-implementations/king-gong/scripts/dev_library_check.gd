@@ -100,6 +100,8 @@ func _check_page() -> void:
 		"it opens on every song, on the song picked: %s at %d" % [lib.filter(), lib.at])
 	_expect(category.get_node("Value").text == Song.ALL_SONGS and difficulty.get_node("Value").text == "Any"
 		and category.get_node("Count").text == "10 songs", "the filters say All songs, Any, 10 songs")
+	var bar: Control = lib.get_node(BOX + "Songs/Bar")
+	_expect(not bar.visible, "ten songs fit: no scroll bar")
 	_expect(lib.top == 0 and cursor.selected() == lib.line(7) and _lit(cursor) == "CDEFAB", "the cursor on the song's line, all six lit: %s" % _lit(cursor))
 	await _act(hud, Act.DOWN)
 	await _act(hud, Act.DOWN)
@@ -163,7 +165,7 @@ func _check_page() -> void:
 	await _act(hud, Act.BACK)
 	_expect(not lib.visible and menu.visible and game.song == 4 and menu.filter.category == "Classical", "B closes, the song and its filter kept")
 	_expect(cursor.selected() == song_row, "the cursor back on the Song row")
-	# a long list: the selection never at the edge, the marks say there is more
+	# a long list: the selection never at the edge, the marks and the scroll bar say there is more
 	lib.open(0, {category = "", difficulty = 0}, range(25).map(func(k: int) -> int: return k % 10))
 	await process_frame
 	for k in 12:
@@ -171,18 +173,24 @@ func _check_page() -> void:
 	var line: int = lib.at - lib.top
 	_expect(lib.at == 12 and line >= 1 and line <= lib.LINES - 2, "after 12 D on a list of 25 the selection is off the edge: line %d" % line)
 	_expect(lib.get_node(BOX + "Above/Mark").visible and lib.get_node(BOX + "Below/Mark").visible, "the marks show songs above and below")
+	var thumb: Rect2 = bar.thumb()
+	_expect(bar.visible and is_equal_approx(thumb.size.y, bar.size.y * 10.0 / 25.0) and thumb.position.y > 0.0 and thumb.end.y < bar.size.y,
+		"the scroll bar shows, its thumb a 10/25 of it, off both ends: %s in %s" % [thumb, bar.size])
 	for k in 12:
 		await _act(hud, Act.DOWN)
 	_expect(lib.at == 24 and lib.top == 15 and not lib.get_node(BOX + "Below/Mark").visible, "at the end the last line, nothing below")
+	_expect(is_equal_approx(bar.thumb().end.y, bar.size.y), "the thumb at the foot of the bar: %s" % bar.thumb())
 	for k in 24:
 		await _act(hud, Act.UP)
 	_expect(lib.at == 0 and lib.top == 0 and not lib.get_node(BOX + "Above/Mark").visible, "C back to the top, the view with it")
+	_expect(bar.thumb().position.y == 0.0, "the thumb at the top of the bar: %s" % bar.thumb())
 	var wheel := InputEventMouseButton.new()
 	wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
 	wheel.pressed = true
 	for k in 3:
 		lib.get_node(BOX + "Songs/List").gui_input.emit(wheel)
 	_expect(lib.top == 3 and lib.at >= lib.top and lib.at < lib.top + lib.LINES, "the wheel scrolls, the selection kept in view: top %d at %d" % [lib.top, lib.at])
+	_expect(is_equal_approx(bar.thumb().position.y, (bar.size.y - bar.thumb().size.y) * 3.0 / 15.0), "the thumb follows the wheel: %s" % bar.thumb())
 	lib.line(4).mouse_entered.emit()
 	_expect(lib.at == lib.top + 4 and cursor.selected() == lib.line(4), "pointing at a line selects it")
 	lib.line(4).pressed.emit()
