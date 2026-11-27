@@ -201,7 +201,8 @@ func _check_page() -> void:
 
 
 ## The song the selection rests on plays its first 10 seconds at 80 BPM, on its own bus,
-## fading out over the last; moving, closing or picking stops it at once.
+## fading out over the last; moving, closing or picking stops it at once, and another filter
+## too, with none after it until a move.
 func _check_preview(lib: Node) -> void:
 	lib.open(0, {category = "", difficulty = 0})
 	var player: Node = lib.get_node("Preview")
@@ -234,6 +235,20 @@ func _check_preview(lib: Node) -> void:
 	await create_timer(1.0).timeout
 	lib.close()
 	_expect(lib.previewing() == -1 and player.sounding() == 0, "closing stops it")
+	lib.open(0, {category = "", difficulty = 0})
+	await create_timer(1.0).timeout
+	_expect(lib.previewing() == 0, "opening, the song it opens on plays")
+	lib.step_category(1)
+	_expect(lib.previewing() == -1 and player.sounding() == 0, "another category stops it at once")
+	await create_timer(1.0).timeout
+	_expect(lib.selected_song() == 0 and lib.previewing() == -1, "and none plays after it, not even on the song the list kept")
+	lib.step_level(1)
+	await create_timer(1.0).timeout
+	_expect(lib.previewing() == -1, "nor after another difficulty")
+	lib.move(1)
+	await create_timer(1.0).timeout
+	_expect(lib.previewing() == lib.selected_song(), "a move to a song previews it again")
+	lib.close()
 	lib.open(0, {category = "", difficulty = 0})
 	await create_timer(1.0).timeout
 	lib.line(lib.at - lib.top).pressed.emit()

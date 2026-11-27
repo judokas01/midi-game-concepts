@@ -11,6 +11,8 @@ extends ColorRect
 ## Once the selection has rested on a song for PREVIEW_AFTER_MS, its first PREVIEW_MS play on
 ## the piano (its own SongPlayer, on the Preview bus): tune and chords at PREVIEW_BPM, the
 ## last FADE_MS fading out. A move, another filter, a pick or closing stops it at once.
+## After another filter none plays, not even on the song the list kept, until the selection
+## moves to a song; on opening, the song it opens on plays as after a move.
 
 signal picked(song: int, filter: Dictionary)
 
@@ -95,7 +97,7 @@ func open(song: int, filter: Dictionary, only: Array = []) -> void:
 	_level = maxi(_levels.find(filter.get("difficulty", 0)), 0)
 	_only = only
 	_current = song
-	_filter()
+	_filter(true)
 	show()
 
 
@@ -154,24 +156,25 @@ func move(by: int) -> bool:
 ## The category `by` on, round from the last to All songs.
 func step_category(by: int) -> void:
 	_category = posmod(_category + by, _categories.size())
-	_filter()
+	_filter(false)
 
 
 ## The difficulty `by` on, round from the hardest to Any.
 func step_level(by: int) -> void:
 	_level = posmod(_level + by, _levels.size())
-	_filter()
+	_filter(false)
 
 
 ## The list for the filters chosen, on the song picked if it is in it, else on its first.
-func _filter() -> void:
+## With `preview` false, that song is not previewed: only a move starts one again.
+func _filter(preview: bool) -> void:
 	var f := filter()
 	_songs = _only if not _only.is_empty() else Song.matching(f.category, f.difficulty)
 	at = maxi(_songs.find(_current), 0)
 	top = 0
 	_keep_in_view()
 	_show()
-	_moved()
+	_moved(preview)
 
 
 ## The view moves so the selection is never on its first or last line, unless the list
@@ -313,8 +316,9 @@ func _stop_preview() -> void:
 		_restore_at = Time.get_ticks_usec() / 1000.0 + RESTORE_MS
 
 
-## The selection moved: any preview stops, and the next waits for it to rest.
-func _moved() -> void:
+## The selection moved: any preview stops, and the next waits for it to rest; with
+## `preview` false there is no next until it moves again.
+func _moved(preview := true) -> void:
 	_stop_preview()
-	_previewed = false
+	_previewed = not preview
 	_rest_from = Time.get_ticks_usec() / 1000.0

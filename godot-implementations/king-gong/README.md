@@ -179,7 +179,8 @@ was picked with.
 The mouse selects what it points at and the wheel scrolls. When the selection rests on a
 song for 0.6 s, its first 10 seconds play on the [piano](#the-piano), tune and chords, at 80
 BPM, the last second fading out. Moving on, another filter, picking or closing stops it at
-once.
+once. After another category or difficulty nothing plays, not even the song the list kept,
+until you move to a song.
 
 Every song has a category and a difficulty from 1 to 5, for its tune alone: 1 a few
 neighbouring notes in an even rhythm, 2 mostly steps within five or six notes, 3 about an
@@ -580,7 +581,8 @@ keys' acts on the real menus (opening from the Song row and from Browse…, the 
 list's ends, both filters, a filter with no songs, picking, closing, the board's arrows
 within the filter, a long list's scrolling, marks and scroll bar, the wheel and the mouse) and the
 preview (not before 0.6 s, then tune and chords at 80 BPM on its own bus, stopped by a move,
-fading in its last second without a click, once per rest, stopped by closing or picking):
+fading in its last second without a click, once per rest, stopped by closing or picking, and
+by another filter, with none after it until a move):
 
 ```powershell
 & "C:/game-dev/godot/Godot_v4.7.2-stable_win64_console.exe" --headless --path godot-implementations/king-gong --script res://scripts/dev_library_check.gd
