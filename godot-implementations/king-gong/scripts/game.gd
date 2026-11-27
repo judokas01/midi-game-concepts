@@ -23,6 +23,7 @@ const Metronome := preload("res://scripts/metronome.gd")
 const NoteInput := preload("res://scripts/note_input.gd")
 const MenuCursor := preload("res://scripts/menu_cursor.gd")
 const SongPlayer := preload("res://scripts/song_player.gd")
+const RunRecord := preload("res://scripts/run_record.gd")
 
 enum State { WAIT, HANG, AIR, REST, FALL, BOUNCE, OVER, WON }
 
@@ -72,6 +73,10 @@ var falls := 0
 var misses := 0            # learn mode and the drill: wrong notes and chords
 var done_up_to := 0
 var started := false
+var record := RunRecord.new()  # this run's settings and inputs, written out only for a bug report
+var last_report := ""          # the path of the last bug report written, "" if it couldn't be
+var next_deal: Array = []      # the drill's next round as already dealt, instead of a new deal: a replay's
+var _dealt: Array = []         # the drill round being played, as dealt
 
 # `cur` is the branch being hung on (HANG, AIR, REST) or waited for (WAIT, FALL, BOUNCE).
 # Every window is measured from `grab_t`, the grab of branch `cur`, never from a global clock.
@@ -133,7 +138,7 @@ func _ready() -> void:
 	hud.start_pressed.connect(start)
 	hud.listen_pressed.connect(listen)
 	hud.restart_pressed.connect(restart)
-	hud.tempo_changed.connect(func(v: float) -> void: bpm = v)
+	hud.tempo_changed.connect(set_bpm)
 	hud.labels_toggled.connect(_on_labels_toggled)
 	hud.tick_toggled.connect(_on_tick_toggled)
 	hud.mode_chosen.connect(set_mode)
@@ -148,9 +153,13 @@ func _ready() -> void:
 	hud.menu_pressed.connect(show_menu)
 	hud.continue_pressed.connect(resume)
 	hud.back_pressed.connect(_back)
+	hud.report_written.connect(func(text: String) -> void: hud.show_report_saved(write_report(text)))
+	var args := Array(OS.get_cmdline_user_args())
 	var dev_flags := ["--autoplay", "--perf", "--chords", "--bass", "--chords-only", "--learn", "--drill", "--pause", "--menu", "--listen", "--backing"]
-	if Array(OS.get_cmdline_user_args()).any(func(a: String) -> bool: return a in dev_flags or a.begins_with("--shots=") or a.begins_with("--song=")):
+	if args.any(func(a: String) -> bool: return a in dev_flags or a.begins_with("--shots=") or a.begins_with("--song=")):
 		add_child(preload("res://scripts/dev_autoplay.gd").new())
+	if args.any(func(a: String) -> bool: return a.begins_with("--replay=")):
+		add_child(preload("res://scripts/dev_replay.gd").new())
 	now = now_ms()
 	_last = now
 	set_style(_style.clef, _style.chords, _style.by_itself)
@@ -218,8 +227,10 @@ func restart() -> void:
 	fifths = 0 if drill else Song.key_of(song)   # the drill's tune is the gorilla's, so it needs none
 	$Clef.show_clef(clef, fifths)
 	var bars: Array
-	if drill:   # new chords every time
-		notes = Song.parse_entries(Drill.entries(drill_chords, drill_count, drill_beats), clef, true)
+	if drill:   # new chords every time, but a replay's as they were dealt
+		_dealt = next_deal if not next_deal.is_empty() else Drill.entries(drill_chords, drill_count, drill_beats)
+		next_deal = []
+		notes = Song.parse_entries(_dealt, clef, true)
 		bars = notes.filter(func(n: Song.Note) -> bool: return n.chord != null and n.beat > 0.0).map(func(n: Song.Note) -> float: return n.beat)
 	else:
 		notes = Song.parse(song, clef, chords)
@@ -253,6 +264,71 @@ func restart() -> void:
 	_update_hud()
 	_furthest = 0.0
 	hud.show_progress(0.0)
+	record.begin(_run_settings(), level_print(), now_ms())   # a new run: the last one's inputs go
+
+
+## The run's settings, as a bug report keeps them (run_record.gd).
+func _run_settings() -> Dictionary:
+	var out := {}
+	if mode == Hud.Mode.DRILL:
+		out.drill = {chords = drill_chords, count = drill_count, beats = drill_beats, entries = _dealt}
+	else:
+		out.song = Song.library()[song].name
+		out.song_number = song
+	out.merge({mode = Hud.Mode.keys()[mode], clef = Song.Clef.keys()[_style.clef], chords = _style.chords,
+		by_itself = _style.by_itself, practice = practice, bpm = bpm, tick = tick_on, backing = backing,
+		labels = labels, hint = ChordLog.Hint.keys()[hint], keyboard_hint = piano, input = note_input.source})
+	return out
+
+
+## Each branch as laid out: "E4 1", "G4 2 rest 1 [C]".
+func level_print() -> Array:
+	return notes.map(func(n: Song.Note) -> String:
+		return "%s %s%s%s" % [n.name, String.num(n.beats), " rest " + String.num(n.rest_after) if n.rest_after > 0.0 else "",
+			" [%s]" % n.chord.name if n.chord else ""])
+
+
+## How the game stands, as a bug report keeps it and a replay checks it.
+func snapshot() -> Dictionary:
+	return {state = State.keys()[state], branch = cur, done_up_to = done_up_to, falls = falls, bananas = bananas,
+		misses = misses, progress = snappedf(_furthest, 0.001), message = hud.last_message}
+
+
+## A bug report, from the pause menu: this run, the player's `text` and how the game stands,
+## to a file. Its path, or "" if it couldn't be written.
+func write_report(text: String) -> String:
+	last_report = record.write(text, snapshot())
+	if last_report != "":
+		print("bug report: ", ProjectSettings.globalize_path(last_report))
+	return last_report
+
+
+## A setting as a bug report names it (run_record.gd), set as the menus or the input would.
+## For a replay.
+func apply_setting(kind: String, value: Variant) -> void:
+	match kind:
+		"bpm":
+			set_bpm(value)
+		"practice":
+			set_practice(value)
+		"tick":
+			_on_tick_toggled(value)
+		"backing":
+			set_backing(value)
+		"labels":
+			_on_labels_toggled(value)
+		"hint":
+			set_hint(ChordLog.Hint[value])
+		"keyboard_hint":
+			set_piano(value)
+		"source":
+			note_input.source = value
+			_on_source_changed(value)
+		_:
+			push_warning("no setting %s" % kind)
+			return
+	if get_tree().paused:
+		_open_pause()   # the pause menu shows it
 
 
 ## How much of the level the gorilla has crossed, from the stump (0) to the nest (1). The level
@@ -307,6 +383,7 @@ func _keys_octave() -> int:
 func set_hint(h: ChordLog.Hint) -> void:
 	hint = h
 	_refresh_labels()
+	_note_setting("hint", ChordLog.Hint.keys()[h])
 
 
 ## The drill deals `count` chords a round from `chords`, by name, `beats` beats apart.
@@ -321,6 +398,18 @@ func set_drill(chords: Array, count: int, beats: int = Drill.BEATS) -> void:
 func set_practice(on: bool) -> void:
 	practice = on
 	_update_hud()
+	_note_setting("practice", on)
+
+
+func set_bpm(v: float) -> void:
+	bpm = v
+	_note_setting("bpm", v)
+
+
+## A setting changed: the run's record keeps it, if a run is on.
+func _note_setting(kind: String, value: Variant) -> void:
+	if started:
+		record.add(now_ms(), kind, [value])
 
 
 func set_piano(on: bool) -> void:
@@ -346,6 +435,11 @@ func pause() -> void:
 	_blocked = {}
 	_missed_chord = false
 	get_tree().paused = true
+	record.add(_paused_at, "pause", [State.keys()[state], cur])
+	_open_pause()
+
+
+func _open_pause() -> void:
 	hud.open_pause(mode == Hud.Mode.PLAY, practice, bpm, tick_on, backing_part() != "", backing, labels, chords, hint)
 
 
@@ -357,6 +451,7 @@ func resume() -> void:
 	get_tree().paused = false
 	hud.close_pause()
 	now = now_ms()
+	record.add(now, "resume")
 	if not _blend.is_empty():
 		_blend.t0 += away
 	match state:
@@ -452,6 +547,7 @@ func note_on(m: int, ts: float) -> void:
 		if note_input.source == "MIDI" and now_ms() - _stopped_at > LISTEN_GUARD_MS:
 			hud.menu_note(m)   # the computer keyboard's notes don't work the menus: its arrows do
 		return
+	record.add(ts, "on", [m, State.keys()[state], cur])
 	if chords and (by_itself or m < _next_note()):
 		_left[m] = true
 		_left_changed(ts, true)
@@ -515,6 +611,7 @@ func note_off(m: int, ts: float) -> void:
 		return
 	if get_tree().paused:
 		return
+	record.add(ts, "off", [m, State.keys()[state], cur])
 	_right.erase(m)
 	_wrong.erase(m)
 	if by_itself or _left.has(m):   # the hand it was played in, though the next note may have moved since
@@ -900,6 +997,8 @@ func _back() -> void:
 		hud.close_library()
 	elif hud.chords_open():
 		hud.close_chords()
+	elif hud.report_open():
+		hud.close_report()
 	elif get_tree().paused:
 		resume()
 	elif started:
@@ -911,11 +1010,13 @@ func _back() -> void:
 func _on_labels_toggled(on: bool) -> void:
 	labels = on
 	_refresh_labels()
+	_note_setting("labels", on)
 
 
-func _on_source_changed(_source: String) -> void:
+func _on_source_changed(source: String) -> void:
 	_refresh_labels()
 	_setup_piano()
+	_note_setting("source", source)
 
 
 ## The drill names no notes: the gorilla plays them itself, and it's about the chords.
@@ -960,12 +1061,14 @@ func set_backing(on: bool) -> void:
 	hud.set_backing(on)
 	if not on:
 		song_player.stop()
+	_note_setting("backing", on)
 
 
 func _on_tick_toggled(on: bool) -> void:
 	tick_on = on
 	if not on:
 		metronome.cancel_ticks()
+	_note_setting("tick", on)
 
 
 # ---------------------------------------------------------------- what the scene shows

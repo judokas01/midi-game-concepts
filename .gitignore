@@ -16,3 +16,6 @@ export_presets.cfg
 # OS
 .DS_Store
 Thumbs.db
+
+# King Gong bug reports: written by the game, read by replay-bug
+godot-implementations/king-gong/bug-reports/

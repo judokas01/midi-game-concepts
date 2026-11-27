@@ -1,6 +1,7 @@
 extends Node
 ## MIDI notes and the computer-keyboard fallback, stamped with the time they arrived. On the
-## keyboard a chord is one key, which plays its three notes.
+## keyboard a chord is one key, which plays its three notes. While a text box has the keys (a
+## bug report being written), they are its, but Esc.
 ##
 ## Godot's input events carry no timestamp, so the stamp is taken when the event is
 ## dispatched, which happens once per frame. That is ~16 ms of resolution at 60 fps,
@@ -88,6 +89,11 @@ func _input(event: InputEvent) -> void:
 
 	var key := event as InputEventKey
 	if key == null:
+		return
+	if get_viewport().gui_get_focus_owner() is TextEdit:   # the keys write a bug report; Esc still goes back
+		if key.pressed and not key.echo and key.keycode == KEY_ESCAPE:
+			menu_requested.emit()
+			get_viewport().set_input_as_handled()
 		return
 	var idx := KEYS.find(key.keycode)
 	var chord: Song.Chord = _chord_keys.get(key.get_keycode_with_modifiers())

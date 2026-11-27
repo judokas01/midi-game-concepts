@@ -114,6 +114,22 @@ corner_radius_bottom_left = 5
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_pause_hint"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_report_text"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(0.0941176, 0.0627451, 0.0313726, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.94902, 0.760784, 0.188235, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
 [node name="Game" type="Node2D" unique_id=2093278088]
 script = ExtResource("1_game")
 
@@ -1516,6 +1532,16 @@ horizontal_alignment = 1
 size_flags_horizontal = 4
 theme_type_variation = &"Sign"
 
+[node name="Note" type="Label" parent="Hud/PauseMenu/Center/Panel/Rows"]
+visible = false
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Report saved"
+horizontal_alignment = 1
+autowrap_mode = 3
+theme_type_variation = &"BoardCaption"
+
 [node name="Continue" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=588575870]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
@@ -1669,10 +1695,71 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_pause_hint")
 text = "Bass clef"
 
+[node name="Report" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 16
+text = "Report bug…"
+theme_type_variation = &"Plank"
+script = ExtResource("19_plank")
+
 [node name="Menu" type="Button" parent="Hud/PauseMenu/Center/Panel/Rows" unique_id=931932808]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 focus_mode = 0
 text = "Menu"
 theme_type_variation = &"Plank"
+script = ExtResource("19_plank")
+
+[node name="Report" type="VBoxContainer" parent="Hud/PauseMenu/Center/Panel"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Hud/PauseMenu/Center/Panel/Report"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Report a bug"
+horizontal_alignment = 1
+theme_type_variation = &"Sign"
+
+[node name="Caption" type="Label" parent="Hud/PauseMenu/Center/Panel/Report"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "What happened? The song, its settings and every note you played in this run go with it."
+autowrap_mode = 3
+theme_type_variation = &"BoardCaption"
+
+[node name="Text" type="TextEdit" parent="Hud/PauseMenu/Center/Panel/Report"]
+custom_minimum_size = Vector2(420, 150)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxFlat_report_text")
+theme_override_styles/focus = SubResource("StyleBoxFlat_report_text")
+placeholder_text = "I played the right note but the gorilla fell…"
+wrap_mode = 1
+
+[node name="Buttons" type="HBoxContainer" parent="Hud/PauseMenu/Center/Panel/Report"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Cancel" type="Button" parent="Hud/PauseMenu/Center/Panel/Report/Buttons"]
+custom_minimum_size = Vector2(140, 44)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 18
+text = "‹ Back"
+theme_type_variation = &"Plank"
+script = ExtResource("19_plank")
+
+[node name="Save" type="Button" parent="Hud/PauseMenu/Center/Panel/Report/Buttons"]
+custom_minimum_size = Vector2(170, 46)
+layout_mode = 2
+focus_mode = 0
+text = "Save report"
+theme_type_variation = &"StartButton"
 script = ExtResource("19_plank")

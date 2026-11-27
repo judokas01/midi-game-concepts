@@ -51,7 +51,7 @@ while the main menu is up.
 `Esc` during a song freezes it under the pause menu: **Continue**, **Restart song**,
 **Practice mode** (in Play mode), **Tempo** (`◀ 60 BPM ▶`, 40 to 120 in steps of 5; E and F
 on its row), **Beat tick**, **Backing** (when the part has something to back), **Labels**, **Chord sign** (with chords: each log's name or its
-notes in the bass clef, changed on the logs at once) and **Menu**, back to the board the
+notes in the bass clef, changed on the logs at once), **Report bug…** ([below](#bug-reports)) and **Menu**, back to the board the
 song was started from. It opens on Continue, so A, `Enter` or `Space` continues at once; B or `Esc` does too.
 
 You let go of the key to reach for `Esc`, so a branch can't be held through a pause. On
@@ -59,6 +59,39 @@ Continue the gorilla floats up at the branch it hung on, or the next one if it w
 air or in a rest, and waits for the note, untimed, as after a magic banana but for free. The
 beat restarts at the grab, so a new tempo starts cleanly. A fall carries on where it was and
 still costs its banana. Notes played or let go while paused are ignored.
+
+### Bug reports
+
+Every run is recorded as it is played: the song (or the drill's round, as dealt) with its
+settings, and every note the game took, to the millisecond, with the state and branch it
+came in, as well as the pauses and the settings changed in them. A new run (Start, Restart song,
+`Enter`, Play again, a new drill round) throws the last one away, so only the current one is
+ever kept, and only in memory.
+
+**Report bug…** in the pause menu opens a box for what happened. Type into it (the keys
+write there, not play; `Esc` goes back to the pause menu, writing nothing), then **Save
+report**: the run, your words and how the game stood (state, branch, falls, bananas, wrong
+notes, progress and the last message) go to a new file in `bug-reports/` in this folder,
+named for when and what, e.g. `bug-reports/2026-11-27_14-21-07_twinkle-twinkle.json`. The
+pause menu says where it went. `scripts/run_record.gd` describes the file.
+
+To watch a report played back, with every note at its time, and end paused where it was
+written, its words in the pause menu:
+
+```powershell
+cd godot-implementations/king-gong
+.\replay-bug                     # the newest report
+.\replay-bug <file>              # that one
+.\replay-bug --quit              # the newest, and quit once it has said how it went
+.\replay-bug <file> --quit       # that one, and quit
+```
+
+The console says `replay: as reported (HANG on branch 10, falls 2, bananas 2, misses 0)`,
+or what came out differently. Pauses are cut to a second. The game moves on once a frame and
+the frames never fall quite where they did, so a note waits a few frames at most for the
+game to stand as it did when it was played, or, played as the gorilla waited (after a magic
+banana, a pause, on the stump), until it waits again, the rest of the run coming that much
+later. If the song has changed since, it says so.
 
 ## Learning
 
@@ -430,7 +463,8 @@ them around:
 | `scripts/chord_menu.gd` | The chord drill's chord grid: builds it, and hands the menu cursor its rows |
 | `scripts/library.gd` | The song library: its two filters, the list and its scrolling, and the preview on its own piano |
 | `scripts/scroll_bar.gd` | Draws the library's scroll bar: a groove beside the list, and a thumb for the part of it in view |
-| `scripts/pause_menu.gd` | The pause menu: its buttons and toggles, the tempo's steps |
+| `scripts/pause_menu.gd` | The pause menu: its buttons and toggles, the tempo's steps, and the bug report box |
+| `scripts/run_record.gd` | The run being played, its settings and inputs, and the bug report file it writes |
 | `scripts/progress_line.gd` | Draws the progress line along the top, gliding after the gorilla |
 | `scripts/piano.gd` | Draws the little keyboard |
 | `scripts/score_import.gd` | Reads the MusicXML scores in `songs/` into songs |
@@ -442,6 +476,7 @@ them around:
 | `scripts/hud.gd` | The counters, the menus' wiring, messages, what the little keyboard lights |
 | `scripts/songbook/*.gd` | The song book: the tunes of `song-ideas.md`, a file for each category, in the format `song.gd` describes |
 | `play-song.cmd`, `scripts/play_song.gd` | Plays one song from the console, for checking it by ear; see [Listening to a song](#listening-to-a-song) |
+| `replay-bug.cmd`, `scripts/dev_replay.gd` | Plays a bug report back in the game; see [Bug reports](#bug-reports) |
 | `scripts/dev_autoplay.gd`, `dev_cursor_check.gd`, `dev_sign_check.gd`, `dev_sound_check.gd`, `dev_library_check.gd`, `dev_songbook_check.gd` | Dev checks only, see below |
 
 Branches, lianas and logs only appear when the game runs, because `level.gd` lays them out
@@ -492,6 +527,14 @@ breaks, on purpose, so falls, cracks and magic bananas get used too.
   expect the same result as without it: `WON falls=2 bananas=5`, with `--learn` one pause
   and `WON falls=0 bananas=4 misses=1`, with `--chords` `WON falls=3 bananas=4`. If a pause
   menu doesn't continue, the run ends with `autoplay: the pause menu did not continue`.
+- `--report` pauses as `--pause` does, but at the second pause (in learn mode and the drill,
+  the first) writes a bug report instead of continuing: C C A to Report bug…, types `as d`
+  into the box and checks no note played and Space pressed nothing, `Esc` back to the pause
+  menu, Report bug… again, its words and A on Save. It checks the pause menu says where it
+  went and the file has the words, the pauses, the tempo the first one set, the notes and the
+  game as it stands, prints `report: saved <file>, 26 events, HANG on branch 10` and quits.
+  Then `replay-bug.cmd <file> --quit` should print `replay: as reported (...)`: it does with
+  Treble clef, Treble + chords, Chords only, learn mode and the drill.
 - `--menu` works the menus by MIDI notes in mixed octaves before playing, instead of
   starting at once, checking the selection and the sign's lit keys at each step: on the main
   page the mouse, `Esc` and B (nothing happens); D down to the board for the mode (Play

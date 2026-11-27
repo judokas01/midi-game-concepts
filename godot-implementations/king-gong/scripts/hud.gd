@@ -22,6 +22,7 @@ signal backing_toggled(on: bool)
 signal menu_pressed
 signal continue_pressed
 signal back_pressed   # B or Esc on a menu: what Esc does there
+signal report_written(text: String)   # a bug report saved from the pause menu, with what the player wrote
 
 ## What the main menu's boards play: a song, learning one, or the chord drill.
 enum Mode { PLAY, LEARN, DRILL }
@@ -48,6 +49,7 @@ var _end_at := 0       # ms, when the end panel came up
 var _cursor_on := ""          # the menu the cursor works: "pause", "chords", "end", "main" and the page, or ""
 
 var cursor: MenuCursor        # the selection on whichever menu is up, over everything
+var last_message := ""        # the last thing the message pill said since it was last cleared, for a bug report
 
 @onready var _progress: ProgressLine = $Progress
 @onready var _pill: Control = $Pill
@@ -111,6 +113,8 @@ func _ready() -> void:
 	_pause.practice_toggled.connect(func(on: bool) -> void:
 		_menu.set_practice(on)   # the Play song board's says the same
 		practice_toggled.emit(on))
+	_pause.report_written.connect(func(text: String) -> void: report_written.emit(text))
+	_pause.reporting_changed.connect(_refresh_cursor)
 	_chord_keys.fold = true
 	$EndPanel/Lines/Buttons/Again.pressed.connect(func() -> void: restart_pressed.emit())
 	$EndPanel/Lines/Buttons/Menu.pressed.connect(func() -> void: menu_pressed.emit())
@@ -225,6 +229,29 @@ func close_pause() -> void:
 	_pause.close()
 
 
+## The pause menu's bug report box is open.
+func report_open() -> bool:
+	return _pause.visible and _pause.reporting()
+
+
+## Back from the bug report box to the pause menu, writing nothing.
+func close_report() -> void:
+	_pause.close_report()
+
+
+## The pause menu says where the bug report went, `path`, or that it couldn't be written ("").
+func show_report_saved(path: String) -> void:
+	if path == "":
+		_pause.show_note("The report couldn't be saved")
+	else:
+		_pause.show_note("Report saved: " + (path.trim_prefix("res://") if path.begins_with("res://") else ProjectSettings.globalize_path(path)))
+
+
+## A line of `text` under the pause menu's title, until it closes.
+func show_pause_note(text: String) -> void:
+	_pause.show_note(text)
+
+
 ## The song boards show song `song` (the game picked it, or a dev flag did).
 func show_song(song: int) -> void:
 	_menu.show_song(song)
@@ -280,6 +307,7 @@ func show_banner(text: String) -> void:
 	if _banner_fade:
 		_banner_fade.kill()
 	_banner_text.text = text
+	last_message = text
 	_banner.modulate.a = 1.0
 	_banner.show()
 	_banner_fade = create_tween()
@@ -306,6 +334,7 @@ func clear_messages() -> void:
 		_banner_fade.kill()
 	_banner.hide()
 	_end.hide()
+	last_message = ""
 
 
 ## A collected banana arcs from `from` (screen position) to the counter.
@@ -338,7 +367,7 @@ func _choose_drill() -> void:
 func _refresh_cursor() -> void:
 	var on := ""
 	if _pause.visible:
-		on = "pause"
+		on = "report" if _pause.reporting() else "pause"
 	elif _chord_menu.visible:
 		on = "chords"
 	elif _library.visible:
@@ -355,6 +384,8 @@ func _refresh_cursor() -> void:
 			cursor.clear()
 		"pause":
 			cursor.use(_pause.cursor_rows(), 0, _pause.get_node("Center/Panel"), true)
+		"report":
+			cursor.use(_pause.report_rows(), 0, _pause.get_node("Center/Panel"), true)
 		"chords":
 			cursor.use(_chord_menu.cursor_rows(), 0, _chord_menu.get_node("Center/Board"), true)
 		"library":

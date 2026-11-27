@@ -26,6 +26,12 @@ extends Node
 ##                        then by keys (down arrows, right arrow, Esc), and last continues with
 ##                        Enter. With chords, the first time it also picks Bass clef on Chord
 ##                        sign and checks the logs show it
+##   -- --report          with --autoplay, --pause, but at the second pause (in learn mode and the
+##                        drill the first) it writes a bug report instead of continuing: C C A to Report bug…, types "as d" into the box
+##                        (no note plays, Space presses nothing), Esc back to the menu, again,
+##                        then its words and Save. It checks the file has them, the pause and its
+##                        tempo, the notes, and the game as it stands, prints "report: saved
+##                        <file>, <n> events, <state> on branch <n>" and quits. replay-bug plays it
 ##   -- --menu            with --autoplay, works the menus by MIDI notes in mixed octaves (C up,
 ##                        D down, E and F left and right, A press, B back) instead of starting
 ##                        at once, checking the selection and the sign's lit keys at each step:
@@ -96,11 +102,16 @@ const MINORS := ["Cm", "Dm", "Em", "Fm", "Gm", "Am", "Bm"]   # Minor on the whit
 const MODES := {MainMenu.Page.PLAY: Hud.Mode.PLAY, MainMenu.Page.LEARN: Hud.Mode.LEARN, MainMenu.Page.DRILL: Hud.Mode.DRILL}
 const MenuCursor := preload("res://scripts/menu_cursor.gd")
 const KEYS := {"C": 0, "D": 2, "E": 4, "F": 5, "A": 9, "B": 11}   # the white keys that work the menus
+const RunRecord := preload("res://scripts/run_record.gd")
+const REPORT_TEXT := "autoplay: a test report"
 
 @onready var game: Game = get_parent()
 
 var _autoplay := false
 var _pause := false
+var _report := false       # --report
+var _report_step := 0      # its step, from 1; 0 until the second pause
+var _report_next := 0.0    # the next step not before then
 var _paused_in := {}       # the states it has paused in already, each only once
 var _pausing_since := 0.0  # when it pressed Esc; 0 while not pausing
 var _paused_at := 0.0      # when it saw the game paused
@@ -172,6 +183,9 @@ func _ready() -> void:
 			_autoplay = true
 		elif arg == "--pause":
 			_pause = true
+		elif arg == "--report":
+			_pause = true
+			_report = true
 		elif arg.begins_with("--shots="):
 			_shots_dir = arg.trim_prefix("--shots=")
 		elif arg == "--perf":
@@ -1001,6 +1015,9 @@ func _start_pause(now: float) -> bool:
 ## While pausing: once the game is paused, lets go of the note; a second later works the pause
 ## menu (see --pause); once it runs again, says where the gorilla is.
 func _work_pause(now: float) -> void:
+	if _report_step > 0:
+		_work_report(now)
+		return
 	var paused := get_tree().paused
 	if _resume_sent:
 		if paused and now - _paused_at > PAUSE_FOR_MS + PAUSE_DEADLINE_MS:
@@ -1049,6 +1066,10 @@ func _work_pause(now: float) -> void:
 		var nth := _pauses
 		_pauses += 1          # before the walk: one that breaks halfway is not tried again and again
 		_resume_sent = true
+		if _report and nth == _report_at():
+			_report_step = 1
+			_report_next = now
+			return
 		match nth:
 			0:
 				for k in downs:
@@ -1084,6 +1105,88 @@ func _work_pause(now: float) -> void:
 					_held_over = game.notes[game.cur + 1].midi   # the note it plays next, once in the song
 					game.note_on(_held_over, now)   # still down from the menu: playing it again lets the old one go
 				_key(KEY_ENTER)
+
+
+## With --report, at the second pause, a step every half MENU_STEP_MS: Report bug… by notes,
+## typing into the box, Esc back, Report bug… again, its words and Save, then the file.
+func _work_report(now: float) -> void:
+	if now < _report_next:
+		return
+	_report_next = now + MENU_STEP_MS / 2.0
+	var rows := game.hud.get_node("PauseMenu/Center/Panel/Rows")
+	var box := game.hud.get_node("PauseMenu/Center/Panel/Report")
+	var text: TextEdit = box.get_node("Text")
+	var step := _report_step
+	_report_step += 1   # before the step: one that breaks halfway is not tried again and again
+	if step == 2:
+		_expect(text.text == "as d" and box.visible and get_tree().paused and game._menu_notes.is_empty(),
+			"typing goes into the report box, playing nothing and pressing nothing: \"%s\"" % text.text)
+		_key(KEY_ESCAPE)
+		return
+	if step == 3:
+		_expect(not box.visible and rows.visible and get_tree().paused and _cursor().selected() == rows.get_node("Continue"),
+			"Esc in the report box goes back to the pause menu, on Continue")
+	elif step > 3:
+		return
+	_note("C", 4)
+	_note("C", 5)
+	_expect(_cursor().selected() == rows.get_node("Report"), "C twice from Continue reaches Report bug")
+	_note("A", 4)
+	_expect(box.visible and not rows.visible and text.has_focus() and text.text == "",
+		"Report bug opens an empty report box, which has the keys")
+	_expect(_cursor().selected() == box.get_node("Buttons/Save") and _lit() == "EFAB", "the report box is on Save, E F A B lit: %s" % _lit())
+	if step == 1:
+		_type("as d")   # keys that play notes on the computer keyboard, and Space, which presses on a menu
+		return
+	text.text = REPORT_TEXT
+	_note("A", 3)
+	_check_report(rows, box)
+	get_tree().quit()
+
+
+## The report just saved: back on the pause menu, which says where it went, and the file with
+## the words, the first pause and its tempo, the notes, and the game as it stands.
+func _check_report(rows: Control, box: Control) -> void:
+	var path: String = game.last_report
+	_expect(not box.visible and rows.visible and rows.get_node("Note").visible and path.get_file() in rows.get_node("Note").text,
+		"after Save the pause menu says where the report went")
+	var rec := RunRecord.read(path)
+	if rec.is_empty():
+		push_error("report: no report at %s" % path)
+		return
+	var events: Array = rec.events
+	var kinds := events.map(func(e: Array) -> String: return e[1])
+	var at: Dictionary = rec.at_report
+	_expect(rec.report == REPORT_TEXT, "the report has the words: \"%s\"" % rec.report)
+	var before := _report_at()   # pauses continued from before this one; the first stepped the tempo up, below 120
+	var stepped := before > 0 and float(rec.settings.bpm) < 120.0
+	_expect(kinds.count("pause") == before + 1 and kinds.count("resume") == before and ("bpm" in kinds) == stepped,
+		"the report has its pauses, their resumes and the tempo the first one set: %s" % [kinds.filter(func(k: String) -> bool: return not k in ["on", "off"])])
+	_expect(kinds.count("on") >= game.done_up_to, "the report has a note for each branch done at least: %d" % kinds.count("on"))
+	_expect(at.state == Game.State.keys()[game.state] and int(at.branch) == game.cur and int(at.falls) == game.falls,
+		"the report has the game as it stands: %s" % [at])
+	var drill := game.mode == Hud.Mode.DRILL
+	_expect(rec.settings.mode == Hud.Mode.keys()[game.mode] and rec.settings.has("drill") == drill
+		and (drill or rec.settings.song == Song.library()[game.song].name) and rec.level == game.level_print(),
+		"the report has the run's settings and level: %s" % [rec.settings])
+	print("report: saved %s, %d events, %s on branch %d" % [path.get_file(), events.size(), at.state, int(at.branch)])
+
+
+## The pause --report writes its report at, from 0: the second in Play mode, after one
+## continued with a new tempo; the first in learn mode and the drill, which only pause once.
+func _report_at() -> int:
+	return 1 if game.mode == Hud.Mode.PLAY else 0
+
+
+## Types `text` on the computer keyboard, as a player would.
+func _type(text: String) -> void:
+	for c in text:
+		for pressed: bool in [true, false]:
+			var key := InputEventKey.new()
+			key.keycode = KEY_SPACE if c == " " else OS.find_keycode_from_string(c.to_upper())
+			key.unicode = c.unicode_at(0)
+			key.pressed = pressed
+			Input.parse_input_event(key)
 
 
 ## Presses and lets go of computer key `code`, as if typed.
